@@ -1,0 +1,507 @@
+#
+# Quake Makefile for M68k Amiga
+#
+# Dec '99 by Frank Wille <frank@phoenix.owl.de>
+#
+
+VERSION=1.09
+ARCH=m68k/winquake
+BUILDDIR=$(ARCH)
+EXED=m68k
+EXEDIR=$(EXED)
+CC=vc +m68kdb
+CC68=vc
+CFLAGS=-+ -O1 -speed -maxoptpasses=50 -cpu=68060 -fpu=68060 -c99 -no-trigraphs -dontwarn=129 \
+       -DM68KASM -DAMIGA -DNDEBUG -Dstricmp=strcasecmp
+
+NOP_CFLAGS=-+ -cpu=68060 -fpu=68060 -c99 -no-trigraphs -dontwarn=129 \
+       -DM68KASM -DAMIGA -DNDEBUG -Dstricmp=strcasecmp
+
+NETINC=-Ivincludem68k: -Idh2:sdk/amitcpsdk/netinclude
+LDFLAGS=-lm040 -lvc -lcgfx -lp96 -lamiga -lsocket
+AS=phxass
+ASFLAGS=q noexe m=68060 opt=2 i=dh2:sdk/os35/INCLUDE/include_i
+
+DO_CC=$(CC) $(CFLAGS) -o $@ -c $<
+DO_NOP_CC=$(CC) $(NOP_CFLAGS) -o $@ -c $<
+DO_CCNET=$(CC) $(CFLAGS) $(NETINC) -o $@ -c $<
+DO_AS=$(AS) $(ASFLAGS) to $@ $<
+
+
+#############################################################################
+# SETUP AND BUILD
+#############################################################################
+
+TARGETS=$(BUILDDIR)/quake68k
+
+all: $(TARGETS)
+
+#############################################################################
+# CLIENT/SERVER
+#############################################################################
+
+QUAKE_OBJS= \
+	$(BUILDDIR)/chase.o \
+	$(BUILDDIR)/cl_demo.o \
+	$(BUILDDIR)/cl_input.o \
+	$(BUILDDIR)/cl_main.o \
+	$(BUILDDIR)/cl_parse.o \
+	$(BUILDDIR)/cl_tent.o \
+	$(BUILDDIR)/cmd.o \
+	$(BUILDDIR)/common.o \
+	$(BUILDDIR)/console.o \
+	$(BUILDDIR)/crc.o \
+	$(BUILDDIR)/cvar.o \
+	$(BUILDDIR)/draw.o \
+	$(BUILDDIR)/d_edge.o \
+	$(BUILDDIR)/d_fill.o \
+	$(BUILDDIR)/d_init.o \
+	$(BUILDDIR)/d_modech.o \
+	$(BUILDDIR)/d_part.o \
+	$(BUILDDIR)/d_polyset.o \
+	$(BUILDDIR)/d_scan.o \
+	$(BUILDDIR)/d_sky.o \
+	$(BUILDDIR)/d_sprite.o \
+	$(BUILDDIR)/d_surf.o \
+	$(BUILDDIR)/d_vars.o \
+	$(BUILDDIR)/d_zpoint.o \
+	$(BUILDDIR)/host.o \
+	$(BUILDDIR)/host_cmd.o \
+	$(BUILDDIR)/in_amiga.o \
+	$(BUILDDIR)/in_amigajoy.o \
+	$(BUILDDIR)/in_amigapsx.o \
+	$(BUILDDIR)/in_amigamouse.o \
+	$(BUILDDIR)/keys.o \
+	$(BUILDDIR)/location.o \
+	$(BUILDDIR)/menu.o \
+	$(BUILDDIR)/mathlib.o \
+	$(BUILDDIR)/model.o \
+	$(BUILDDIR)/net_amiga.o \
+	$(BUILDDIR)/net_bsdsocket.o \
+	$(BUILDDIR)/net_dgrm.o \
+	$(BUILDDIR)/net_loop.o \
+	$(BUILDDIR)/net_main.o \
+	$(BUILDDIR)/net_vcr.o \
+	$(BUILDDIR)/nonintel.o \
+	$(BUILDDIR)/pr_cmds.o \
+	$(BUILDDIR)/pr_edict.o \
+	$(BUILDDIR)/pr_exec.o \
+	$(BUILDDIR)/r_aclip.o \
+	$(BUILDDIR)/r_alias.o \
+	$(BUILDDIR)/r_bsp.o \
+	$(BUILDDIR)/r_light.o \
+	$(BUILDDIR)/r_draw.o \
+	$(BUILDDIR)/r_efrag.o \
+	$(BUILDDIR)/r_edge.o \
+	$(BUILDDIR)/r_misc.o \
+	$(BUILDDIR)/r_main.o \
+	$(BUILDDIR)/r_sky.o \
+	$(BUILDDIR)/r_sprite.o \
+	$(BUILDDIR)/r_surf.o \
+	$(BUILDDIR)/r_part.o \
+	$(BUILDDIR)/r_vars.o \
+	$(BUILDDIR)/sbar.o \
+	$(BUILDDIR)/screen.o \
+	$(BUILDDIR)/sv_main.o \
+	$(BUILDDIR)/sv_phys.o \
+	$(BUILDDIR)/sv_move.o \
+	$(BUILDDIR)/sv_user.o \
+	$(BUILDDIR)/zone.o \
+	$(BUILDDIR)/view.o \
+	$(BUILDDIR)/wad.o \
+	$(BUILDDIR)/world.o \
+	$(BUILDDIR)/cd_amiga.o \
+	$(BUILDDIR)/snd_amiga.o \
+	$(BUILDDIR)/snd_dma.o \
+	$(BUILDDIR)/snd_mix.o \
+	$(BUILDDIR)/snd_mem.o \
+	$(BUILDDIR)/sys_amiga.o \
+	$(BUILDDIR)/sys_amigaclip.o \
+	$(BUILDDIR)/twfsound_cd.o \
+	$(BUILDDIR)/vid_amiga.o \
+	$(BUILDDIR)/vid_AGAamiga.o \
+	$(BUILDDIR)/vid_CGFXamiga.o \
+	$(BUILDDIR)/vid_CPPCamiga.o \
+	$(BUILDDIR)/vid_cppcstatic.o \
+	$(BUILDDIR)/vid_cppcstatic68k.o
+
+QUAKE_AS_OBJS= \
+	$(BUILDDIR)/in_amigamouse68k.o \
+	$(BUILDDIR)/snd_int68k.o \
+	$(BUILDDIR)/snd_mixamiga68k.o \
+	$(BUILDDIR)/sys_amiga68k.o \
+	$(BUILDDIR)/vid_c2p.o \
+	$(BUILDDIR)/vid_turboupd68k.o
+
+# use -DM68KASM when you want to use the following
+QUAKE_ASOPT_OBJS= \
+	$(BUILDDIR)/mathlib68k.o \
+	$(BUILDDIR)/common68k.o \
+	$(BUILDDIR)/d_sky68k.o \
+	$(BUILDDIR)/d_part68k.o \
+	$(BUILDDIR)/d_polyset68k.o \
+	$(BUILDDIR)/d_edge68k.o \
+	$(BUILDDIR)/d_scan68k.o \
+	$(BUILDDIR)/r_aclip68k.o \
+	$(BUILDDIR)/r_alias68k.o \
+	$(BUILDDIR)/r_bsp68k.o \
+	$(BUILDDIR)/r_draw68k.o \
+	$(BUILDDIR)/r_edge68k.o \
+	$(BUILDDIR)/r_light68k.o \
+	$(BUILDDIR)/r_misc68k.o \
+	$(BUILDDIR)/r_sky68k.o \
+	$(BUILDDIR)/r_surf68k.o 
+
+INCS = quakedef.h \
+       common.h bspfile.h vid.h sys.h \
+       zone.h mathlib.h wad.h draw.h \
+       cvar.h screen.h net.h protocol.h \
+       cmd.h sbar.h sound.h render.h \
+       client.h progs.h server.h \
+       model.h input.h d_iface.h \
+       world.h keys.h console.h location.h \
+       view.h menu.h crc.h cdaudio.h \
+       pr_comp.h progdefs.h modelgen.h spritegn.h
+
+
+$(BUILDDIR)/quake68k_noopt: $(QUAKE_OBJS) $(QUAKE_AS_OBJS)
+	$(CC) -o $@ $(BUILDDIR)/#?.o $(LDFLAGS)
+
+$(BUILDDIR)/quake68k: $(QUAKE_OBJS) $(QUAKE_AS_OBJS) $(QUAKE_ASOPT_OBJS)
+	$(CC) -o $@ $(BUILDDIR)/#?.o $(LDFLAGS)
+
+quakedef68k.i: genasmheaders quakeasmheaders.gen
+	genasmheaders quakeasmheaders.gen $@ 0 "$(CC) $(CFLAGS)"
+
+genasmheaders: genasmheaders.c
+	$(CC68) -o $@ genasmheaders.c
+
+##
+
+
+$(BUILDDIR)/chase.o :               chase.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/cl_demo.o :             cl_demo.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/cl_input.o :            cl_input.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/cl_main.o :             cl_main.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/cl_parse.o :            cl_parse.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/cl_tent.o :             cl_tent.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/cmd.o :                 cmd.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/common.o :              common.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/console.o :             console.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/crc.o :                 crc.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/cvar.o :                cvar.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/draw.o :                draw.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/d_edge.o :              d_edge.c $(INCS) d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_fill.o :              d_fill.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/d_init.o :              d_init.c $(INCS) d_local.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_modech.o :            d_modech.c $(INCS) d_modech.c d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_part.o :              d_part.c $(INCS) d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_polyset.o :           d_polyset.c $(INCS) r_local.h d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_scan.o :              d_scan.c $(INCS) d_scan.c r_local.h d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_sky.o :               d_sky.c $(INCS) r_local.h d_local.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_sprite.o :            d_sprite.c $(INCS) d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_surf.o :              d_surf.c $(INCS) r_local.h d_local.h
+	$(DO_CC)
+
+$(BUILDDIR)/d_vars.o :              d_vars.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/d_zpoint.o :            d_zpoint.c $(INCS) r_local.h d_local.h
+	$(DO_CC)
+
+$(BUILDDIR)/host.o :                host.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/host_cmd.o :            host_cmd.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/keys.o :                keys.c $(INCS) sys_amigaclip.h
+	$(DO_CC)
+
+$(BUILDDIR)/location.o :            location.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/menu.o :                menu.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/mathlib.o :             mathlib.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/model.o :               model.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/nonintel.o :            nonintel.c $(INCS) r_local.h d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/pr_cmds.o :             pr_cmds.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/pr_edict.o :            pr_edict.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/pr_exec.o :             pr_exec.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/r_aclip.o :             r_aclip.c $(INCS) r_local.h d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_alias.o :             r_alias.c $(INCS) r_local.h d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_bsp.o :               r_bsp.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_light.o :             r_light.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_draw.o :              r_draw.c $(INCS) r_local.h d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_efrag.o :             r_efrag.c $(INCS) r_local.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_edge.o :              r_edge.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_misc.o :              r_misc.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_main.o :              r_main.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_sky.o :               r_sky.c $(INCS) r_local.h d_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_sprite.o :            r_sprite.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_surf.o :              r_surf.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_part.o :              r_part.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/r_vars.o :              r_vars.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/screen.o :              screen.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/sbar.o :                sbar.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/sv_main.o :             sv_main.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/sv_phys.o :             sv_phys.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/sv_move.o :             sv_move.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/sv_user.o :             sv_user.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/zone.o	:           zone.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/view.o	:           view.c $(INCS) r_local.h r_shared.h
+	$(DO_CC)
+
+$(BUILDDIR)/wad.o :                 wad.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/world.o :               world.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/cd_amiga.o :            cd_amiga.c $(INCS) twfsound_cd.h
+	$(DO_CC)
+
+$(BUILDDIR)/twfsound_cd.o :         twfsound_cd.c twfsound_cd.h
+	$(DO_CC)
+
+$(BUILDDIR)/snd_dma.o :             snd_dma.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/snd_mix.o :             snd_mix.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/snd_mem.o :             snd_mem.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/net_amiga.o :           net_amiga.c $(INCS) net_loop.h net_dgrm.h
+	$(DO_CC)
+
+$(BUILDDIR)/net_bsdsocket.o :       net_bsdsocket.c $(INCS)
+	$(DO_CCNET)
+
+$(BUILDDIR)/net_dgrm.o :            net_dgrm.c $(INCS) net_dgrm.h
+	$(DO_CC)
+
+$(BUILDDIR)/net_loop.o :            net_loop.c $(INCS) net_loop.h
+	$(DO_CC)
+
+$(BUILDDIR)/net_main.o :            net_main.c $(INCS) net_vcr.h
+	$(DO_CC)
+
+$(BUILDDIR)/net_vcr.o :             net_vcr.c $(INCS) net_vcr.h
+	$(DO_CC)
+
+$(BUILDDIR)/sys_amiga.o :           sys_amiga.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/sys_amigaclip.o :       sys_amigaclip.c $(INCS) sys_amigaclip.h
+	$(DO_CC)
+
+$(BUILDDIR)/snd_amiga.o :           snd_amiga.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/in_amiga.o :            in_amiga.c $(INCS) in_amiga.h
+	$(DO_CC)
+
+$(BUILDDIR)/in_amigajoy.o :         in_amigajoy.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/in_amigapsx.o :         in_amigapsx.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/in_amigamouse.o :       in_amigamouse.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/vid_amiga.o :           vid_amiga.c $(INCS) d_local.h r_shared.h vid_amiga.h
+	$(DO_CC)
+
+$(BUILDDIR)/vid_AGAamiga.o :        vid_AGAamiga.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/vid_CGFXamiga.o :       vid_CGFXamiga.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/vid_CPPCamiga.o :       vid_CPPCamiga.c $(INCS)
+	$(DO_CC)
+
+$(BUILDDIR)/vid_cppcstatic68k.o :   vid_cppcstatic68k.c
+	$(DO_CC)
+
+$(BUILDDIR)/vid_cppcstatic.o :      vid_cppcstatic.c
+	$(DO_CC)
+
+#####
+
+$(BUILDDIR)/snd_mixamiga68k.o:      snd_mixamiga68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/vid_c2p.o:              vid_c2p_040.s
+	$(DO_AS) SET depth8
+
+$(BUILDDIR)/vid_turboupd68k.o:      vid_turboupd68k.s
+	$(DO_AS)
+
+$(BUILDDIR)/in_amigamouse68k.o:     in_amigamouse68k.s
+	$(DO_AS)
+
+$(BUILDDIR)/snd_int68k.o:           snd_int68k.s
+	$(DO_AS)
+
+$(BUILDDIR)/sys_amiga68k.o:         sys_amiga68k.s
+	$(DO_AS)
+
+#####
+
+$(BUILDDIR)/mathlib68k.o:           mathlib68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/common68k.o:            common68k.s
+	$(DO_AS)
+
+$(BUILDDIR)/d_sky68k.o:             d_sky68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/d_polyset68k.o:         d_polyset68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/d_part68k.o:            d_part68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/d_edge68k.o:            d_edge68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/d_scan68k.o:            d_scan68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_edge68k.o:            r_edge68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_sky68k.o:             r_sky68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_light68k.o:           r_light68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_alias68k.o:           r_alias68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_aclip68k.o:           r_aclip68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_surf68k.o:            r_surf68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_misc68k.o:            r_misc68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_draw68k.o:            r_draw68k.s quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/r_bsp68k.o:             r_bsp68k.s sincos.bin quakedef68k.i
+	$(DO_AS)
+
+
+#############################################################################
+# MISC
+#############################################################################
+
+clean:
+	delete force quiet $(QUAKE_OBJS) $(QUAKE_AS_OBJS) $(QUAKE_AS68_OBJS)

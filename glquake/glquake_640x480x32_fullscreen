@@ -1,0 +1,5 @@
+; BlitzQuake MiniGL: 640x480, 32-bit, fullscreen.
+Assign quakedir: ""
+quakedir:
+Stack 1048576
+glquake68k_gcc -width 640 -height 480 -bpp 32 -lm_LUMINANCE -condebug -nojoy -nocdaudio -nopsx

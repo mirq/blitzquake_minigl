@@ -1,0 +1,8 @@
+; BlitzQuake MiniGL dispatch launcher.
+; Execute this script from the directory containing glquake68k_gcc and id1/.
+; A 1 MiB stack is required by the GL renderer.
+
+Assign quakedir: ""
+quakedir:
+Stack 1048576
+glquake68k_gcc -width 320 -height 240 -bpp 32 -windowmode -lm_LUMINANCE -condebug -nojoy -nocdaudio -nopsx

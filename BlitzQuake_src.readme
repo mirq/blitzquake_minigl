@@ -1,0 +1,36 @@
+Short: sources for BlitzQuake distribution of GLquake/GLqwcl
+Author: Christian Michael
+Uploader: Christian Michael (christian.michael@groenjord.dk)
+Type: game/shoot
+Version: 1.0
+Replaces:game/shoot/BlitzQuake_src.lha
+Requires: MiniGL v1.2, Warp3D v4.2, GCC or VBCC
+
+
+BlitzQuake - GLQuake and GLQwcl ports by Christian Michael
+
+GLqwcl/GLquake sources (v1.0 - first Aminet-Release)
+
+Based on quake/quakeworld by Frank Wille and Steffen Haeuser
+
+
+Makefiles for GCC v2.95.3 and VBCC v0.8 are included
+
+
+
+Suggestions for further performance-improvements:
+
+- Rewrite model loaders for compiled-vertexarrays
+  (See gl_rmain.c in GLqwcl src for implementation)
+- Rewrite inner loops in ASM (MiniGL and GLquake/GLqwcl)
+- Rewrite particlesystem - current is slow and looks boring
+
+
+Other suggestions:
+
+- Fix AHI code (copy from Frank Wille's latest source..)
+- Fix interpolation for shadows in GLquake
+- Add some new funky effects :)
+- Write fully OpenGL-compilant point-draw func for MiniGL
+- Implement HalfLife bsp (see ThomazQuake/Darkplaces)
+

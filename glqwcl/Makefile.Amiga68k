@@ -1,0 +1,640 @@
+#
+# QuakeWorld Makefile for M68k Amiga
+#
+# Dec '99 by Frank Wille <frank@phoenix.owl.de>
+#
+
+ARCH=m68k
+BUILDDIR=$(ARCH)
+CLIENT_DIR=client
+SERVER_DIR=server
+
+CC=vc +m68kdb
+CC68=vc
+
+OPT_CFLAGS=-+ -O2 -speed -c99 -cpu=68060 -fpu=68060 -no-trigraphs -dontwarn=129 -maxoptpasses=40 \
+       -Dstricmp=strcasecmp -D_INLINE_INCLUDES -DPROXY -DM68KASM -DAMIGA -DNDEBUG \
+       -I$(CLIENT_DIR) -I$(SERVER_DIR)
+
+CFLAGS=-+ -O1 -speed -c99 -cpu=68060 -fpu=68060 -no-trigraphs -dontwarn=129 -maxoptpasses=40 \
+       -Dstricmp=strcasecmp -D_INLINE_INCLUDES -DPROXY -DM68KASM -DAMIGA -DNDEBUG \
+       -I$(CLIENT_DIR) -I$(SERVER_DIR)
+
+NOP_CFLAGS=-+ -speed -c99 -cpu=68060 -fpu=68060 -no-trigraphs -dontwarn=129 \
+       -Dstricmp=strcasecmp -D_INLINE_INCLUDES -DPROXY -DM68KASM -DAMIGA -DNDEBUG \
+       -I$(CLIENT_DIR) -I$(SERVER_DIR)
+
+NETINC=-Ivincludem68k: -Idh2:sdk/amitcpsdk/netinclude
+
+LDFLAGS=-lm040 -lvc -lcgfx -lp96 -lamiga -lsocket
+AS=phxass
+ASFLAGS=q noexe m=68060 opt=2 i=DH2:sdk/os35/Include/Include_i,client
+
+DO_CC=$(CC) $(CFLAGS) -o $@ -c $<
+DO_OPT_CC=$(CC) $(CFLAGS) -o $@ -c $<
+DO_NOP_CC=$(CC) $(NOP_CFLAGS) -o $@ -c $<
+DO_NET_CC=$(CC) $(CFLAGS) $(NETINC) -o $@ -c $<
+DO_SERVER_CC=$(CC) -DSERVERONLY $(CFLAGS) -o $@ -c $<
+DO_AS=$(AS) $(ASFLAGS) to $@ $<
+
+
+#############################################################################
+# SETUP AND BUILD
+#############################################################################
+
+
+TARGETS=$(BUILDDIR)/qwcl68k
+
+all: $(TARGETS)
+
+
+#############################################################################
+# STANDARD HEADER FILES
+#############################################################################
+
+SVINCS = \
+	server/qwsvdef.h \
+	server/sys.h server/progs.h server/server.h server/world.h \
+	server/pr_comp.h server/progdefs.h \
+	client/bothdefs.h client/common.h client/bspfile.h \
+        client/zone.h client/mathlib.h client/cvar.h client/net.h \
+	client/protocol.h client/cmd.h client/model.h client/crc.h \
+	client/pmove.h client/modelgen.h client/spritegn.h
+
+CLINCS = \
+	client/quakedef.h \
+	client/bothdefs.h client/bspfile.h client/vid.h client/sys.h \
+	client/zone.h client/mathlib.h client/wad.h client/draw.h \
+	client/cvar.h client/screen.h client/net.h client/protocol.h \
+	client/cmd.h client/sbar.h client/sound.h client/render.h \
+	client/client.h client/model.h client/d_iface.h \
+	client/input.h client/keys.h client/console.h client/view.h \
+	client/menu.h client/crc.h client/cdaudio.h client/pmove.h \
+	client/modelgen.h client/spritegn.h
+
+$(CLIENT_DIR)/quakedef68k.i: genasmheaders quakeasmheaders.gen
+	genasmheaders quakeasmheaders.gen $@ 0 "$(CC) $(CFLAGS)"
+
+genasmheaders: genasmheaders.c
+	$(CC68) -o $@ genasmheaders.c
+
+#############################################################################
+# SERVER
+#############################################################################
+
+QWSV_OBJS = \
+	$(BUILDDIR)/server/pr_cmds.o \
+	$(BUILDDIR)/server/pr_edict.o \
+	$(BUILDDIR)/server/pr_exec.o \
+	$(BUILDDIR)/server/sv_init.o \
+	$(BUILDDIR)/server/sv_main.o \
+	$(BUILDDIR)/server/sv_nchan.o \
+	$(BUILDDIR)/server/sv_ents.o \
+	$(BUILDDIR)/server/sv_send.o \
+	$(BUILDDIR)/server/sv_move.o \
+	$(BUILDDIR)/server/sv_phys.o \
+	$(BUILDDIR)/server/sv_user.o \
+	$(BUILDDIR)/server/sv_ccmds.o \
+	$(BUILDDIR)/server/world.o \
+	$(BUILDDIR)/server/sys_amiga.o \
+	$(BUILDDIR)/server/model.o \
+	$(BUILDDIR)/server/cmd.o \
+	$(BUILDDIR)/server/common.o \
+	$(BUILDDIR)/server/crc.o \
+	$(BUILDDIR)/server/cvar.o \
+	$(BUILDDIR)/server/mathlib.o \
+	$(BUILDDIR)/server/md4.o \
+	$(BUILDDIR)/server/zone.o \
+	$(BUILDDIR)/server/pmove.o \
+	$(BUILDDIR)/server/pmovetst.o \
+	$(BUILDDIR)/server/net_chan.o \
+	$(BUILDDIR)/server/net_udpamiga.o
+
+# use -DM68KASM when you want to use the following
+QWSV_ASOPT_OBJS= \
+	$(BUILDDIR)/server/mathlib68k.o \
+	$(BUILDDIR)/server/common68k.o
+
+$(BUILDDIR)/qwsv68k_noopt : $(QWSV_OBJS)
+	$(CC) -o $@ $(BUILDDIR)/server/#?.o $(LDFLAGS)
+
+$(BUILDDIR)/qwsv68k : $(QWSV_OBJS) $(QWSV_ASOPT_OBJS)
+	$(CC) -o $@ $(BUILDDIR)/server/#?.o $(LDFLAGS)
+
+##insert gen asmh here
+##
+
+$(BUILDDIR)/server/pr_cmds.o :   $(SERVER_DIR)/pr_cmds.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/pr_edict.o :  $(SERVER_DIR)/pr_edict.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/pr_exec.o :   $(SERVER_DIR)/pr_exec.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_init.o :   $(SERVER_DIR)/sv_init.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_main.o :   $(SERVER_DIR)/sv_main.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_nchan.o :  $(SERVER_DIR)/sv_nchan.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_ents.o :   $(SERVER_DIR)/sv_ents.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_send.o :   $(SERVER_DIR)/sv_send.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_move.o :   $(SERVER_DIR)/sv_move.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_phys.o :   $(SERVER_DIR)/sv_phys.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_user.o :   $(SERVER_DIR)/sv_user.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sv_ccmds.o :  $(SERVER_DIR)/sv_ccmds.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/world.o :     $(SERVER_DIR)/world.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/sys_amiga.o :  $(SERVER_DIR)/sys_amiga.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/model.o :     $(SERVER_DIR)/model.c $(SVINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/cmd.o :       $(CLIENT_DIR)/cmd.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/common.o :    $(CLIENT_DIR)/common.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/crc.o :       $(CLIENT_DIR)/crc.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/cvar.o :      $(CLIENT_DIR)/cvar.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/mathlib.o :   $(CLIENT_DIR)/mathlib.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/md4.o :       $(CLIENT_DIR)/md4.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/zone.o :      $(CLIENT_DIR)/zone.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/pmove.o :     $(CLIENT_DIR)/pmove.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/pmovetst.o :  $(CLIENT_DIR)/pmovetst.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/net_chan.o :  $(CLIENT_DIR)/net_chan.c $(CLINCS)
+	$(DO_SERVER_CC)
+
+$(BUILDDIR)/server/net_udpamiga.o : $(CLIENT_DIR)/net_udpamiga.c $(CLINCS)
+	$(DO_NET_CC)
+
+#####
+
+$(BUILDDIR)/server/mathlib68k.o: $(CLIENT_DIR)/mathlib68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/server/common68k.o:  $(CLIENT_DIR)/common68k.s
+	$(DO_AS)
+
+
+#############################################################################
+# CLIENT
+#############################################################################
+
+# slist.c and teamplay.c are used with -DPROXY
+
+QWCL_OBJS = \
+	$(BUILDDIR)/client/cl_slist.o \
+	$(BUILDDIR)/client/teamplay.o \
+	$(BUILDDIR)/client/cl_demo.o \
+	$(BUILDDIR)/client/cl_ents.o \
+	$(BUILDDIR)/client/cl_input.o \
+	$(BUILDDIR)/client/cl_main.o \
+	$(BUILDDIR)/client/cl_parse.o \
+	$(BUILDDIR)/client/cl_pred.o \
+	$(BUILDDIR)/client/cl_tent.o \
+	$(BUILDDIR)/client/cl_cam.o \
+	$(BUILDDIR)/client/cmd.o \
+	$(BUILDDIR)/client/common.o \
+	$(BUILDDIR)/client/console.o \
+	$(BUILDDIR)/client/crc.o \
+	$(BUILDDIR)/client/cvar.o \
+	$(BUILDDIR)/client/d_edge.o \
+	$(BUILDDIR)/client/d_fill.o \
+	$(BUILDDIR)/client/d_init.o \
+	$(BUILDDIR)/client/d_modech.o \
+	$(BUILDDIR)/client/d_part.o \
+	$(BUILDDIR)/client/d_polyset.o \
+	$(BUILDDIR)/client/d_scan.o \
+	$(BUILDDIR)/client/d_sky.o \
+	$(BUILDDIR)/client/d_sprite.o \
+	$(BUILDDIR)/client/d_surf.o \
+	$(BUILDDIR)/client/d_vars.o \
+	$(BUILDDIR)/client/d_zpoint.o \
+	$(BUILDDIR)/client/draw.o \
+	$(BUILDDIR)/client/keys.o \
+	$(BUILDDIR)/client/mathlib.o \
+	$(BUILDDIR)/client/md4.o \
+	$(BUILDDIR)/client/menu.o \
+	$(BUILDDIR)/client/model.o \
+	$(BUILDDIR)/client/net_chan.o \
+	$(BUILDDIR)/client/net_udpamiga.o \
+	$(BUILDDIR)/client/nonintel.o \
+	$(BUILDDIR)/client/pmove.o \
+	$(BUILDDIR)/client/pmovetst.o \
+	$(BUILDDIR)/client/r_aclip.o \
+	$(BUILDDIR)/client/r_alias.o \
+	$(BUILDDIR)/client/r_bsp.o \
+	$(BUILDDIR)/client/r_draw.o \
+	$(BUILDDIR)/client/r_edge.o \
+	$(BUILDDIR)/client/r_efrag.o \
+	$(BUILDDIR)/client/r_light.o \
+	$(BUILDDIR)/client/r_main.o \
+	$(BUILDDIR)/client/r_misc.o \
+	$(BUILDDIR)/client/r_part.o \
+	$(BUILDDIR)/client/r_sky.o \
+	$(BUILDDIR)/client/r_sprite.o \
+	$(BUILDDIR)/client/r_surf.o \
+	$(BUILDDIR)/client/r_vars.o \
+	$(BUILDDIR)/client/sbar.o \
+	$(BUILDDIR)/client/screen.o \
+	$(BUILDDIR)/client/skin.o \
+	$(BUILDDIR)/client/snd_dma.o \
+	$(BUILDDIR)/client/snd_mem.o \
+	$(BUILDDIR)/client/snd_mix.o \
+	$(BUILDDIR)/client/view.o \
+	$(BUILDDIR)/client/wad.o \
+	$(BUILDDIR)/client/zone.o \
+	$(BUILDDIR)/client/cd_amiga.o \
+	$(BUILDDIR)/client/in_amiga.o \
+	$(BUILDDIR)/client/in_amigajoy.o \
+	$(BUILDDIR)/client/in_amigapsx.o \
+	$(BUILDDIR)/client/in_amigamouse.o \
+	$(BUILDDIR)/client/snd_amiga.o \
+	$(BUILDDIR)/client/sys_amiga.o \
+	$(BUILDDIR)/client/twfsound_cd.o \
+	$(BUILDDIR)/client/vid_amiga.o \
+	$(BUILDDIR)/client/vid_AGAamiga.o \
+	$(BUILDDIR)/client/vid_CGFXamiga.o \
+	$(BUILDDIR)/client/vid_CPPCamiga.o \
+	$(BUILDDIR)/client/vid_cppcstatic.o \
+	$(BUILDDIR)/client/vid_cppcstatic68k.o
+
+QWCL_AS_OBJS= \
+	$(BUILDDIR)/client/in_amigamouse68k.o \
+	$(BUILDDIR)/client/snd_int68k.o \
+	$(BUILDDIR)/client/snd_mixamiga68k.o \
+	$(BUILDDIR)/client/sys_amiga68k.o \
+	$(BUILDDIR)/client/vid_c2p.o \
+	$(BUILDDIR)/client/vid_turboupd68k.o
+
+# use -DM68KASM when you want to use the following
+QWCL_ASOPT_OBJS= \
+	$(BUILDDIR)/client/mathlib68k.o \
+	$(BUILDDIR)/client/common68k.o \
+	$(BUILDDIR)/client/d_edge68k.o \
+	$(BUILDDIR)/client/d_scan68k.o \
+	$(BUILDDIR)/client/d_sky68k.o \
+	$(BUILDDIR)/client/d_part68k.o \
+	$(BUILDDIR)/client/d_polyset68k.o \
+	$(BUILDDIR)/client/r_aclip68k.o \
+	$(BUILDDIR)/client/r_alias68k.o \
+	$(BUILDDIR)/client/r_draw68k.o \
+	$(BUILDDIR)/client/r_edge68k.o \
+	$(BUILDDIR)/client/r_light68k.o \
+	$(BUILDDIR)/client/r_misc68k.o \
+	$(BUILDDIR)/client/r_sky68k.o \
+	$(BUILDDIR)/client/r_surf68k.o \
+	$(BUILDDIR)/client/r_bsp68k.o
+
+$(BUILDDIR)/qwcl68k_noopt : $(QWCL_OBJS) $(QWCL_AS_OBJS)
+	$(CC) -o $@ $(BUILDDIR)/client/#?.o $(LDFLAGS)
+
+$(BUILDDIR)/qwcl68k : $(QWCL_OBJS) $(QWCL_AS_OBJS) $(QWCL_ASOPT_OBJS)
+	$(CC) -o $@ $(BUILDDIR)/client/#?.o $(LDFLAGS)
+
+##
+
+$(BUILDDIR)/client/teamplay.o :        $(CLIENT_DIR)/teamplay.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/cl_slist.o :        $(CLIENT_DIR)/cl_slist.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/cl_demo.o :        $(CLIENT_DIR)/cl_demo.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/cl_ents.o :        $(CLIENT_DIR)/cl_ents.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/cl_input.o :       $(CLIENT_DIR)/cl_input.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/cl_main.o :        $(CLIENT_DIR)/cl_main.c $(CLINCS)
+	$(DO_NOP_CC)
+                                                                      
+$(BUILDDIR)/client/cl_parse.o :       $(CLIENT_DIR)/cl_parse.c $(CLINCS)
+	$(DO_NOP_CC)
+                                                                      
+$(BUILDDIR)/client/cl_pred.o :        $(CLIENT_DIR)/cl_pred.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/cl_tent.o :        $(CLIENT_DIR)/cl_tent.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/cl_cam.o :         $(CLIENT_DIR)/cl_cam.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/cmd.o :            $(CLIENT_DIR)/cmd.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/common.o :         $(CLIENT_DIR)/common.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/console.o :        client/console.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/crc.o :            $(CLIENT_DIR)/crc.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/cvar.o :           $(CLIENT_DIR)/cvar.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_edge.o :         $(CLIENT_DIR)/d_edge.c $(CLINCS) $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_fill.o :         $(CLIENT_DIR)/d_fill.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_init.o :         $(CLIENT_DIR)/d_init.c $(CLINCS) $(CLIENT_DIR)/d_local.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_modech.o :       $(CLIENT_DIR)/d_modech.c $(CLINCS) $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_part.o :         $(CLIENT_DIR)/d_part.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_polyset.o :      $(CLIENT_DIR)/d_polyset.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_scan.o :         $(CLIENT_DIR)/d_scan.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_sky.o :          $(CLIENT_DIR)/d_sky.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_sprite.o :       $(CLIENT_DIR)/d_sprite.c $(CLINCS) $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_surf.o :         $(CLIENT_DIR)/d_surf.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_vars.o :         $(CLIENT_DIR)/d_vars.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/d_zpoint.o :       $(CLIENT_DIR)/d_zpoint.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/draw.o :           client/draw.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/keys.o :           $(CLIENT_DIR)/keys.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/mathlib.o :        $(CLIENT_DIR)/mathlib.c $(CLINCS)
+	$(DO_OPT_CC)
+                                                                      
+$(BUILDDIR)/client/md4.o :            $(CLIENT_DIR)/md4.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/menu.o :           client/menu.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/model.o :          $(CLIENT_DIR)/model.c $(CLINCS)  $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/net_chan.o :       $(CLIENT_DIR)/net_chan.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/net_udpamiga.o :   $(CLIENT_DIR)/net_udpamiga.c $(CLINCS)
+	$(DO_NET_CC)
+                                                                      
+$(BUILDDIR)/client/nonintel.o :       $(CLIENT_DIR)/nonintel.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/pmove.o :          $(CLIENT_DIR)/pmove.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/pmovetst.o :       $(CLIENT_DIR)/pmovetst.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/r_aclip.o :        $(CLIENT_DIR)/r_aclip.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/r_alias.o :        $(CLIENT_DIR)/r_alias.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/r_bsp.o :          $(CLIENT_DIR)/r_bsp.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_OPT_CC)
+                                                                      
+$(BUILDDIR)/client/r_draw.o :         $(CLIENT_DIR)/r_draw.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/r_edge.o :         $(CLIENT_DIR)/r_edge.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/r_efrag.o :        $(CLIENT_DIR)/r_efrag.c $(CLINCS) $(CLIENT_DIR)/r_local.h
+	$(DO_OPT_CC)
+                                                                      
+$(BUILDDIR)/client/r_light.o :        $(CLIENT_DIR)/r_light.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_OPT_CC)
+                                                                      
+$(BUILDDIR)/client/r_main.o :         $(CLIENT_DIR)/r_main.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/r_misc.o :         $(CLIENT_DIR)/r_misc.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/r_part.o :         $(CLIENT_DIR)/r_part.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_OPT_CC)
+                                                                      
+$(BUILDDIR)/client/r_sky.o :          $(CLIENT_DIR)/r_sky.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_OPT_CC)
+                                                                      
+$(BUILDDIR)/client/r_sprite.o :       $(CLIENT_DIR)/r_sprite.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_OPT_CC)
+                                                                      
+$(BUILDDIR)/client/r_surf.o :         $(CLIENT_DIR)/r_surf.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/r_vars.o :         $(CLIENT_DIR)/r_vars.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/sbar.o :           client/sbar.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/screen.o :         client/screen.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/skin.o :           $(CLIENT_DIR)/skin.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/snd_dma.o :        $(CLIENT_DIR)/snd_dma_AHI.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/snd_mem.o :        $(CLIENT_DIR)/snd_mem.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/snd_mix.o :        $(CLIENT_DIR)/snd_mix_AHI.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/view.o :           $(CLIENT_DIR)/view.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/wad.o :            $(CLIENT_DIR)/wad.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/zone.o :           $(CLIENT_DIR)/zone.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/cd_amiga.o :        $(CLIENT_DIR)/cd_amiga.c $(CLINCS) $(CLIENT_DIR)/twfsound_cd.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/in_amiga.o :       $(CLIENT_DIR)/in_amiga.c $(CLINCS) $(CLIENT_DIR)/in_amiga.h
+	$(DO_CC)
+
+$(BUILDDIR)/client/in_amigajoy.o :    $(CLIENT_DIR)/in_amigajoy.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/in_amigapsx.o :    $(CLIENT_DIR)/in_amigapsx.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/in_amigamouse.o :  $(CLIENT_DIR)/in_amigamouse.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/snd_amiga.o :      $(CLIENT_DIR)/snd_amiga_AHI.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/sys_amiga.o :      $(CLIENT_DIR)/sys_amiga.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/client/twfsound_cd.o :    $(CLIENT_DIR)/twfsound_cd.c $(CLIENT_DIR)/twfsound_cd.h
+	$(DO_CC)
+
+$(BUILDDIR)/client/vid_amiga.o :      client/vid_amiga.c $(CLINCS) $(CLIENT_DIR)/d_local.h $(CLIENT_DIR)/r_shared.h $(CLIENT_DIR)/vid_amiga.h
+	$(DO_CC)
+
+$(BUILDDIR)/client/vid_AGAamiga.o :   client/vid_AGAamiga.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/vid_CGFXamiga.o :  client/vid_CGFXamiga.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/vid_CPPCamiga.o : client/vid_CPPCamiga.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/client/vid_cppcstatic68k.o : $(CLIENT_DIR)/vid_cppcstatic68k.c
+	$(DO_CC)
+
+$(BUILDDIR)/client/vid_cppcstatic.o : $(CLIENT_DIR)/vid_cppcstatic.c
+	$(DO_NOP_CC)
+
+#####
+
+$(BUILDDIR)/client/snd_mixamiga68k.o: $(CLIENT_DIR)/snd_mixamiga68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/vid_c2p.o:         $(CLIENT_DIR)/vid_c2p_040.s
+	$(DO_AS) SET depth8
+
+$(BUILDDIR)/client/vid_turboupd68k.o: $(CLIENT_DIR)/vid_turboupd68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/in_amigamouse68k.o: $(CLIENT_DIR)/in_amigamouse68k.s
+	$(DO_AS)
+
+$(BUILDDIR)/client/snd_int68k.o:      $(CLIENT_DIR)/snd_int68k.s
+	$(DO_AS)
+
+$(BUILDDIR)/client/sys_amiga68k.o:    $(CLIENT_DIR)/sys_amiga68k.s
+	$(DO_AS)
+
+#####
+
+$(BUILDDIR)/client/mathlib68k.o:      $(CLIENT_DIR)/mathlib68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/common68k.o:       $(CLIENT_DIR)/common68k.s
+	$(DO_AS)
+
+$(BUILDDIR)/client/d_sky68k.o:        $(CLIENT_DIR)/d_sky68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/d_polyset68k.o:    $(CLIENT_DIR)/d_polyset68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/d_part68k.o:       $(CLIENT_DIR)/d_part68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/d_edge68k.o:       $(CLIENT_DIR)/d_edge68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/d_scan68k.o:       $(CLIENT_DIR)/d_scan68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_edge68k.o:       $(CLIENT_DIR)/r_edge68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_sky68k.o:        $(CLIENT_DIR)/r_sky68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_light68k.o:      $(CLIENT_DIR)/r_light68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_alias68k.o:      $(CLIENT_DIR)/r_alias68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_aclip68k.o:      $(CLIENT_DIR)/r_aclip68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_surf68k.o:       $(CLIENT_DIR)/r_surf68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_misc68k.o:       $(CLIENT_DIR)/r_misc68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_draw68k.o:       $(CLIENT_DIR)/r_draw68k.s $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+$(BUILDDIR)/client/r_bsp68k.o:        $(CLIENT_DIR)/r_bsp68k.s $(CLIENT_DIR)/sincos.bin $(CLIENT_DIR)/quakedef68k.i
+	$(DO_AS)
+
+
+#############################################################################
+# MISC
+#############################################################################
+
+aligntest: $(BUILDDIR)/aligntest_server $(BUILDDIR)/aligntest_client
+
+$(BUILDDIR)/aligntest_server: $(SERVER_DIR)/aligntest.c $(SVINCS)
+	$(CC) -DSERVERONLY $(CFLAGS) -o $@ $(SERVER_DIR)/aligntest.c
+
+$(BUILDDIR)/aligntest_client: $(CLIENT_DIR)/aligntest.c $(SVINCS)
+	$(CC) $(CFLAGS) -o $@ $(CLIENT_DIR)/aligntest.c
+
+

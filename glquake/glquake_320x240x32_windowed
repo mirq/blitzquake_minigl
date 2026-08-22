@@ -1,0 +1,5 @@
+; BlitzQuake MiniGL: 320x240, 32-bit, windowed.
+Assign quakedir: ""
+quakedir:
+Stack 1048576
+glquake68k_gcc -width 320 -height 240 -bpp 32 -windowmode -lm_LUMINANCE -condebug -nojoy -nocdaudio -nopsx

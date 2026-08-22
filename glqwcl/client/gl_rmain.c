@@ -1,0 +1,2540 @@
+/*
+Copyright (C) 1996-1997 Id Software, Inc.
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
+// r_main.c
+
+#include "quakedef.h"
+
+#ifdef AMIGA
+#include <mgl/mglmacros.h>
+#endif
+
+
+//Surgeon: notes regarding model-flatshading:
+//precalc dotproducts are within the range [0.70;1.99]
+//I have selected 1.20 as constant flatshade multiplier
+
+
+
+//surgeon:
+extern qboolean	mtexenabled;
+
+entity_t  r_worldentity;
+
+qboolean  r_cache_thrash;   // compatability
+
+vec3_t    modelorg, r_entorigin;
+entity_t  *currententity;
+
+int     r_visframecount;  // bumped when going to a new PVS
+int     r_framecount;   // used for dlight push checking
+
+mplane_t  frustum[4];
+
+int     c_brush_polys, c_alias_polys;
+
+qboolean  envmap;       // true during envmap command capture 
+
+int     currenttexture = -1;    // to avoid unnecessary texture sets
+
+int     cnttextures[2] = {-1, -1};     // cached
+
+int     particletexture;  // little dot for particles
+int     playertextures;   // up to 16 color translated skins
+
+int     mirrortexturenum; // quake texturenum, not gltexturenum
+qboolean  mirror;
+mplane_t  *mirror_plane;
+
+//
+// view origin
+//
+vec3_t  vup;
+vec3_t  vpn;
+vec3_t  vright;
+vec3_t  r_origin;
+
+float r_world_matrix[16];
+float r_base_world_matrix[16];
+
+//
+// screen size info
+//
+refdef_t  r_refdef;
+
+mleaf_t   *r_viewleaf, *r_oldviewleaf;
+
+texture_t *r_notexture_mip;
+
+int   d_lightstylevalue[256]; // 8.8 fraction of base light value
+
+
+void R_MarkLeaves (void);
+
+//Surgeon - translates 2 vectors in one go
+extern void RotatePointAroundVectorNEW( vec3_t dst, vec3_t dst2, const vec3_t dir, const vec3_t point, float degrees);
+
+extern qboolean gl_warp;
+qboolean r_dowarp = true;
+
+
+#ifdef PROXY
+cvar_t  r_drawsky = {"r_drawsky", "1"};
+cvar_t  r_fastlight = {"r_fastlight", "0"};
+cvar_t  r_hack = {"r_hack", "0"};
+cvar_t  r_tex_anim = {"r_tex_anim","1", true};
+cvar_t  v_itembob = {"v_itembob","1"};
+cvar_t  r_beamskip = {"beamskip","0", true};
+cvar_t  r_splashes = {"r_splashes","1", true};
+cvar_t  r_blood = {"r_blood","1", true};
+cvar_t  r_smoke = {"r_smoke","1", true};
+cvar_t  r_voor = {"r_voor","1", true};
+cvar_t  r_tracer = {"r_tracer","1", true};
+cvar_t  r_bullets = {"r_bullets","1", true};
+cvar_t  r_spikehit = {"r_spikehit","1", true};
+
+cvar_t  skip_animframes = {"frameskip","0"};
+#endif
+
+cvar_t  r_elim_areasize = {"r_elim_areasize","0.50", true};
+cvar_t  r_vertexarrays = {"r_vertexarrays","1",true};
+cvar_t  r_model_maxdist = {"r_model_maxdist","4096"};
+cvar_t  r_cull_aggressive = {"r_cull_aggressive","0",true};
+static  ULONG r_mod_maxdist;
+
+cvar_t  r_cullworld = {"r_cullworld","0"}; //Surgeon
+cvar_t  r_norefresh = {"r_norefresh","0"};
+cvar_t  r_drawentities = {"r_drawentities","1"};
+cvar_t  r_drawviewmodel = {"r_drawviewmodel","1"};
+cvar_t  r_speeds = {"r_speeds","0"};
+cvar_t  r_fullbright = {"r_fullbright","0"};
+cvar_t  r_lightmap = {"r_lightmap","0"};
+cvar_t  r_shadows = {"r_shadows","0"};
+cvar_t  r_mirroralpha = {"r_mirroralpha","1"};
+cvar_t  r_wateralpha = {"r_wateralpha","1"};
+cvar_t  r_dynamic = {"r_dynamic","1"};
+cvar_t  r_novis = {"r_novis","0"};
+cvar_t  r_netgraph = {"r_netgraph","0"};
+cvar_t  r_waterwarp = {"r_waterwarp","1"};
+
+cvar_t  gl_clear = {"gl_clear","0"};
+cvar_t  gl_cull = {"gl_cull","1"};
+cvar_t  gl_texsort = {"gl_texsort","1"};
+cvar_t  gl_smoothmodels = {"gl_smoothmodels","1"};
+cvar_t  gl_affinemodels = {"gl_affinemodels","0"};
+cvar_t  gl_polyblend = {"gl_polyblend","1"};
+cvar_t  gl_flashblend = {"gl_flashblend","1"};
+cvar_t  gl_playermip = {"gl_playermip","0"};
+cvar_t  gl_nocolors = {"gl_nocolors","0"};
+cvar_t  gl_keeptjunctions = {"gl_keeptjunctions","0"};
+cvar_t  gl_reporttjunctions = {"gl_reporttjunctions","0"};
+cvar_t  gl_finish = {"gl_finish","0"};
+
+extern  cvar_t  gl_ztrick;
+extern  cvar_t  scr_fov;
+
+
+/*
+
+
+Geometry caching system by Christian "SuRgEoN" Michael :
+
+Used only for playermodel and some non-animated models due
+to extra memory consumption (currently 7K/frame, byt used to be 40K).
+
+
+The implementation is rather sophisticated since it uses the
+GL_EXT_compiled_vertex_array extension while also using the
+strips and fans generated in gl_mesh.c.
+This means 66% reduction in transformations for playermodel
+without additional vertex-throughput.
+Additionally, the cache uses a simple form of LOD:
+LOD data was generated by calculating mesh-areas after projection and recording if it was consistently too small to be noticeable at a given distance.
+
+All code for the geometrycache-system is my own.
+
+
+** FIXME: Rewrite model-loaders and mesh constructor for
+** compiled arrays format.
+** Dynamic reordering eats too many cpu cycles.
+
+
+** ideas for a simple implementation:
+- write new vertexcoords and lightnormalindex back.
+- add the following to the aliasmodelframe:
+
+	int totalverts (is equal to 0 before modification)
+	UWORD *vidx (pointer to cotinous vertex-index)
+
+- this should be enough to store models in the new format,
+  while only adding 2K pr frame with vidx sized 128*16.
+
+Ofcourse models should be converted when they are loaded as opposed to when they are rendered the first time.
+
+If desired, a new set if vertexcoords/lightnormalindex could be added to the struct in order to keep the old format for implementations that do not support the compiled vertexarrays extension, since this in just 4 bytes/vertex
+
+current limitations:
+
+15  one-frame models
+146 playerframes
+128 primitives/model
+16 verts/primitive
+
+
+The limitations are imposed to conserve memory.
+Caching currently allocates 1 MB.
+model 0 is empty
+
+The following defines sets the size of the geometry-cache:
+
+*/
+
+#define MAX_CACHE_M	256 // num models (num frames)
+#define MAX_CACHE_P	128 // prim/frame (playermodel = 110)
+#define MAX_CACHE_PV	22  // verts/prim
+#define MAX_CACHE_VC  512 // verts/frame (compressed)
+
+//playermodel uses:	209 verts (compressed)
+//			110 primitives
+//			3-14  verts/ptimitive
+//			146 frames
+
+#define MAX_CACHE_V	1024 // verts/frame
+
+// After compression, 256 verts is enough for
+// storing a whole frame for the standard playermodel.
+
+
+//vertex data for cache:
+
+typedef struct qglvertarray_s //4 bytes
+{
+	byte		vcoord[3];
+	byte		lni;
+} qglvertarray_t;
+
+
+//primitive struct for cache
+typedef struct qglprimarray_s //48 bytes
+{
+	UWORD	idx[MAX_CACHE_PV];	//vertex index
+	UWORD	reject[2];		//LOD index
+} qglprimarray_t;
+
+
+//model(frame) - holds vertexdata and indices for 1 frame:
+typedef struct mcache_s //+ 16 bytes
+{
+	qglvertarray_t	verts[MAX_CACHE_VC];	//verts
+	qglprimarray_t	prim[MAX_CACHE_P];	//prim index
+	int		totalverts;	//verts in frame
+	qboolean	lodmodel;
+
+} mcache_t;
+
+static qboolean m_incache[MAX_CACHE_M];
+
+// (verts:4*512 + prim:48*128 + 8) = 8240
+//
+// 8.2K * 256 frames ~ 2 MB
+
+
+//struct for standard vertexarrays:
+
+typedef struct qglarray_s	// 32 bytes
+{
+#ifdef OPTIMIZE_060
+	int	x,y,z;
+#else
+	float	x,y,z;
+#endif
+	ULONG	c;		//color
+	float	s,t,w;
+	float	_pad_;		//padding
+} qglarray_t;
+
+
+typedef struct qgltmpvert_s
+{
+	float		tcoord[2];
+	byte		vcoord[3];
+	byte		lni;
+} qgltmpvert_t;
+
+
+static qgltmpvert_t	vcache[1024]; //temp verts
+static int		pcache[128];  //temp primitives
+
+static mcache_t *cachearray = NULL;
+
+static qglarray_t *global_qglarray = NULL;
+
+
+qboolean geometry_cache = false;
+
+void qgl_FreeArrays(void)
+{
+	if(global_qglarray)	free(global_qglarray);
+}
+
+
+void SwitchArray_f (void)
+{
+  if (Cmd_Argc() == 1)
+  {
+     Con_Printf ("geometrycache %i\n", geometry_cache);
+     return;
+  }
+
+  geometry_cache = Q_atoi(Cmd_Argv(1)); 
+}
+
+/*
+Surgeon: LOD in this context is an index of primitives that are so small at a given distance from the camera that they can safely be omitted without noticeable loss in quality of rendering
+*/
+
+static int modellod = 0;
+
+void SwitchLod_f (void)
+{
+
+  if (Cmd_Argc() == 1)
+  {
+     Con_Printf ("model_LOD %i\n", modellod);
+     return;
+  }
+
+  modellod = Q_atoi(Cmd_Argv(1)); 
+
+  if(modellod < 0)
+  modellod = 0;
+
+  else if(modellod > 1)
+  modellod = 1;
+}
+
+static int compiled_arrays = 0;
+
+void SwitchCompiled_f (void)
+{
+
+  if (Cmd_Argc() == 1)
+  {
+     Con_Printf ("compiled arrays %i\n", compiled_arrays);
+     return;
+  }
+
+  compiled_arrays = Q_atoi(Cmd_Argv(1)); 
+
+  if(compiled_arrays < 0)
+  compiled_arrays = 0;
+
+  else if(compiled_arrays > 1)
+  compiled_arrays = 1;
+}
+
+
+
+extern qboolean geometry_cache;
+
+static void qgl_InitCacheArrays(void)
+{
+	int i,j,k;
+
+	const UBYTE loddata1[146][MAX_CACHE_P] = {
+	#include "lodmodels1.h"
+	};
+	const UBYTE loddata2[146][MAX_CACHE_P] = {
+	#include "lodmodels2.h"
+	};
+
+	//allocate the cache:
+
+	cachearray = (mcache_t *) Hunk_AllocName (MAX_CACHE_M * sizeof(mcache_t), "cachearray");
+
+	for (i=0; i<MAX_CACHE_M; i++)
+	{
+		m_incache[i] = false;
+
+		cachearray[i].totalverts = 0;
+		cachearray[i].lodmodel = false;
+	}
+
+	//load LOD data for playermodel
+
+	k = 0;
+	for (i=32; i<32+146; i++, k++)
+	{
+	   for(j=0; j<MAX_CACHE_P; j++)
+	   {
+	   cachearray[i].prim[j].reject[0] = loddata1[k][j];
+	   cachearray[i].prim[j].reject[1] = loddata1[k][j];
+
+	   //overwrite positions not recorded in level1
+	   if(loddata2[k][j])
+	   cachearray[i].prim[j].reject[1] = loddata2[k][j];
+
+	   //mark frames with LOD data
+	   if(loddata1[k][j] == 1 || loddata2[k][j] == 1)
+	   cachearray[i].lodmodel = true;
+	   }
+	}
+
+  Cmd_AddCommand ("geometrycache", SwitchArray_f);  
+  Cmd_AddCommand ("gl_compiled_arrays", SwitchCompiled_f);  
+  Cmd_AddCommand ("model_LOD", SwitchLod_f);  
+
+  Con_SafePrintf ("%i bytes allocated for geometrycache\n", sizeof(mcache_t) * MAX_CACHE_M);
+
+  compiled_arrays = 1;
+  modellod = 1;
+}
+
+void qgl_InitArrays(qboolean enable_cache)
+{
+	int i;
+
+	global_qglarray = (qglarray_t *) malloc (1024 * sizeof(qglarray_t));
+
+	if(enable_cache)
+	{
+	geometry_cache = true;
+	qgl_InitCacheArrays();
+	}
+}
+
+
+
+typedef struct vshare_s
+{
+	int numidents;
+	qboolean shareable;
+} vshare_t;
+
+
+static void qgl_BuildCacheIndex (mcache_t *md, int numprim)
+{
+	int		i,j,k,l,m;
+	int		numprimitives;
+	int		numverts, new_numverts;
+	int		compressed_size;
+	int		prevverts;
+	int		totalverts;
+	int		vnum;
+	vshare_t	sidx[MAX_CACHE_V];
+	int		shared[MAX_CACHE_V][16];
+	int		remapped[1024];
+	int		vshort[1024];
+	int		clvl; //compression level
+
+	/*
+	Build index of identical vertices in a model,
+	in order to avoid unnecessary transformations
+	and store data in optimized format suitable for the
+	compiled vertexarrays extension (vertex sharing)
+	*/
+
+	clvl = 0;
+
+	//set max dissociation of vertexcoords:
+	if ((i = COM_CheckParm("-geometrycompress")) != 0)
+ 		clvl = Q_atoi(com_argv[i+1]);
+
+	//clamp :
+	if (clvl < 0) clvl = 0;
+	if (clvl > 8) clvl = 8; //this is already looking bad
+
+	i = 0;
+	do
+	{
+	   sidx[i].numidents = 0;
+	   sidx[i].shareable = true;
+
+	i++;
+	} while (i < MAX_CACHE_V);
+
+
+	numprimitives = numprim;
+	totalverts = md->totalverts;
+
+   // Scan for identcal vertices and mark them:
+
+   for (i=0; i<totalverts-1; i++)
+   {
+	int idents = 0;
+
+	if (sidx[i].shareable == true)
+	{
+	   byte *a = vcache[i].vcoord;
+
+	   for (j=(i+1); j<totalverts; j++)
+	   {
+	     if(sidx[j].shareable == true && idents < 16)
+	     {
+	   	byte *b = vcache[j].vcoord;
+
+		if ( ( abs(a[0]-b[0]) <= clvl ) && ( abs(a[1]-b[1]) <= clvl ) && ( abs(a[2]-b[2]) <= clvl ) )
+		{
+			sidx[j].shareable = false;
+			sidx[j].numidents = -1;
+			shared[i][idents] = j;
+			idents++;
+		}
+	     }
+	   }
+	}
+   sidx[i].numidents = idents;
+   }
+
+
+   // Re-assign all verts in a model:
+
+   prevverts = 0;
+
+   for (i=0; i<numprimitives; i++)
+   {
+      numverts = pcache[i];
+
+	for (j=0; j<numverts; j++)
+	{
+	   int idents;
+	   int reassign;
+
+	   vnum = j+prevverts;
+	   idents = sidx[vnum].numidents;
+
+	   k = 0;
+	   while (k < idents)
+	   {
+		int new_prevverts = 0;
+		reassign = shared[vnum][k];
+
+		for (l=0; l<numprimitives; l++)
+		{
+		   qglprimarray_t *pva = &md->prim[l];
+		   new_numverts = pcache[l];
+
+		   for (m=0; m<new_numverts; m++)
+		   {
+		      int new_vnum = m + new_prevverts;
+
+		      if(pva->idx[m] == reassign)
+		      {
+		      pva->idx[m] = vnum; //remapped vertexpos
+		      sidx[new_vnum].numidents = -1; //invalid
+		      }
+		   }
+		new_prevverts += new_numverts;
+		}
+	   k++;
+	   }
+	}
+	prevverts += numverts;
+   }
+
+
+//final compression step
+
+	compressed_size = 0;
+	prevverts = 0;
+
+	for (i=0; i<numprimitives; i++)
+	{
+	   qglprimarray_t *pva = &md->prim[i];
+ 	   numverts = pcache[i];
+
+	   for (j=0; j<numverts; j++)
+	   {
+	     vnum = j+prevverts;
+
+	     if(sidx[vnum].numidents >= 0)
+	     {
+		vshort[compressed_size] = vnum;
+		compressed_size++;
+	     }
+
+	   }
+	   prevverts += numverts;
+	}	   	     
+
+
+	totalverts = md->totalverts;
+	md->totalverts = compressed_size;
+
+	Con_DPrintf("index shortening : %i percent\n", ((totalverts - compressed_size) * 100) / totalverts);
+
+
+//reorder verts for compiled vertexarrays
+
+	   if (md->totalverts >= MAX_CACHE_VC)
+	   {
+		Con_Printf("WARNING: too many verts to cache (%i). Max verts is %i - switching of geometrycache..\n", md->totalverts, MAX_CACHE_VC);
+
+		geometry_cache = 0;
+		return;
+	   }
+
+
+	   for (i=0; i<md->totalverts; i++)
+	   {
+		int v = vshort[i];
+		remapped[v] = i;
+		md->verts[i].vcoord[0] = vcache[v].vcoord[0];
+		md->verts[i].vcoord[1] = vcache[v].vcoord[1];
+		md->verts[i].vcoord[2] = vcache[v].vcoord[2];
+		md->verts[i].lni = vcache[v].lni;
+	   }	   	     
+
+// Reorder indices for compiled vertexarrays
+
+	for (i=0; i<numprimitives; i++)
+	{
+	   qglprimarray_t *pva = &md->prim[i];
+ 	   numverts = pcache[i];
+
+	   for (j=0; j<numverts; j++)
+	   {
+		int pos = pva->idx[j];
+		pva->idx[j] = remapped[pos];
+	   }
+	}
+}
+
+
+
+static void qgl_EnableArray()
+{
+	glEnable(MGL_ARRAY_TRANSFORMATIONS);
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+#ifdef OPTIMIZE_060
+	glVertexPointer(3, GL_INT, sizeof(qglarray_t), &global_qglarray->x);
+#else
+	glVertexPointer(3, GL_FLOAT, sizeof(qglarray_t), &global_qglarray->x);
+#endif
+
+	glTexCoordPointer(3, GL_FLOAT, sizeof(qglarray_t), &global_qglarray->s); //size 3 leaves space for w-coord
+
+	if(gl_smoothmodels.value)
+	{
+		glEnableClientState(GL_COLOR_ARRAY);
+
+		glColorPointer(4, MGL_UBYTE_ARGB, sizeof(qglarray_t), &global_qglarray->c);
+	}
+}
+
+static void qgl_DisableArray()
+{
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+
+
+
+#ifndef FASTBOPS
+
+/*
+=================
+R_CullBox
+
+Returns true if the box is completely outside the frustom
+=================
+*/
+qboolean R_CullBox (vec3_t mins, vec3_t maxs)
+{
+  int   i;
+
+  for (i=0 ; i<4 ; i++)
+    if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
+      return true;
+  return false;
+}
+#endif
+
+int R_VisibleCullBox (vec3_t mins, vec3_t maxs) 
+{ 
+	int sides; 
+	mnode_t *nodestack[8192], *node; 
+	int stack = 0; 
+ 
+	if (R_CullBox(mins, maxs)) 
+		return true; 
+ 
+	node = cl.worldmodel->nodes; 
+loc0: 
+	if (node->contents < 0) 
+	{ 
+		if (((mleaf_t *)node)->visframe == r_framecount) 
+			return false; 
+		if (!stack) 
+			return true; 
+		node = nodestack[--stack]; 
+		goto loc0; 
+	} 
+	 
+	sides = BOX_ON_PLANE_SIDE(mins, maxs, node->plane); 
+	 
+// recurse down the contacted sides 
+	if (sides & 1) 
+	{ 
+		if (sides & 2) // 3 
+		{ 
+			// put second child on the stack for later examination 
+			nodestack[stack++] = node->children[1]; 
+			node = node->children[0]; 
+			goto loc0; 
+		} 
+		else // 1 
+		{ 
+			node = node->children[0]; 
+			goto loc0; 
+		} 
+	} 
+	// 2 
+	node = node->children[1]; 
+	goto loc0; 
+} 
+
+
+
+void R_RotateForEntity (entity_t *e)
+{
+    glTranslatef (e->origin[0],  e->origin[1],  e->origin[2]);
+
+#ifdef AMIGA
+    glRotatefEXT(e->angles[1], GLROT_001);
+    glRotatefEXT(-e->angles[0], GLROT_010);
+  //ZOID: fixed z angle
+    glRotatefEXT(e->angles[2], GLROT_100);
+#else
+
+    glRotatef (e->angles[1],  0, 0, 1);
+    glRotatef (-e->angles[0],  0, 1, 0);
+  //ZOID: fixed z angle
+    glRotatef (e->angles[2],  1, 0, 0);
+#endif
+}
+
+/*
+=============================================================
+
+  SPRITE MODELS
+
+=============================================================
+*/
+
+/*
+================
+R_GetSpriteFrame
+================
+*/
+mspriteframe_t *R_GetSpriteFrame (entity_t *currententity)
+{
+  msprite_t   *psprite;
+  mspritegroup_t  *pspritegroup;
+  mspriteframe_t  *pspriteframe;
+  int       i, numframes, frame;
+  float     *pintervals, fullinterval, targettime, time;
+
+  psprite = currententity->model->cache.data;
+  frame = currententity->frame;
+
+  if ((frame >= psprite->numframes) || (frame < 0))
+  {
+    Con_Printf ("R_DrawSprite: no such frame %d\n", frame);
+    frame = 0;
+  }
+
+  if (psprite->frames[frame].type == SPR_SINGLE)
+  {
+    pspriteframe = psprite->frames[frame].frameptr;
+  }
+  else
+  {
+    pspritegroup = (mspritegroup_t *)psprite->frames[frame].frameptr;
+    pintervals = pspritegroup->intervals;
+    numframes = pspritegroup->numframes;
+    fullinterval = pintervals[numframes-1];
+
+    time = cl.time + currententity->syncbase;
+
+  // when loading in Mod_LoadSpriteGroup, we guaranteed all interval values
+  // are positive, so we don't have to worry about division by 0
+    targettime = time - ((int)(time / fullinterval)) * fullinterval;
+
+    for (i=0 ; i<(numframes-1) ; i++)
+    {
+      if (pintervals[i] > targettime)
+        break;
+    }
+
+    pspriteframe = pspritegroup->frames[i];
+  }
+
+  return pspriteframe;
+}
+
+
+/*
+=================
+R_DrawSpriteModel
+
+=================
+*/
+void R_DrawSpriteModel (entity_t *e)
+{
+  vec3_t  point;
+  mspriteframe_t  *frame;
+  float   *up, *right;
+  vec3_t    v_forward, v_right, v_up;
+  msprite_t   *psprite;
+
+  // don't even bother culling, because it's just a single
+  // polygon without a surface cache
+  frame = R_GetSpriteFrame (e);
+  psprite = currententity->model->cache.data;
+
+  if (psprite->type == SPR_ORIENTED)
+  { // bullet marks on walls
+    AngleVectors (currententity->angles, v_forward, v_right, v_up);
+    up = v_up;
+    right = v_right;
+  }
+  else
+  { // normal sprite
+    up = vup;
+    right = vright;
+  }
+
+
+
+if(mtexenabled)  GL_DisableMultitexture();
+
+    GL_Bind(frame->gl_texturenum);
+
+  glColor3f (1,1,1);
+  glEnable (GL_ALPHA_TEST);
+
+  glBegin (GL_QUADS);
+
+
+#if 1 //VectorMA inlined
+  point[0] = e->origin[0] + frame->down*up[0];
+  point[1] = e->origin[1] + frame->down*up[1];
+  point[2] = e->origin[2] + frame->down*up[2];
+  point[0] += frame->left*right[0];
+  point[1] += frame->left*right[1];
+  point[2] += frame->left*right[2];
+
+  glTexCoord2f (0, 1);
+  glVertex3fv (point);
+
+  point[0] = e->origin[0] + frame->up*up[0];
+  point[1] = e->origin[1] + frame->up*up[1];
+  point[2] = e->origin[2] + frame->up*up[2];
+  point[0] += frame->left*right[0];
+  point[1] += frame->left*right[1];
+  point[2] += frame->left*right[2];
+
+  glTexCoord2f (0, 0);
+  glVertex3fv (point);
+
+  point[0] = e->origin[0] + frame->up*up[0];
+  point[1] = e->origin[1] + frame->up*up[1];
+  point[2] = e->origin[2] + frame->up*up[2];
+  point[0] += frame->right*right[0];
+  point[1] += frame->right*right[1];
+  point[2] += frame->right*right[2];
+
+  glTexCoord2f (1, 0);
+  glVertex3fv (point);
+
+  point[0] = e->origin[0] + frame->down*up[0];
+  point[1] = e->origin[1] + frame->down*up[1];
+  point[2] = e->origin[2] + frame->down*up[2];
+  point[0] += frame->right*right[0];
+  point[1] += frame->right*right[1];
+  point[2] += frame->right*right[2];
+
+  glTexCoord2f (1, 1);
+  glVertex3fv (point);
+
+#else
+
+  VectorMA (e->origin, frame->down, up, point);
+  VectorMA (point, frame->left, right, point);
+
+  glTexCoord2f (0, 1);
+  glVertex3f (point[0], point[1], point[2]);
+
+  VectorMA (e->origin, frame->up, up, point);
+  VectorMA (point, frame->left, right, point);
+
+  glTexCoord2f (0, 0);
+  glVertex3f (point[0], point[1], point[2]);
+
+  VectorMA (e->origin, frame->up, up, point);
+  VectorMA (point, frame->right, right, point);
+
+  glTexCoord2f (1, 0);
+  glVertex3f (point[0], point[1], point[2]);
+
+  VectorMA (e->origin, frame->down, up, point);
+  VectorMA (point, frame->right, right, point);
+
+  glTexCoord2f (1, 1);
+  glVertex3f (point[0], point[1], point[2]);
+
+ #endif
+ 
+  glEnd ();
+
+  glDisable (GL_ALPHA_TEST);
+}
+
+/*
+=============================================================
+
+  ALIAS MODELS
+
+=============================================================
+*/
+
+/* surgeon: not used
+
+#define NUMVERTEXNORMALS  162
+
+float r_avertexnormals[NUMVERTEXNORMALS][3] = {
+#include "anorms.h"
+};
+
+*/
+
+
+
+vec3_t  shadevector;
+float shadelight, ambientlight;
+
+// precalculated dot products for quantized angles
+#define SHADEDOT_QUANT 16
+float r_avertexnormal_dots[SHADEDOT_QUANT][256] =
+#include "anorm_dots.h"
+;
+
+float *shadedots = r_avertexnormal_dots[0];
+
+int lastposenum;
+
+/*
+=============
+GL_DrawAliasFrame
+=============
+*/
+void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
+{
+  float   l;
+  trivertx_t  *verts;
+  int   *order;
+  int   count;
+
+  lastposenum = posenum;
+
+  verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+  verts += posenum * paliashdr->poseverts;
+  order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+
+  if(!gl_smoothmodels.value) //Surgeon 
+  {
+  	l = shadelight * 1.20;
+  	if (l > 255) l = 255.f;
+
+	l *= 1.f / 255.f;
+	glColor3f(l,l,l);
+  }
+
+  while (1)
+  {
+    // get the vertex count and primitive type
+    count = *order++;
+    if (!count)
+      break;    // done
+ 
+    if (count < 0)
+    {
+      count = -count;
+      glBegin (GL_TRIANGLE_FAN);
+    }
+    else
+    {
+      glBegin (GL_TRIANGLE_STRIP);
+    }
+
+// Surgeon: HACK - flatshading implemented - works fine
+
+    if (gl_smoothmodels.value)
+    do
+    {
+      // texture coordinates come from the draw list
+      glTexCoord2f (((float *)order)[0], ((float *)order)[1]);
+
+      order += 2;
+
+      // normals and vertexes come from the frame list
+      l = shadedots[verts->lightnormalindex] * shadelight;
+#ifdef AMIGA
+	if(l > 255) l=255; //clamp
+#endif
+      glColor3ub (l, l, l);
+	glVertex3f (verts->v[0], verts->v[1], verts->v[2]);
+
+      verts++;
+    } while (--count);
+
+  else //glColor moded outside loop
+  {
+    do
+    {
+      // texture coordinates come from the draw list
+      glTexCoord2f (((float *)order)[0], ((float *)order)[1]);
+
+      order += 2;
+
+	glVertex3f (verts->v[0], verts->v[1], verts->v[2]);
+
+      verts++;
+    } while (--count);
+  }
+    glEnd ();
+  }
+}
+
+#ifndef __PPC__
+/*
+** Surgeon: used for vertexarrays
+** Table of 256 unsigned longs mimmicking argb ubytes
+*/
+
+const ULONG lighttab[256] = {
+#include "whitelight.h"
+};
+#endif
+
+void GL_DrawAliasArrayFrame (aliashdr_t *paliashdr, int posenum)
+{
+  float   l;
+  trivertx_t  *verts;
+  int   *order;
+  int   count;
+
+  GLenum primitive;
+  ULONG vcount;
+  qglarray_t *lva;
+
+  lastposenum = posenum;
+
+  verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+  verts += posenum * paliashdr->poseverts;
+  order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+
+  if(!gl_smoothmodels.value) //Surgeon 
+  {
+  	l = shadelight * 1.20;
+  	if (l > 255) l = 255.f;
+
+	l *= 1.f / 255.f;
+	glColor3f(l,l,l);
+  }
+
+  while (1)
+  {
+    // get the vertex count and primitive type
+    count = *order++;
+
+    if (!count)
+      break;    // done
+
+    if (count < 0)
+    {
+      count = -count;
+		primitive = GL_TRIANGLE_FAN;
+    }
+    else
+    {
+		primitive = GL_TRIANGLE_STRIP;
+    }
+
+    vcount = count;
+
+    lva = &global_qglarray[0];
+
+    if (gl_smoothmodels.value)
+    do
+    {
+	ULONG c;
+      // texture coordinates come from the draw list
+	lva->s = ((float *)order++)[0];
+	lva->t = ((float *)order++)[0];
+
+      // normals and vertexes come from the frame list
+      c = (ULONG)(shadedots[verts->lightnormalindex] * shadelight);
+	if(c > 255) c=255; //clamp
+
+	lva->x = verts->v[0];
+	lva->y = verts->v[1];
+	lva->z = verts->v[2];
+#ifndef __PPC__
+	lva->c = lighttab[c];
+#else
+	lva->c = 0xFF000000 | (c<<16) | (c<<8) | c;
+#endif
+
+	lva++; verts++;
+    } while (--count);
+
+    else //glColor moved outside loop
+    do
+    {
+      // texture coordinates come from the draw list
+	lva->s = ((float *)order++)[0];
+	lva->t = ((float *)order++)[0];
+
+	lva->x = verts->v[0];
+	lva->y = verts->v[1];
+	lva->z = verts->v[2];
+	
+	lva++; verts++;
+    } while (--count);
+
+  glDrawArrays(primitive, 0, vcount);
+
+  }
+}
+
+static inline void qgl_RenderCompiledFrame(aliashdr_t *paliashdr, mcache_t *mdframe, int lod)
+{
+  int i,j;
+  int count, vnum;
+  GLenum primitive;
+  int *order;
+  qglarray_t *lva;
+  qglprimarray_t *primidx;
+
+  order = (int *)((byte *)paliashdr + paliashdr->commands);
+  lva = &global_qglarray[0];
+  primidx = &mdframe->prim[0];
+
+  if(lod >= 0)
+  {
+    while (1)
+    {
+	// get the vertex count and primitive type
+	count = *order++;
+
+	if (!count)
+      break;    // done
+
+	if (count < 0)
+	{
+		count = -count;
+		primitive = GL_TRIANGLE_FAN;
+	}
+	else
+	{
+		primitive = GL_TRIANGLE_STRIP;
+	}
+
+	if(primidx->reject[lod])
+	{
+		//skip primitive:
+		order += count*2; 
+	}
+	else
+	{
+	   //fetch texcoords:
+	   j = 3;
+
+	   vnum = primidx->idx[0];
+		lva[vnum].s = ((float *)order++)[0];
+		lva[vnum].t = ((float *)order++)[0];
+	   vnum = primidx->idx[1];
+		lva[vnum].s = ((float *)order++)[0];
+		lva[vnum].t = ((float *)order++)[0];
+	   vnum = primidx->idx[2];
+		lva[vnum].s = ((float *)order++)[0];
+		lva[vnum].t = ((float *)order++)[0];
+
+	   while (j < count)
+	   {
+		vnum = primidx->idx[j++];
+		lva[vnum].s = ((float *)order++)[0];
+		lva[vnum].t = ((float *)order++)[0];
+	   }
+
+	   glDrawElements(primitive, (ULONG)count, GL_UNSIGNED_SHORT, &primidx->idx[0]);
+
+	}
+	primidx++;
+    }
+  }
+  else
+  {
+    while (1)
+    {
+
+	// get the vertex count and primitive type
+	count = *order++;
+
+	if (!count)
+      break;    // done
+
+	if (count < 0)
+	{
+		count = -count;
+		primitive = GL_TRIANGLE_FAN;
+	}
+	else
+	{
+		primitive = GL_TRIANGLE_STRIP;
+	}
+
+
+	   //fetch texcoords:
+	   j = 3;
+
+	   vnum = primidx->idx[0];
+		lva[vnum].s = ((float *)order++)[0];
+		lva[vnum].t = ((float *)order++)[0];
+	   vnum = primidx->idx[1];
+		lva[vnum].s = ((float *)order++)[0];
+		lva[vnum].t = ((float *)order++)[0];
+	   vnum = primidx->idx[2];
+		lva[vnum].s = ((float *)order++)[0];
+		lva[vnum].t = ((float *)order++)[0];
+
+	   while (j < count)
+	   {
+		vnum = primidx->idx[j++];
+		lva[vnum].s = ((float *)order++)[0];
+		lva[vnum].t = ((float *)order++)[0];
+	   }
+
+	glDrawElements(primitive, (ULONG)count, GL_UNSIGNED_SHORT, &primidx->idx[0]);
+
+	primidx++;
+    }
+  }
+}
+
+
+void GL_DrawCompiledAliasFrame (aliashdr_t *paliashdr, int posenum, int modelnum, int clipdist)
+{
+  int i;
+  int count;
+  int lodlevel;
+  float l;
+  mcache_t *mdframe;
+  qglvertarray_t *verts;
+  qglarray_t *lva;
+
+  lastposenum = posenum;
+
+  mdframe = &cachearray[modelnum];
+
+  count = mdframe->totalverts;
+  verts = &mdframe->verts[0];
+  lva = &global_qglarray[0];
+
+  if(!gl_smoothmodels.value)
+  {
+	l = shadelight * (1.2/255.0);
+  	if (l > 1.0) l = 1.0;
+	glColor3f(l, l, l);
+
+
+	do
+	{
+#ifdef OPTIMIZE_060
+		lva->x = (int)verts->vcoord[0];
+		lva->y = (int)verts->vcoord[1];
+		lva->z = (int)verts->vcoord[2];
+#else
+		lva->x = (float)verts->vcoord[0];
+		lva->y = (float)verts->vcoord[1];
+		lva->z = (float)verts->vcoord[2];
+#endif
+	verts++; lva++;
+	} while (--count);
+  }
+  else
+  {
+	ULONG c;
+	do
+	{
+		c = (ULONG)(shadedots[verts->lni] * shadelight);
+		if(c > 255) c=255; //clamp
+
+#ifdef OPTIMIZE_060
+		lva->x = (int)verts->vcoord[0];
+		lva->y = (int)verts->vcoord[1];
+		lva->z = (int)verts->vcoord[2];
+#else
+		lva->x = (float)verts->vcoord[0];
+		lva->y = (float)verts->vcoord[1];
+		lva->z = (float)verts->vcoord[2];
+#endif
+#ifndef __PPC__
+		lva->c = lighttab[c];
+#else
+		lva->c = 0xFF000000 | (c<<16) | (c<<8) | c;
+#endif
+
+	verts++; lva++;
+	} while (--count);
+  }
+
+  if(mdframe->lodmodel == false)
+  {
+	lodlevel = -1; //no lod
+  }
+  else if(modellod == 2 || clipdist > 65536)
+  {
+	lodlevel = 1;
+  }
+  else if(clipdist > 16384)
+  {
+	lodlevel = 0;
+  }
+  else
+  {
+	lodlevel = -1; //no lod
+  }
+
+
+  if(compiled_arrays)
+	glLockArrays(0, mdframe->totalverts);
+
+	qgl_RenderCompiledFrame(paliashdr, mdframe, lodlevel);
+
+  if(compiled_arrays)
+	glUnlockArrays();
+}
+
+
+//The main caching routine
+
+void GL_CompileAliasFrame (aliashdr_t *paliashdr, int posenum, int modelnum)
+{
+  int i;
+  trivertx_t  *verts;
+  int   *order;
+  int   count;
+  int   tmp_totalverts;
+  int   numprim;
+  qgltmpvert_t   *tmpvert;
+  qglprimarray_t *prim;
+  mcache_t       *mdframe;
+
+  numprim = 0;
+  tmp_totalverts = 0;
+
+  verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+  verts += posenum * paliashdr->poseverts;
+  order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+  mdframe = &cachearray[modelnum];
+  prim = &mdframe->prim[0];
+  tmpvert = &vcache[0];
+
+	while (1)
+	{
+
+	// get the vertex count and primitive type
+		count = *order++;
+
+	   if (!count)
+		break;    // done
+
+	   if (count < 0)
+	   {
+		count = -count;
+	   }
+
+	   pcache[numprim] = count;
+
+	   i = 0;
+	   do
+	   {
+		tmpvert->tcoord[0] = ((float *)order++)[0];
+		tmpvert->tcoord[1] = ((float *)order++)[0];
+		tmpvert->vcoord[0] = verts->v[0];
+		tmpvert->vcoord[1] = verts->v[1];
+		tmpvert->vcoord[2] = verts->v[2];
+		tmpvert->lni       = verts->lightnormalindex;
+		prim->idx[i++]     = tmp_totalverts++;
+
+		tmpvert++; verts++;
+
+	  } while (--count);
+
+	prim++;
+	numprim++;
+	}
+
+	mdframe->totalverts = tmp_totalverts;
+
+	qgl_BuildCacheIndex (mdframe, numprim); //the tricky stuff!
+
+	m_incache[modelnum] = true; //we are done :)
+}
+
+
+/*
+=============
+GL_DrawAliasShadow
+=============
+*/
+
+extern  vec3_t      lightspot;
+
+void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
+{
+  trivertx_t  *verts;
+  int   *order;
+  vec3_t  point;
+  float height, lheight;
+  int   count;
+
+  lheight = currententity->origin[2] - lightspot[2];
+
+  height = 0;
+  verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+  verts += posenum * paliashdr->poseverts;
+  order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+  height = -lheight + 1.0;
+
+  while (1)
+  {
+    // get the vertex count and primitive type
+    count = *order++;
+    if (!count)
+      break;    // done
+    if (count < 0)
+    {
+      count = -count;
+      glBegin (GL_TRIANGLE_FAN);
+    }
+    else
+    {
+      glBegin (GL_TRIANGLE_STRIP);
+    }
+
+    do
+    {
+      // texture coordinates come from the draw list
+      // (skipped for shadows) glTexCoord2fv ((float *)order);
+      order += 2;
+
+      // normals and vertexes come from the frame list
+      point[0] = verts->v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
+      point[1] = verts->v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
+      point[2] = verts->v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
+
+      point[0] -= shadevector[0]*(point[2]+lheight);
+      point[1] -= shadevector[1]*(point[2]+lheight);
+      point[2] = height;
+//      height -= 0.001;
+  glVertex3fv (point);
+
+      verts++;
+    } while (--count);
+
+    glEnd ();
+  } 
+}
+
+
+/*
+=================
+R_SetupAliasFrame
+
+=================
+*/
+
+void R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, float clipdist)
+{
+  int       pose, numposes;
+  float     interval;
+
+  int modelnum;
+  model_t *clmodel; //for cache check
+
+  if ((frame >= paliashdr->numframes) || (frame < 0))
+  {
+    Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
+    frame = 0;
+  }
+
+  pose = paliashdr->frames[frame].firstpose;
+  numposes = paliashdr->frames[frame].numposes;
+
+  if (numposes > 1)
+  {
+    interval = paliashdr->frames[frame].interval;
+    pose += (int)(cl.time / interval) % numposes;
+  }
+
+  clmodel = currententity->model;
+  modelnum = clmodel->modhint;
+
+
+	if(!r_vertexarrays.value || currententity == &cl.viewent)
+	{
+		GL_DrawAliasFrame (paliashdr, pose);
+	}
+	else if(geometry_cache && modelnum > 0)
+	{
+	//check for animated models, assign frame to cache
+
+		if(modelnum == MOD_PLAYER)
+		{
+			modelnum = 32 + pose;
+		}
+		else if(modelnum == MOD_FLAME)
+		{
+			modelnum = 192 + pose;
+		}
+		else if(modelnum == MOD_FLAME2)
+		{
+			modelnum = 208 + pose;
+		}
+
+		if(m_incache[modelnum] == false)
+		{
+			GL_CompileAliasFrame (paliashdr, pose, modelnum);
+		}
+
+		if(modellod)
+			GL_DrawCompiledAliasFrame (paliashdr, pose, modelnum, clipdist);
+		else
+			GL_DrawCompiledAliasFrame (paliashdr, pose, modelnum, 0);
+
+	}
+	else
+	{
+		GL_DrawAliasArrayFrame (paliashdr, pose);
+
+	}
+}
+
+
+/*
+=================
+R_DrawAliasModel
+
+=================
+*/
+void R_DrawAliasModel (entity_t *e)
+{
+  int     i;
+  int     lnum;
+  vec3_t    dist;
+  float   add;
+  model_t   *clmodel;
+  vec3_t    mins, maxs;
+  aliashdr_t  *paliashdr;
+  float   an;
+  int     anim;
+
+  vec3_t cvec, mod_orig;
+  float distfromplane, reference;
+  float d_forward, d_right, d_up;
+  float viewfield, vd_ratio;
+  static float clipdist;
+
+  clmodel = currententity->model;
+
+  VectorAdd (currententity->origin, clmodel->mins, mins);
+  VectorAdd (currententity->origin, clmodel->maxs, maxs);
+
+#ifdef FASTBOPS
+//Surgeon: bugfix
+  if (currententity->model->flags & EF_ROTATE)
+  {
+  mins[2] += 16;
+  maxs[2] += 16;
+  }
+#endif
+
+  if (R_CullBox (mins, maxs))
+//  if (R_VisibleCullBox (mins, maxs))
+    return;
+
+//Surgeon: far culling
+	cvec[0] = r_refdef.vieworg[0] - currententity->origin[0];
+	cvec[1] = r_refdef.vieworg[1] - currententity->origin[1];
+
+  if (currententity->model->flags & EF_ROTATE)
+	cvec[2] = r_refdef.vieworg[2] - currententity->origin[2] + 32;
+  else
+	cvec[2] = r_refdef.vieworg[2] - currententity->origin[2];
+
+	clipdist = (cvec[0]*cvec[0] + cvec[1]*cvec[1] + cvec[2]*cvec[2]);
+	if (clipdist > r_mod_maxdist)
+		return;
+
+	//surgeon: aggressive culling
+
+	if(r_cull_aggressive.value  && (clipdist > 256))
+	{
+
+	mod_orig[0] = currententity->origin[0];
+	mod_orig[1] = currententity->origin[1];
+
+	if (currententity->model->flags & EF_ROTATE)
+	{
+		mod_orig[2] = currententity->origin[2] + 32;
+	}
+	else
+	{
+		mod_orig[2] = currententity->origin[2];
+	}
+
+	distfromplane = DotProduct(mod_orig, vpn);
+	reference = DotProduct(r_origin, vpn); 
+	d_forward = distfromplane - reference;
+
+	if(d_forward < 0.0)
+		return;
+
+	viewfield = scr_fov.value;
+	if(viewfield > 90.0)
+		vd_ratio = viewfield / (90.0 - (viewfield - 90.0));
+
+	else
+		vd_ratio = viewfield * (1.0/90.0);
+
+	distfromplane = DotProduct(mod_orig, vright);
+	reference = DotProduct(r_origin, vright); 
+
+	d_right = fabs(distfromplane - reference);	
+
+	d_right /= d_forward;
+
+	if(d_right > vd_ratio)
+		return;
+
+
+	distfromplane = DotProduct(mod_orig, vup);
+	reference = DotProduct(r_origin, vup); 
+
+	d_up = fabs(distfromplane - reference);	
+
+	d_up /= d_forward;
+
+	if(d_up > vd_ratio * 0.75)
+		return;
+
+	}
+
+
+  VectorCopy (currententity->origin, r_entorigin);
+  VectorSubtract (r_origin, r_entorigin, modelorg);
+
+  //
+  // get lighting information
+  //
+
+
+
+/*
+if (strcmp (clmodel->name, "progs/flame2.mdl")
+    && strcmp (clmodel->name, "progs/flame.mdl"))
+*/
+
+if(clmodel->modhint != MOD_FLAME && clmodel->modhint != MOD_FLAME2 && clmodel->modhint != MOD_BOLT && clmodel->modhint != MOD_BOLT2)
+  ambientlight = shadelight = (float)R_LightPoint (currententity->origin);
+ 
+  // allways give the gun some light
+  if (e == &cl.viewent && ambientlight < 24)
+    ambientlight = shadelight = 24;
+
+if(clmodel->modhint != MOD_FLAME && clmodel->modhint != MOD_FLAME2 && clmodel->modhint != MOD_BOLT && clmodel->modhint != MOD_BOLT2)
+  for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
+  {
+    if (cl_dlights[lnum].die >= cl.time)
+    {
+      VectorSubtract (currententity->origin,
+              cl_dlights[lnum].origin,
+              dist);
+      add = cl_dlights[lnum].radius - Length(dist);
+
+      if (add > 0) {
+        ambientlight += add;
+        //ZOID models should be affected by dlights as well
+        shadelight += add;
+      }
+    }
+  }
+
+  // clamp lighting so it doesn't overbright as much
+  if (ambientlight > 128)
+    ambientlight = 128;
+  if (ambientlight + shadelight > 192)
+    shadelight = 192 - ambientlight;
+
+  // ZOID: never allow players to go totally black
+/*
+  if (!strcmp(clmodel->name, "progs/player.mdl")) {
+*/
+  if(clmodel->modhint == MOD_PLAYER || clmodel->modhint == MOD_PLAYERHEAD)
+	{
+		if (ambientlight < 8)
+      	ambientlight = shadelight = 8;
+	}
+
+ /*
+ else if (!strcmp (clmodel->name, "progs/flame2.mdl")
+    || !strcmp (clmodel->name, "progs/flame.mdl") )
+    // HACK HACK HACK -- no fullbright colors, so make torches full light
+*/
+  else if (clmodel->modhint == MOD_FLAME || clmodel->modhint == MOD_FLAME2 || clmodel->modhint == MOD_BOLT || clmodel->modhint == MOD_BOLT2)
+    ambientlight = shadelight = 256;
+
+
+  shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+
+//  shadelight = shadelight / 200.0;
+shadelight *= 1.275;
+
+if(r_shadows.value) //surgeon: optimized "if"
+{  
+  an = e->angles[1]/180*M_PI;
+  shadevector[0] = cos(-an);
+  shadevector[1] = sin(-an);
+  shadevector[2] = 1;
+  VectorNormalize (shadevector);
+}
+  //
+  // locate the proper data
+  //
+  paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
+
+  c_alias_polys += paliashdr->numtris;
+
+  //
+  // draw all the triangles
+  //
+
+  if(mtexenabled) GL_DisableMultitexture();
+
+    glPushMatrix ();
+  R_RotateForEntity (e);
+
+/*  if (!strcmp (clmodel->name, "progs/eyes.mdl") )*/
+if (clmodel->modhint == MOD_EYES) {
+    glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2] - (22 + 8));
+  // double size of eyes, since they are really hard to see in gl
+    glScalef (paliashdr->scale[0]*2, paliashdr->scale[1]*2, paliashdr->scale[2]*2);
+  } else {
+    glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+    glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+  }
+
+  anim = (int)(cl.time*10) & 3;
+    GL_Bind(paliashdr->gl_texturenum[currententity->skinnum][anim]);
+
+  // we can't dynamically colormap textures, so they are cached
+  // seperately for the players.  Heads are just uncolored.
+  if (currententity->scoreboard && !gl_nocolors.value)
+  {
+    i = currententity->scoreboard - cl.players;
+    if (!currententity->scoreboard->skin) {
+      Skin_Find(currententity->scoreboard);
+      R_TranslatePlayerSkin(i);
+    }
+    if (i >= 0 && i<MAX_CLIENTS)
+        GL_Bind(playertextures + i);
+  }
+
+  if (gl_smoothmodels.value)
+    glShadeModel (GL_SMOOTH);
+  else
+    glShadeModel (GL_FLAT); //SuRgEoN
+
+
+  if (r_shadows.value) //standard case moved
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+  R_SetupAliasFrame (currententity->frame, paliashdr, clipdist);
+
+  if (r_shadows.value) //standard case moved
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+  glShadeModel (GL_FLAT);
+
+  glPopMatrix ();
+
+  if (r_shadows.value)
+  {
+    glPushMatrix ();
+    R_RotateForEntity (e);
+    glDisable (GL_TEXTURE_2D);
+    glEnable (GL_BLEND);
+    glColor4f (0,0,0,0.5);
+    GL_DrawAliasShadow (paliashdr, lastposenum);
+    glEnable (GL_TEXTURE_2D);
+    glDisable (GL_BLEND);
+    glColor4f (1,1,1,1);
+    glPopMatrix ();
+  }
+
+}
+
+//==================================================================================
+
+/*
+=============
+R_DrawEntitiesOnList
+=============
+*/
+
+void R_DrawViewModel (void);
+
+void R_DrawEntitiesOnList (int routine)
+{
+	int   i;
+  
+	if (!r_drawentities.value)
+		return;
+
+
+	if (routine == 1)
+	{
+		for (i=0;i<cl_numvisedicts;i++)
+		{
+		currententity = &cl_visedicts[i];
+  		if (currententity->model->type != mod_brush)
+			continue;
+
+		R_DrawBrushModel(currententity);
+		}
+	return;
+	}
+
+	if (routine == 2)
+	{
+
+	#ifndef AMIGA
+		if (gl_affinemodels.value)
+		    glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+	#else
+		if (gl_affinemodels.value)
+		    glDisable(MGL_PERSPECTIVE_MAPPING);
+	#endif
+
+		glDepthMask(GL_FALSE);
+
+		glDisable(GL_CULL_FACE);
+	
+		for (i=0;i<cl_numvisedicts;i++)
+		{
+		currententity = &cl_visedicts[i];
+		if (currententity->model->type != mod_sprite)
+			continue;
+
+		R_DrawSpriteModel(currententity);
+		}
+
+		glDepthMask(GL_TRUE);
+
+		if(gl_cull.value)
+		glEnable(GL_CULL_FACE);
+
+		if (gl_smoothmodels.value)
+		glShadeModel (GL_SMOOTH);
+
+		if(r_vertexarrays.value)
+		{
+			qgl_EnableArray();
+		}
+
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+		for (i=0;i<cl_numvisedicts;i++)
+		{
+		currententity = &cl_visedicts[i];
+		if (currententity->model->type != mod_alias)
+			continue;
+
+		R_DrawAliasModel(currententity);
+		}
+
+		if(r_vertexarrays.value)
+		{
+			qgl_DisableArray();
+		}
+
+		R_DrawViewModel ();
+
+	#ifndef AMIGA
+		  if (gl_affinemodels.value)
+		    glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	#else
+		  if (gl_affinemodels.value)
+		    glEnable(MGL_PERSPECTIVE_MAPPING);
+	#endif
+
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	return;
+	}
+
+}
+
+/*
+=============
+R_DrawViewModel
+=============
+*/
+void R_DrawViewModel (void)
+{
+
+  if (!r_drawviewmodel.value || !Cam_DrawViewModel())
+    return;
+
+  if(r_framecount < 2) //surgeon
+    return;
+
+  if (scr_fov.value > 90) //surgeon: like soft renderer
+    return;
+
+  if (envmap)
+    return;
+
+  if (!r_drawentities.value)
+    return;
+
+  if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+    return;
+
+  if (cl.stats[STAT_HEALTH] <= 0)
+    return;
+
+  currententity = &cl.viewent;
+
+  if (!currententity->model)
+    return;
+
+  // hack the depth range to prevent viewmodel from poking into walls
+
+  glDepthRange (gldepthmin, gldepthmin + 0.3*(gldepthmax-gldepthmin));
+
+  R_DrawAliasModel (currententity);
+
+  glDepthRange (gldepthmin, gldepthmax);
+}
+
+
+
+#ifdef AMIGA //let's do it fast :)
+
+extern cvar_t cl_sbar;
+
+/*
+============
+R_PolyBlend
+============
+*/
+void R_PolyBlend (void)
+{
+  if (!gl_polyblend.value)
+    return;
+  if (!v_blend[3])
+    return;
+
+  if(mtexenabled) GL_DisableMultitexture();
+
+  glDisable (GL_ALPHA_TEST);
+  glEnable (GL_BLEND);
+  glDisable (GL_DEPTH_TEST);
+  glDisable (GL_TEXTURE_2D);
+
+  glColor4fv (v_blend);
+
+  glBegin (MGL_FLATFAN);
+
+  glVertex2f (0, 0);
+  glVertex2f (vid.width, 0);
+  glVertex2f (vid.width, vid.height - (sb_lines * cl_sbar.value));
+  glVertex2f (0, vid.height - (sb_lines * cl_sbar.value));
+
+  glEnd ();
+
+  glDisable (GL_BLEND);
+  glEnable (GL_TEXTURE_2D);
+//  glEnable (GL_ALPHA_TEST);
+}
+
+#else
+
+/*
+============
+R_PolyBlend
+============
+*/
+void R_PolyBlend (void)
+{
+  if (!gl_polyblend.value)
+    return;
+  if (!v_blend[3])
+    return;
+
+//Con_Printf("R_PolyBlend(): %4.2f %4.2f %4.2f %4.2f\n",v_blend[0], v_blend[1], v_blend[2], v_blend[3]);
+
+  if(mtexenabled) GL_DisableMultitexture();
+
+  glDisable (GL_ALPHA_TEST);
+  glEnable (GL_BLEND);
+  glDisable (GL_DEPTH_TEST);
+  glDisable (GL_TEXTURE_2D);
+
+    glLoadIdentity ();
+
+#ifdef AMIGA
+    glRotatefEXTs(-1.f, 0.f, GLROT_100);
+    glRotatefEXTs( 1.f, 0.f, GLROT_001);
+#else
+    glRotatef (-90,  1, 0, 0);      // put Z going up
+    glRotatef (90,  0, 0, 1);     // put Z going up
+#endif
+
+  glColor4fv (v_blend);
+
+  glBegin (GL_QUADS);
+
+  glVertex3f (10, 100, 100);
+  glVertex3f (10, -100, 100);
+  glVertex3f (10, -100, -100);
+  glVertex3f (10, 100, -100);
+  glEnd ();
+
+  glDisable (GL_BLEND);
+  glEnable (GL_TEXTURE_2D);
+//  glEnable (GL_ALPHA_TEST);
+}
+
+#endif
+
+int SignbitsForPlane (mplane_t *out)
+{
+  int bits, j;
+
+  // for fast box on planeside test
+
+  bits = 0;
+  for (j=0 ; j<3 ; j++)
+  {
+    if (out->normal[j] < 0)
+      bits |= 1<<j;
+  }
+  return bits;
+}
+
+
+void R_SetFrustum (void)
+{
+  int   i;
+
+  if (r_refdef.fov_x == 90) 
+  {
+    // front side is visible
+
+    VectorAdd (vpn, vright, frustum[0].normal);
+    VectorSubtract (vpn, vright, frustum[1].normal);
+
+    VectorAdd (vpn, vup, frustum[2].normal);
+    VectorSubtract (vpn, vup, frustum[3].normal);
+  }
+  else
+  {
+#if 1
+
+    RotatePointAroundVectorNEW( frustum[0].normal, frustum[1].normal, vup, vpn, -(90-r_refdef.fov_x/2));
+    RotatePointAroundVectorNEW( frustum[2].normal, frustum[3].normal, vright, vpn, 90-r_refdef.fov_y/2);
+
+#else
+    // rotate VPN right by FOV_X/2 degrees
+    RotatePointAroundVector( frustum[0].normal, vup, vpn, -(90-r_refdef.fov_x / 2 ) );
+    // rotate VPN left by FOV_X/2 degrees
+    RotatePointAroundVector( frustum[1].normal, vup, vpn, 90-r_refdef.fov_x / 2 );
+    // rotate VPN up by FOV_X/2 degrees
+    RotatePointAroundVector( frustum[2].normal, vright, vpn, 90-r_refdef.fov_y / 2 );
+    // rotate VPN down by FOV_X/2 degrees
+    RotatePointAroundVector( frustum[3].normal, vright, vpn, -( 90 - r_refdef.fov_y / 2 ) );
+#endif
+  }
+
+#ifndef FASTBOPS
+  for (i=0 ; i<4 ; i++)
+  {
+    frustum[i].type = PLANE_ANYZ;
+    frustum[i].dist = DotProduct (r_origin, frustum[i].normal);
+    frustum[i].signbits = SignbitsForPlane (&frustum[i]);
+  }
+#else
+    frustum[0].type = PLANE_ANYZ;
+    frustum[1].type = PLANE_ANYZ;
+    frustum[2].type = PLANE_ANYZ;
+    frustum[3].type = PLANE_ANYZ;
+
+    frustum[0].dist = DotProduct (r_origin, frustum[0].normal);
+    frustum[1].dist = DotProduct (r_origin, frustum[1].normal);
+    frustum[2].dist = DotProduct (r_origin, frustum[2].normal);
+    frustum[3].dist = DotProduct (r_origin, frustum[3].normal);
+
+    BoxOnPlaneSideClassify(&frustum[0]);
+    BoxOnPlaneSideClassify(&frustum[1]);
+    BoxOnPlaneSideClassify(&frustum[2]);
+    BoxOnPlaneSideClassify(&frustum[3]);
+
+
+#endif
+}
+
+
+
+/*
+===============
+R_SetupFrame
+===============
+*/
+
+
+void R_SetupFrame (void)
+{
+
+  r_mod_maxdist = (ULONG)r_model_maxdist.value;
+  r_mod_maxdist *= r_mod_maxdist;
+
+// don't allow cheats in multiplayer
+  r_fullbright.value = 0;
+  r_lightmap.value = 0;
+  if (!atoi(Info_ValueForKey(cl.serverinfo, "watervis")))
+    r_wateralpha.value = 1;
+
+  r_dowarp = (r_waterwarp.value != 1);
+ 
+ R_AnimateLight ();
+
+  r_framecount++;
+
+// build the transformation matrix for the given view angles
+  VectorCopy (r_refdef.vieworg, r_origin);
+
+  AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+
+// current viewleaf
+  r_oldviewleaf = r_viewleaf;
+  r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
+
+  V_SetContentsColor (r_viewleaf->contents);
+  V_CalcBlend ();
+
+  r_cache_thrash = false;
+
+  c_brush_polys = 0;
+  c_alias_polys = 0;
+
+}
+
+
+void MYgluPerspective( GLdouble fovy, GLdouble aspect,
+         GLdouble zNear, GLdouble zFar )
+{
+   GLdouble xmin, xmax, ymin, ymax;
+
+   ymax = zNear * tan( fovy * M_PI / 360.0 );
+   ymin = -ymax;
+
+//   xmin = ymin * aspect;
+   xmax = ymax * aspect;
+   xmin = -xmax;
+   glFrustum( xmin, xmax, ymin, ymax, zNear, zFar );
+}
+
+
+/*
+=============
+R_SetupGL
+=============
+*/
+
+void R_SetupGL (void)
+{
+
+  float screenaspect;
+  extern  int glwidth, glheight;
+  int   x, x2, y2, y, w, h;
+
+  //
+  // set up viewpoint
+  //
+  glMatrixMode(GL_PROJECTION);
+    glLoadIdentity ();
+  x = r_refdef.vrect.x * glwidth/vid.width;
+  x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth/vid.width;
+  y = (vid.height-r_refdef.vrect.y) * glheight/vid.height;
+  y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight/vid.height;
+
+  // fudge around because of frac screen scale
+  if (x > 0)
+    x--;
+  if (x2 < glwidth)
+    x2++;
+  if (y2 < 0)
+    y2--;
+  if (y < glheight)
+    y++;
+
+  w = x2 - x;
+  h = y - y2;
+
+  if (envmap)
+  {
+    x = y2 = 0;
+    w = h = 256;
+  }
+
+
+  glViewport (glx + x, gly + y2, w, h);
+
+
+//    screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height;
+
+//Surgeon: adjust for vid.aspect
+    screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height*vid.aspect;
+
+
+//  yfov = 2*atan((float)r_refdef.vrect.height/r_refdef.vrect.width)*180/M_PI;
+//  yfov = (2.0 * tan (scr_fov.value/360*M_PI)) / screenaspect;
+//  yfov = 2*atan((float)r_refdef.vrect.height/r_refdef.vrect.width)*(scr_fov.value*2)/M_PI;
+//    MYgluPerspective (yfov,  screenaspect,  4,  4096);
+
+    MYgluPerspective (r_refdef.fov_y,  screenaspect,  4,  4096);
+
+  if (mirror)
+  {
+    if (mirror_plane->normal[2])
+      glScalef (1, -1, 1);
+    else
+      glScalef (-1, 1, 1);
+    glCullFace(GL_BACK);
+  }
+  else
+    glCullFace(GL_FRONT);
+
+  glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ();
+
+#ifdef AMIGA
+    glRotatefEXTs(-1.f, 0.f, GLROT_100);
+    glRotatefEXTs( 1.f, 0.f, GLROT_001);
+    glRotatefEXT (-r_refdef.viewangles[2], GLROT_100);
+    glRotatefEXT (-r_refdef.viewangles[0], GLROT_010);
+    glRotatefEXT (-r_refdef.viewangles[1], GLROT_001);
+#else
+    glRotatef (-90,  1, 0, 0);      // put Z going up
+    glRotatef (90,  0, 0, 1);     // put Z going up
+    glRotatef (-r_refdef.viewangles[2],  1, 0, 0);
+    glRotatef (-r_refdef.viewangles[0],  0, 1, 0);
+    glRotatef (-r_refdef.viewangles[1],  0, 0, 1);
+#endif
+
+    glTranslatef (-r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
+
+  glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
+
+  //
+  // set drawing parms
+  //
+  if (gl_cull.value)
+    glEnable(GL_CULL_FACE);
+  else
+    glDisable(GL_CULL_FACE);
+
+  glDisable(GL_BLEND);
+  glDisable(GL_ALPHA_TEST);
+  glEnable(GL_DEPTH_TEST);
+
+#ifdef AMIGA //was disabled for 2D
+  glEnable(MGL_PERSPECTIVE_MAPPING);
+#endif
+
+}
+
+
+/*
+================
+R_RenderScene
+
+r_refdef must be set before the first call
+================
+*/
+void R_RenderScene (void)
+{
+  R_SetupFrame ();
+
+  R_SetFrustum ();
+
+  R_SetupGL ();
+
+  R_MarkLeaves ();  // done here so we know if we're in water
+
+//clamp triangle elimination area:
+  if(r_elim_areasize.value > 10.0)
+	Cvar_SetValue("r_elim_areasize", 10.0);
+  else if (r_elim_areasize.value < 0.5)
+	Cvar_SetValue("r_elim_areasize", 0.5);
+
+#ifdef AMIGA
+  mglMinTriArea(r_elim_areasize.value);
+#endif
+
+  glShadeModel (GL_FLAT); //SuRgEoN
+
+  R_DrawEntitiesOnList (1); //brushmodels
+
+  if(!r_cullworld.value && !r_novis.value)
+  glDisable(GL_CULL_FACE);
+ 
+  R_DrawWorld ();   // adds static entities to the list
+
+  S_ExtraUpdate (); // don't let sound get messed up if going slow
+
+  if(mtexenabled) GL_DisableMultitexture();
+
+  if(gl_cull.value)
+  glEnable(GL_CULL_FACE);
+
+  R_DrawEntitiesOnList (2);
+
+  glShadeModel (GL_SMOOTH); //SuRgEoN
+
+  R_RenderDlights ();
+
+glDisable(GL_CULL_FACE);
+//particle frontface-culling makes no sense
+
+  R_DrawParticles ();
+
+if(gl_cull.value)
+glEnable(GL_CULL_FACE);
+
+#ifdef GLTEST
+  Test_Draw ();
+#endif
+
+
+}
+
+
+/*
+=============
+R_Clear
+=============
+*/
+void R_Clear (void)
+{
+
+glClearColor(0,0,0,1);
+	//Surgeon - minimize gl_keeptjunctions 0 errors
+#if 0
+  if (r_mirroralpha.value != 1.0)
+  {
+    if (gl_clear.value)
+      glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    else
+      glClear (GL_DEPTH_BUFFER_BIT);
+    gldepthmin = 0;
+    gldepthmax = 0.5;
+    glDepthFunc (GL_LEQUAL);
+  }
+  else
+#endif
+ if (gl_ztrick.value)
+  {
+    static int trickframe;
+
+    if (gl_clear.value)
+      glClear (GL_COLOR_BUFFER_BIT);
+
+    trickframe++;
+    if (trickframe & 1)
+    {
+      gldepthmin = 0;
+      gldepthmax = 0.49999;
+      glDepthFunc (GL_LEQUAL);
+    }
+    else
+    {
+      gldepthmin = 1;
+      gldepthmax = 0.5;
+      glDepthFunc (GL_GEQUAL);
+    }
+  }
+  else
+  {
+    if (gl_clear.value)
+      glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    else
+      glClear (GL_DEPTH_BUFFER_BIT);
+
+    gldepthmin = 0;
+    gldepthmax = 1;
+    glDepthFunc (GL_LEQUAL);
+  }
+
+  glDepthRange (gldepthmin, gldepthmax);
+}
+
+#if 0 //!!! FIXME, Zoid, mirror is disabled for now
+/*
+=============
+R_Mirror
+=============
+*/
+void R_Mirror (void)
+{
+  float   d;
+  msurface_t  *s;
+  entity_t  *ent;
+
+  if (!mirror)
+    return;
+
+  memcpy (r_base_world_matrix, r_world_matrix, sizeof(r_base_world_matrix));
+
+  d = DotProduct (r_refdef.vieworg, mirror_plane->normal) - mirror_plane->dist;
+  VectorMA (r_refdef.vieworg, -2*d, mirror_plane->normal, r_refdef.vieworg);
+
+  d = DotProduct (vpn, mirror_plane->normal);
+  VectorMA (vpn, -2*d, mirror_plane->normal, vpn);
+
+  r_refdef.viewangles[0] = -asin (vpn[2])/M_PI*180;
+  r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0])/M_PI*180;
+  r_refdef.viewangles[2] = -r_refdef.viewangles[2];
+
+  ent = &cl_entities[cl.viewentity];
+  if (cl_numvisedicts < MAX_VISEDICTS)
+  {
+    cl_visedicts[cl_numvisedicts] = ent;
+    cl_numvisedicts++;
+  }
+
+  gldepthmin = 0.5;
+  gldepthmax = 1;
+  glDepthRange (gldepthmin, gldepthmax);
+  glDepthFunc (GL_LEQUAL);
+
+  R_RenderScene ();
+  R_DrawWaterSurfaces ();
+
+
+  gldepthmin = 0;
+  gldepthmax = 0.5;
+  glDepthRange (gldepthmin, gldepthmax);
+  glDepthFunc (GL_LEQUAL);
+
+  // blend on top
+  glEnable (GL_BLEND);
+  glMatrixMode(GL_PROJECTION);
+  if (mirror_plane->normal[2])
+    glScalef (1,-1,1);
+  else
+    glScalef (-1,1,1);
+  glCullFace(GL_FRONT);
+  glMatrixMode(GL_MODELVIEW);
+
+  glLoadMatrixf (r_base_world_matrix);
+
+  glColor4f (1,1,1,r_mirroralpha.value);
+  s = cl.worldmodel->textures[mirrortexturenum]->texturechain;
+  for ( ; s ; s=s->texturechain)
+    R_RenderBrushPoly (s);
+  cl.worldmodel->textures[mirrortexturenum]->texturechain = NULL;
+  glDisable (GL_BLEND);
+  glColor4f (1,1,1,1);
+}
+#endif
+
+/*
+================
+R_RenderView
+
+r_refdef must be set before the first call
+================
+*/
+void R_RenderView (void)
+{
+  double  time1 = 0, time2;
+
+  if (r_norefresh.value)
+    return;
+
+  if (!r_worldentity.model || !cl.worldmodel)
+    Sys_Error ("R_RenderView: NULL worldmodel");
+
+  if (r_speeds.value)
+  {
+    glFinish ();
+    time1 = Sys_DoubleTime ();
+    c_brush_polys = 0;
+    c_alias_polys = 0;
+  }
+
+  mirror = false;
+
+  if (gl_finish.value)
+    glFinish ();
+
+  R_Clear ();
+
+  // render normal view
+  R_RenderScene ();
+
+  R_DrawWaterSurfaces ();
+
+  // render mirror view
+//  R_Mirror ();
+
+  R_PolyBlend ();
+
+  if (r_speeds.value)
+  {
+//    glFinish ();
+    time2 = Sys_DoubleTime ();
+    Con_Printf ("%3i ms  %4i wpoly %4i epoly\n", (int)((time2-time1)*1000), c_brush_polys, c_alias_polys); 
+  }
+}

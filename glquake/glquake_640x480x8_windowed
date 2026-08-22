@@ -1,0 +1,6 @@
+; BlitzQuake MiniGL: 640x480, 8-bit, windowed.
+; Current R200 MiniGL does not support CLUT8 windowed contexts.
+Assign quakedir: ""
+quakedir:
+Stack 1048576
+glquake68k_gcc -width 640 -height 480 -bpp 8 -windowmode -lm_LUMINANCE -condebug -nojoy -nocdaudio -nopsx

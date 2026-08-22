@@ -1,0 +1,13 @@
+# Generated build outputs
+*.o
+*.a
+*.elf
+*.hunk
+*.map
+*.log
+
+# Amiga MiniGL dispatch build directory
+glquake/m68k_gcc/
+
+# Local tool output
+a.out

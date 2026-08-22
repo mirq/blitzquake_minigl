@@ -1,0 +1,338 @@
+
+"QWCL68K/QWCLPPC" QuakeWorld Client with proxy features
+ 
+What is this and who needs it 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+ 
+A quakeworld client for M68040/60 AND PPC with AGA or CGFX/P96.
+
+- Dozens of new speedup options
+- Features borrowed from Zquake v0.10 (teamplay features). 
+- Serverbrowser with ping and status capability.
+
+This version is tested on the following setups:
+Blizz1260/66/64MB/AGA, Blizz1260/66/64MB/Mediator-Voodoo3
+
+Important: stacksize should be at least 500000
+============================================================
+
+1.
+
+QWCL MODIFICATIONS BY SuRgEoN: () indicate default setting
+
+MENUS
+~~~~~
+New options submenu: <customize details>
+Contains most important fps-booster settings, listed elsewhere
+
+New multiplayer submenus: (list is read from qw/servers.txt)
+(ripped from quakeforge)
+Join A Game -> serverbrowser:
+u: updates status and ping
+s: updates status
+p: updates ping
+a: add a serverentry
+e: edit a serverentry
+d: delete a serverentry
+enter:connect to server
+
+PARTICLE CONTROL
+~~~~~~~~~~~~~~~~
+r_explosions 0|1|2 (1) :off, normal, restricted
+r_teleports  0|1|2 (1) :off, normal, restricted
+
+MISC RENDERING
+~~~~~~~~~~~~~~
+bodyfilter  0|1    (0) :rendering of dead bodies
+gibfilter   0|1    (0) :rendering of gibs  
+beamskip    0|1|2  (0) :skip 0, 50 or 66% of mdl's in beams
+frameskip   0|1|2|3(0) :none, every 5th/3rd/2nd playerframe
+r2g         0|1    (0) :use grenade model instead of rocket
+r_fastcontents 0|1 (0) :flat/normal sky and turbulent surfs
+r_skycolor  0-255(215) :color for flat skies
+r_turbcolor 0-255(185) :color for flat turbulent surfs
+
+LIGHTNING CONTROL
+~~~~~~~~~~~~~~~~~
+r_dynamic      0|1   (1) :dynamic lightning
+cl_muzzleflash 0|1|2 (1) :own off, normal, all off
+============================================================
+
+
+DRAWING
+~~~~~~~
+* crosshair 3 - small crosshair (complies with crosshaircolor as well) 
+
+*note : d_mipcap command has been enabled and it works !
+
+
+PALETTE SHIFT CONTROL
+~~~~~~~~~~~~~~~~~~~~~
+v_alert      0|1     (1) :damage and bonus flashes
+v_powerup    0|1     (1) :powerup-item palette shift
+
+
+SOUND
+~~~~~
+sndcheck     0|1     (1) :check for loopimg wav's
+
+
+DEMORECORDING (startup parameters)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-bufrecord         : Eliminates HD-lag when recording demos!
+
+All demos are stored in ram/qwd and relocated to a subdir
+named qwd when completed. This feature works with easyrecord
+too! Matching names in qwd/ are checked and _## is appended
+if needed.
+
+*Note on playdemo/timedemo: prefix the demoname with /qwd/
+
+
+DEMOPLAYBACK
+~~~~~~~~~~~~
+*Note1 : Inventory is now displayed in spectator demos !
+         The annoying camera messages are gone.
+*Note2 : Pause works with demos - bind pause to F-keys
+
+
+DISPLAY (startup parameters)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(used in conjunction with -aga)
+-ntsc
+-pal
+-dblntsc
+-dblpal
+-odd     :double pixel height (huge speedup)
+
+Other display related parameters:
+-bblack  :black border if using viewsize below 100
+
+Note: On cgfx/p96 systems you can make 320x150 and 320x120 screenmodes which corresponds to -odd parameter with aga
+for cgfx/p96 use the parameter -cgfx.
+P96 emulation of CGFX screenmoderequester has been fixed
+new patameter -modeid (format 0x<ID>) to be used with -cgfx.
+-bypasses screenmode requester step
+
+ANTI CHEATING
+~~~~~~~~~~~~~
+Server fpd disables is recognized and fully supported.
+TeamFortress autodetect:
+skin/color forcing & bodyfilter will be auto-disabled.
+
+fpd can be set on servers to disable proxy features.
+The standard recognized by qizmo/cheapo/nfproxy is used.
+
+UNDOCUMENTED (from original port by Frank 'phx' Wille)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+startup parameters:
+-audspeed      n (11025): (4000 5513 6000 8000 11025 22050)
+
+console variables:
+v_contentblend 0|1   (1): toggles palette shift in liquids
+
+
+2. QWCL MODIFICATIONS FROM ZQUAKE v0.10 BY 'TONIK'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE 
+If you wish to enable stat reports (like in a cheapo/qizmo proxy, etc) dont forget to toggle this option with: 
+cl_parsesay and/or _cmd_macros (described below) 
+
+2. Menus
+~~~~~~~~
+* New multiplayer menus added.
+
+<setup> works like normal quake.
+
+ 
+3. List of new commands 
+~~~~~~~~~~~~~~~~~~~~~~~ 
+* cmdlist - list all commands :) 
+* cvarlist - list all console variables (known as cvars) 
+* toggle - invert the value of a cvar (1 -> 0 and 0 -> 1) 
+* unalias - destroys an existing alias 
+* loadloc - loads a loc-file (must be located in id1/locs, qw/locs, or <gamedir>/locs -- this means fortress/locs when you play TF). The ".loc" extention need not be specified, for example, "loadloc dm6"; if the file itself has no extension, use its explicit name ("loadloc dm6.") 
+* set - set a value to/create a cvar 
+* teamcolor - overrides the color of teammates 
+* enemycolor - overrides the color of enemies  
+* enemyskin - overrides the skins of enemies 
+* teamskin - overrides the skins of teammates 
+* easyrecord - records demos without worrying about the filename 
+* msg_trigger - message catcher system, to be explained later below. 
+
+All override cmds are disabled for TF to prevent cheating.
+The commands obey server fpd-settings just like proxies (qizmo, cheapo, NFproxy). 
+
+4. List of new variables 
+~~~~~~~~~~~~~~~~~~~~~~~~ 
+* cl_c2spps [10-72] - packet filtering (a la Qizmo's .c2spps command). Use this to reduce network traffic when you're playing on a slow modem connection. The recommended settings are cl_maxfps 72 and cl_c2spps 30. In general, don't set it below half your framerate (show_fps 1). 
+ 
+* cl_speedjumpfix - fixes a jump bug (if set to 1, jump prediction is turned on.  Result: smoother jumps even with high ping(=modem connection)) 
+ 
+* cl_clock [0,1,2] - draws a clock on the screen
+	0 - off;
+	1 - displays time connected
+	2 - displays time of day (by SuRgEoN)
+* cl_clock_x - x-pos of the clock 
+* cl_clock_y - line-pos of the clock (if less than 0, its on the bottom part of the screen) 
+ 
+* cl_loadlocs - when set to 1, locfiles are automatically loaded upon change of map.  They must reside in /id1/locs or /<gamedir>/locs.  (.loc files is is basically a way to tell your teammates exactly where you are with one say_team bind. Sadly, there is no way to create/edit loc points, and you must rely on another proxy to do that, but there are plenty of already-made and polished loc files out there.
+
+* cl_muzzleflash [0,1,2] - "Muzzleflash" (lights from shots) 
+	0 - all off;
+	1 - on (default); 
+	2 - own's flash off, others on 
+
+* r_drawflame - if set to 0, models of torches will not be shown.  On levels such as dm6 this significantly helps the frame count.  In order for this to take effect you must reconnect (reload map). It doesn't work on the fly. 
+
+* demotimescale (0.1 - 10) - change speed of demo playback 
+ 
+* impulse imp1 [imp2 [imp3...]] - selection of the best weapon 
+	Example: 
+	impulse 5 4 - selection of ng or sng, depending on which one you have 
+ 
+* show_speed - show the horizontal component of your speed in the upper right corner 
+
+ 
+* cl_triggers - if 1 ( 0 by default), then it is possible under special circumstances to load special aliases... 
+ 
+	aliases: 
+	~~~~~~~~ 
+	f_death - executes upon player's death. 
+
+	f_respawn - executes upon respawn
+
+	f_took - executes upon pickup of powerups 
+ 
+	f_report - executes upon ":" in team messages  
+
+	Examples: 
+	alias f_respawn "say_team i'm respawned at %l" 
+	alias f_death "-attack;wait;say_team I died at %l" 
+	alias f_took "say_team i got the %P" 
+ 
+	alias f_report "say_team at %l h:%h %A:%a %b"
+	example output: (player):at bigroom h:75 ya:150 rl:13
+
+5. Use of macros 
+~~~~~~~~~~~~~~~~ 
+* _cmd_macros - when on, through the use of dollar sign you may generate information in your say's/say_team's such as: 
+	say_team "at $location  $armor/$health  $powerups" 
+ 
+* cl_parsesay - when 1 (0 by default) it is possible to use teamplay messages a-la qizmo/cheapo 
+	say_team "at %l %A/%a h:%h %b %P" 
+	So far only a few %-cmd's are implemented, but it's the tip of the iceberg... 
+ 
+* When cl_parsesay if turned on, it is possible to show Ocrana LED's ("$R$G$B$Y" - lamps) by hand, right out of the console. Also sending "fake" messages through '$\' widhout your name. (i.e. the msg's at the beginning of which your name is not seen.) 
+ 
+	$R - Red lamp 
+	$G - Green lamp 
+	$B - Blue lamp 
+	$Y - Yellow lamp 
+In order to see them, the Ocrana pak with lamps must be installed. 
+ 
+	Example: 
+	say "$\$R$YYou are jyst suck!$Y$R" 
+	Your enemy will see: 
+	@@You are just suck!@@ 
+ 
+	note: 
+	$\ - All characters before this combination are ignored. 
+ 
+* cl_nofake 1 disables entry of 'fake' messages (0 by default). 
+ 
+* List of macros 
+~~~~~~~~~~~~~~~~ 
+Column 'Macros' - full name of the macro (to turn macros on in say/say_team use _cmd_macros 1) 
+Column 'NF'     - alternate macro name for compatibility reasons (turn on with cl_parsesay). 
+ 
+Macro              NF/Qizmo   Description 
+~~~~~~~~~~~~~~     ~~~~~~~~   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+$armor		%a	amount of armor 
+$armortype		%A	type of armor (ga, ya, ra) 
+$health		%h	health 
+ 
+$shells			amount of shells, 
+$nails			nails, 
+$rockets		%r	rockets, 
+$cells		%c	cells. 
+ 
+$weapon		%w	selected weapon 
+$ammo			%W	ammo left in selected weapon 
+$bestweapon		%b	best weapon:ammo posessed 
+$powerups		%P	powerups in your posession
+				(quad/pent/ring) 
+ 
+$location		%l	position in the map
+				(loc-file must be loaded)
+			%L	position in map or last death
+				if within 5 seconds 
+
+$need			%u	output: "need H:A:W"
+				explanation:
+				H = health < 50
+				A = 0 | GA<75 | YA<50 | RA<25
+				W = have only axe/sg/ng
+			%d	location of death
+------------------------------------------------------------ 
+
+6. Other features 
+~~~~~~~~~~~~~~~~~ 
+ 
+6.1. $-expansion (cvar expansion) 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+This uses the cvars value (a-la QII) 
+Example: 
+echo $sensitivity - shows your current sens through the console/viewport. 
+ 
+alias +zoom "set _fov $fov; fov 45" 
+alias -zoom "set fov $_fov" 
+	with the above two aliases you'll be able to always set a previous 
+	value of a cvar. Useful when youre writing scripts that regulate 
+	your rate, volume, sens, etc... 
+ 
+* inc [cvar] [value] - 
+	if value is left out, increments the specified cvar by one 
+	otherwise adds the value to the cvar.  for example, inc volume -0.1 
+	would subtract 0.1 from volume. 
+ 
+6.2. Message catcher system 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+* msg_trigger <alias> <string> 
+With the help of this command you can automatically execute some alias if a specific string is found in the console. The alias is limited to the following commands: alias, echo, play, playvol, say, say_team, set, msg_trigger, inc.
+You can also set cvars, but you can't execute nested aliases! The length of the <string> parameter is limited to 64 chars. 
+ 
+	example (worth a thousand words hehe): 
+	alias no_ammo "play noammo.wav" 
+	msg_trigger no_ammo "No enough ammo" 
+With this, when you run out of ammo and quake says "No enough ammo", alias no_ammo will be automatically executed (in this case it plays a wav file). 
+ 
+	for TF: 
+	alias play_count "play count.wav" 
+	msg_trigger play_count "grenade primed" 
+So if, for example, in the console you get something like 
+	"Grenade primed, 3 seconds..." or "Napalm grenade primed, 3 seconds...", then play_count will execute. 
+ 
+
+6.3. Demo playback 
+~~~~~~~~~~~~~~~~~~ 
+While watching demos, pause actually works, as well as demotimescale: 
+demotimescale 0.1 - 1/10th speed (slo-mo) 
+demotimescale 10 - 10 x speed (fast forward) 
+demotimescale 1 - Normal speed. 
+pause - pauses/unpauses demoplayback (not timedemo) 
+
+
+
+Credits:
+
+All detail adjustment features, fpd and TeamFortress recognition, extended AGA support and special 320x100 & 320x120 320x150 displaymodes for AGA and CGFX/P96:
+	Christian 'SuRgEoN' Michael
+
+Other features taken from zquake
+	main author 'Tonik'
+
+Serverbrowser taken from quakeforge project.
+
+Source: Available upon request from christian.michael@groenjord.dk

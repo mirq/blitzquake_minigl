@@ -1,0 +1,318 @@
+#
+# QuakeWorld Makefile for M68k Amiga
+#
+# Dec '99 by Frank Wille <frank@phoenix.owl.de>
+# Nov '02 by Christian Michael
+#
+
+ARCH=warpos_gcc
+BUILDDIR=$(ARCH)
+CLIENT_DIR=client
+
+
+CC = ppc-amigaos-gcc -warpup
+
+OPTIMIZE = -O3 -ffast-math -mmultiple 
+
+CFLAGS = -mcpu=603e $(OPTIMIZE) -D__PPC__ -DNOMOUSEASM -DFASTBOPS -DGLQUAKE -DAMIGA -DWOS -DPROXY -DNDEBUG -Dstricmp=strcasecmp -g
+
+NOOPT_CFLAGS = -mcpu=603e -D__PPC__ -DNOMOUSEASM -DFASTBOPS -DGLQUAKE -DAMIGA -DWOS -DPROXY -DNDEBUG -Dstricmp=strcasecmp -g
+
+DO_CC=$(CC) $(CFLAGS) -o $@ -c $<
+DO_NOOPT_CC=$(CC) $(NOOPT_CFLAGS) -o $@ -c $<
+DO_NET_CC=$(CC) $(CFLAGS) -o $@ -c $<
+
+
+NETINC=
+LDFLAGS=
+LIBS=-lppcamiga -lmgl -ldebug 
+
+
+#############################################################################
+# SETUP AND BUILD
+#############################################################################
+
+
+TARGETS=$(BUILDDIR)/glqwclWOS_gcc
+
+all: $(TARGETS)
+
+
+CLINCS = \
+	client/quakedef.h client/glquake.h\
+	client/bothdefs.h client/bspfile.h client/vid.h client/sys.h \
+	client/zone.h client/mathlib.h client/wad.h client/draw.h \
+	client/cvar.h client/screen.h client/net.h client/protocol.h \
+	client/cmd.h client/sbar.h client/sound.h client/render.h \
+	client/client.h client/gl_model.h\
+	client/input.h client/keys.h client/console.h client/view.h \
+	client/menu.h client/cdaudio.h client/pmove.h \
+	client/modelgen.h client/spritegn.h \
+client/gl_warp_sin.h client/cl_slist.h client/teamplay.h
+ 
+
+#############################################################################
+# CLIENT
+#############################################################################
+
+
+
+QWCL_OBJS = \
+	$(BUILDDIR)/glclient/cl_slist.o \
+	$(BUILDDIR)/glclient/teamplay.o \
+	$(BUILDDIR)/glclient/cl_demo.o \
+	$(BUILDDIR)/glclient/cl_ents.o \
+	$(BUILDDIR)/glclient/cl_input.o \
+	$(BUILDDIR)/glclient/cl_main.o \
+	$(BUILDDIR)/glclient/cl_parse.o \
+	$(BUILDDIR)/glclient/cl_pred.o \
+	$(BUILDDIR)/glclient/cl_tent.o \
+	$(BUILDDIR)/glclient/cl_cam.o \
+	$(BUILDDIR)/glclient/cmd.o \
+	$(BUILDDIR)/glclient/common.o \
+	$(BUILDDIR)/glclient/console.o \
+	$(BUILDDIR)/glclient/crc.o \
+	$(BUILDDIR)/glclient/cvar.o \
+	$(BUILDDIR)/glclient/keys.o \
+	$(BUILDDIR)/glclient/mathlib.o \
+	$(BUILDDIR)/glclient/md4.o \
+	$(BUILDDIR)/glclient/menu.o \
+	$(BUILDDIR)/glclient/net_chan.o \
+	$(BUILDDIR)/glclient/nonintel.o \
+	$(BUILDDIR)/glclient/pmove.o \
+	$(BUILDDIR)/glclient/pmovetst.o \
+	$(BUILDDIR)/glclient/sbar.o \
+	$(BUILDDIR)/glclient/snd_dma.o \
+	$(BUILDDIR)/glclient/snd_mem.o \
+	$(BUILDDIR)/glclient/snd_mix.o \
+	$(BUILDDIR)/glclient/skin.o \
+	$(BUILDDIR)/glclient/r_part.o \
+	$(BUILDDIR)/glclient/gl_draw.o \
+	$(BUILDDIR)/glclient/gl_mesh.o \
+	$(BUILDDIR)/glclient/gl_model.o \
+	$(BUILDDIR)/glclient/gl_ngraph.o \
+	$(BUILDDIR)/glclient/gl_refrag.o \
+	$(BUILDDIR)/glclient/gl_rlight.o \
+	$(BUILDDIR)/glclient/gl_rmain.o \
+	$(BUILDDIR)/glclient/gl_rmisc.o \
+	$(BUILDDIR)/glclient/miniglext.o \
+	$(BUILDDIR)/glclient/gl_rsurf.o \
+	$(BUILDDIR)/glclient/gl_warp.o \
+	$(BUILDDIR)/glclient/gl_screen.o \
+	$(BUILDDIR)/glclient/gl_test.o \
+	$(BUILDDIR)/glclient/gl_vidamiga.o \
+	$(BUILDDIR)/glclient/view.o \
+	$(BUILDDIR)/glclient/wad.o \
+	$(BUILDDIR)/glclient/zone.o \
+	$(BUILDDIR)/glclient/cd_amiga.o \
+	$(BUILDDIR)/glclient/in_amiga.o \
+	$(BUILDDIR)/glclient/in_amigajoy.o \
+	$(BUILDDIR)/glclient/in_amigapsx.o \
+	$(BUILDDIR)/glclient/in_amigamouse.o \
+	$(BUILDDIR)/glclient/snd_amiga.o \
+	$(BUILDDIR)/glclient/sys_amiga.o \
+	$(BUILDDIR)/glclient/twfsound_CD.o \
+	$(BUILDDIR)/glclient/net_udpamiga.o
+
+
+$(BUILDDIR)/glqwclWOS_gcc: $(QWCL_OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(BUILDDIR)/glclient/*.o $(LIBS)
+
+
+#####
+
+$(BUILDDIR)/glclient/cl_slist.o :        $(CLIENT_DIR)/cl_slist.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/teamplay.o :        $(CLIENT_DIR)/teamplay.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/cl_demo.o :        $(CLIENT_DIR)/cl_demo.c $(CLINCS)
+	$(DO_CC)
+
+                                                     
+$(BUILDDIR)/glclient/cl_ents.o :        $(CLIENT_DIR)/cl_ents.c $(CLINCS)
+	$(DO_CC)
+                                                             $(BUILDDIR)/glclient/cl_input.o :      $(CLIENT_DIR)/cl_input.c $(CLINCS)
+	$(DO_CC)
+                                                             
+$(BUILDDIR)/glclient/cl_main.o :        $(CLIENT_DIR)/cl_main.c $(CLINCS)
+	$(DO_NOOPT_CC)
+                                                                      
+$(BUILDDIR)/glclient/cl_parse.o :      $(CLIENT_DIR)/cl_parse.c $(CLINCS)
+	$(DO_NOOPT_CC)
+                                                                      
+$(BUILDDIR)/glclient/cl_pred.o :       $(CLIENT_DIR)/cl_pred.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/cl_tent.o :       $(CLIENT_DIR)/cl_tent.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/cl_cam.o :         $(CLIENT_DIR)/cl_cam.c $(CLINCS)
+	$(DO_CC)
+                                                            
+
+$(BUILDDIR)/glclient/cmd.o :            $(CLIENT_DIR)/cmd.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/common.o :         $(CLIENT_DIR)/common.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/console.o :        $(CLIENT_DIR)/console.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/crc.o :            $(CLIENT_DIR)/crc.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/cvar.o :           $(CLIENT_DIR)/cvar.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+                                                            
+$(BUILDDIR)/glclient/keys.o :           $(CLIENT_DIR)/keys.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/mathlib.o :        $(CLIENT_DIR)/mathlib.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/md4.o :            $(CLIENT_DIR)/md4.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/menu.o :           client/menu.c $(CLINCS)
+	$(DO_CC)
+                                                                                      
+$(BUILDDIR)/glclient/net_chan.o :       $(CLIENT_DIR)/net_chan.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/net_udpamiga.o :   $(CLIENT_DIR)/net_udpamiga.c $(CLINCS)
+	$(DO_NET_CC)
+                                                                      
+$(BUILDDIR)/glclient/nonintel.o :       $(CLIENT_DIR)/nonintel.c $(CLINCS) $(CLIENT_DIR)/r_local.h $(CLIENT_DIR)/r_shared.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/pmove.o :          $(CLIENT_DIR)/pmove.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/pmovetst.o :       $(CLIENT_DIR)/pmovetst.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+                                                            
+$(BUILDDIR)/glclient/sbar.o :           $(CLIENT_DIR)/gl_sbar.c $(CLINCS)
+	$(DO_CC)
+                                                            
+        
+$(BUILDDIR)/glclient/snd_dma.o :        $(CLIENT_DIR)/snd_dma_AHI.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/snd_mem.o :        $(CLIENT_DIR)/snd_mem.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/snd_mix.o :        $(CLIENT_DIR)/snd_mix_AHI.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/skin.o :        $(CLIENT_DIR)/skin.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/r_part.o :        $(CLIENT_DIR)/r_part.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/gl_draw.o :        $(CLIENT_DIR)/gl_draw.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/gl_mesh.o :        $(CLIENT_DIR)/gl_mesh.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/gl_model.o :        $(CLIENT_DIR)/gl_model.c $(CLINCS) $(CLIENT_DIR)/gl_model.h
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/gl_ngraph.o :        $(CLIENT_DIR)/gl_ngraph.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/gl_refrag.o :        $(CLIENT_DIR)/gl_refrag.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/gl_rlight.o :        $(CLIENT_DIR)/gl_rlight.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/gl_rmisc.o :        $(CLIENT_DIR)/gl_rmisc.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/gl_rmain.o :        $(CLIENT_DIR)/gl_rmain.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/miniglext.o : 		$(CLIENT_DIR)/miniglext.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/gl_rsurf.o : 		$(CLIENT_DIR)/gl_rsurf.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/gl_warp.o : 		$(CLIENT_DIR)/gl_warp.c $(CLINCS)
+	$(DO_CC)
+
+
+$(BUILDDIR)/glclient/gl_screen.o :        $(CLIENT_DIR)/gl_screen.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/gl_test.o :        $(CLIENT_DIR)/gl_test.c $(CLINCS)
+	$(DO_CC)
+
+         
+$(BUILDDIR)/glclient/view.o :           $(CLIENT_DIR)/view.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/wad.o :            $(CLIENT_DIR)/wad.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/zone.o :           $(CLIENT_DIR)/zone.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/cd_amiga.o :        $(CLIENT_DIR)/cd_amiga.c $(CLINCS) $(CLIENT_DIR)/twfsound_cd.h
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/in_amiga.o :       $(CLIENT_DIR)/in_amiga.c $(CLINCS) $(CLIENT_DIR)/in_amiga.h
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/in_amigajoy.o :    $(CLIENT_DIR)/in_amigajoy.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/in_amigapsx.o :    $(CLIENT_DIR)/in_amigapsx.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/in_amigamouse.o :  $(CLIENT_DIR)/in_amigamouse.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/snd_amiga.o :      $(CLIENT_DIR)/snd_amiga_AHI.c $(CLINCS)
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/sys_amiga.o :      $(CLIENT_DIR)/sys_amiga.c $(CLINCS)
+	$(DO_CC)
+                                                                      
+$(BUILDDIR)/glclient/twfsound_CD.o :    $(CLIENT_DIR)/twfsound_CD.c $(CLIENT_DIR)/twfsound_CD.h
+	$(DO_CC)
+
+$(BUILDDIR)/glclient/gl_vidamiga.o :      $(CLIENT_DIR)/gl_vidamiga.c $(CLINCS)
+	$(DO_CC)
+
+
+#####
+
+
+
+#############################################################################
+# MISC
+#############################################################################
+
+aligntest: $(BUILDDIR)/aligntest_server $(BUILDDIR)/aligntest_client
+
+$(BUILDDIR)/aligntest_client: $(CLIENT_DIR)/aligntest.c $(SVINCS)
+	$(CC) $(CFLAGS) -o $@ $(CLIENT_DIR)/aligntest.c
+
+
