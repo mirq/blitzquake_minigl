@@ -1,0 +1,236 @@
+#
+# Quake GLQuake for Amiga WarpOS/PPC (GCC + MiniGL V19 dispatch client)
+#
+# Cross-compiles with ppc-amigaos-gcc + the MOS2WOS WarpOS SDK overlay,
+# linking the MiniGL V19 WarpOS client archive (libminigl.a) which loads
+# minigl_ppc.dll (R200 direct-Radeon stack) at runtime.
+#
+# Produces an ET_REL .warpelf that must be converted to a WarpOS executable
+# ON THE AMIGA with target-hosted Elf2Exe2 (needs ixemul.library V48):
+#   Stack 100000
+#   Elf2Exe2 glquake_wos.warpelf glquakeWOS
+#
+# Deploy glquakeWOS + minigl_ppc.dll into the same directory (e.g.
+# Work:games/quake). Runtime protocol: cold boot, C:InitPPC once per boot,
+# then "Run >NIL: Execute DH2:ibdraw/hostrun" before every client run.
+#
+# Based on Makefile.GCCAmiga68k_MiniGLDispatch (68k dispatch client) and the
+# MiniGL tree's Makefile.import.gcc (WarpOS ET_REL link contract).
+#
+
+VERSION=1.09
+
+# MiniGL V19 WarpOS tree: headers (include/), client archive
+# (lib/libminigl.a) and the shared WarpOS GCC config.
+MGL_DIR ?= /home/mirek/MiniGL_WOS_V19_mglQ3
+CPU ?= 604e
+include $(MGL_DIR)/Makefile.wos.gcc.common
+
+ARCH=warpos_gcc_v19/glquake
+BUILDDIR=$(ARCH)
+
+MINIGL_INC = -I$(MGL_DIR)/include
+
+CFLAGS = -std=gnu89 $(WOS_ARCH_CFLAGS) -O2 -ffast-math -fomit-frame-pointer -w \
+	-DWOS -DAMIGA -DGLQUAKE -DNOMOUSEASM -DFASTBOPS -DLITFILES -DGLOWEFFECTS \
+	-DMINIGL_DISPATCH_CLIENT -Dstricmp=strcasecmp -DNDEBUG \
+	$(MINIGL_INC) $(WOS_CPPFLAGS)
+
+# Load the MiniGL DLL from the authoritative dev location instead of CWD
+# (a stale copy in the game dir once silently resurrected fixed defects).
+MGL_DLL_OVERRIDE ?= Work:ibdraw/minigl_ppc.dll
+
+NETINC = -I$(WOS_SDK_ROOT)/netinclude
+
+DO_CC=$(CC) $(CFLAGS) -o $@ -c $<
+DO_CCNET=$(CC) $(CFLAGS) $(NETINC) -o $@ -c $<
+
+
+#############################################################################
+# SETUP AND BUILD
+#############################################################################
+
+TARGETS=$(BUILDDIR)/glquake_wos.warpelf
+
+.PHONY: all clean check-tools
+
+all: check-tools $(TARGETS)
+
+check-tools:
+	test -x "$(CC)"
+	test -f "$(WOS_STARTFILE)"
+	test -f "$(MGL_DIR)/include/proto/minigl.h"
+	test -f "$(MGL_DIR)/lib/libminigl.a"
+
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
+
+
+#############################################################################
+# CLIENT/SERVER
+#
+# Same source set as the 68k MiniGL-dispatch build, minus the 68k asm
+# objects and minus CD audio (cd_null.o provides the CDAudio_* stubs).
+#############################################################################
+
+QUAKE_OBJS= \
+	$(BUILDDIR)/minigl_ppc_open.o \
+	$(BUILDDIR)/chase.o \
+	$(BUILDDIR)/cl_demo.o \
+	$(BUILDDIR)/cl_input.o \
+	$(BUILDDIR)/cl_main.o \
+	$(BUILDDIR)/cl_parse.o \
+	$(BUILDDIR)/cl_tent.o \
+	$(BUILDDIR)/cmd.o \
+	$(BUILDDIR)/common.o \
+	$(BUILDDIR)/console.o \
+	$(BUILDDIR)/crc.o \
+	$(BUILDDIR)/cvar.o \
+	$(BUILDDIR)/host.o \
+	$(BUILDDIR)/host_cmd.o \
+	$(BUILDDIR)/in_amiga.o \
+	$(BUILDDIR)/in_amigajoy.o \
+	$(BUILDDIR)/in_amigapsx.o \
+	$(BUILDDIR)/in_amigamouse.o \
+	$(BUILDDIR)/keys.o \
+	$(BUILDDIR)/location.o \
+	$(BUILDDIR)/menu.o \
+	$(BUILDDIR)/mathlib.o \
+	$(BUILDDIR)/net_amiga.o \
+	$(BUILDDIR)/net_bsdsocket.o \
+	$(BUILDDIR)/net_dgrm.o \
+	$(BUILDDIR)/net_loop.o \
+	$(BUILDDIR)/net_main.o \
+	$(BUILDDIR)/net_vcr.o \
+	$(BUILDDIR)/nonintel.o \
+	$(BUILDDIR)/pr_cmds.o \
+	$(BUILDDIR)/pr_edict.o \
+	$(BUILDDIR)/pr_exec.o \
+	$(BUILDDIR)/r_part.o \
+	$(BUILDDIR)/gl_draw.o \
+	$(BUILDDIR)/gl_mesh.o \
+	$(BUILDDIR)/gl_model.o \
+	$(BUILDDIR)/gl_refrag.o \
+	$(BUILDDIR)/gl_rlight.o \
+	$(BUILDDIR)/gl_rmain.o \
+	$(BUILDDIR)/gl_rmisc.o \
+	$(BUILDDIR)/miniglext.o \
+	$(BUILDDIR)/gl_rsurf.o \
+	$(BUILDDIR)/gl_warp.o \
+	$(BUILDDIR)/gl_screen.o \
+	$(BUILDDIR)/gl_test.o \
+	$(BUILDDIR)/gl_vidamiga.o \
+	$(BUILDDIR)/sbar.o \
+	$(BUILDDIR)/sv_main.o \
+	$(BUILDDIR)/sv_phys.o \
+	$(BUILDDIR)/sv_move.o \
+	$(BUILDDIR)/sv_user.o \
+	$(BUILDDIR)/zone.o \
+	$(BUILDDIR)/view.o \
+	$(BUILDDIR)/wad.o \
+	$(BUILDDIR)/world.o \
+	$(BUILDDIR)/cd_null.o \
+	$(BUILDDIR)/snd_amiga.o \
+	$(BUILDDIR)/snd_dma.o \
+	$(BUILDDIR)/snd_mix.o \
+	$(BUILDDIR)/snd_mem.o \
+	$(BUILDDIR)/sys_amiga.o \
+	$(BUILDDIR)/sys_amigaclip.o
+
+
+INCS = quakedef.h \
+       common.h bspfile.h vid.h sys.h \
+       zone.h mathlib.h wad.h draw.h \
+       cvar.h screen.h net.h protocol.h \
+       cmd.h sbar.h sound.h render.h \
+       client.h progs.h server.h \
+       gl_model.h input.h \
+       world.h keys.h console.h location.h \
+       view.h menu.h crc.h cdaudio.h \
+       pr_comp.h progdefs.h modelgen.h spritegn.h glquake.h \
+       miniglclient.h
+
+
+$(BUILDDIR)/glquake_wos.warpelf: $(QUAKE_OBJS) $(MGL_DIR)/lib/libminigl.a $(WOS_ETREL_LDSCRIPT) | $(BUILDDIR)
+	$(LD) $(WOS_LINK_FLAGS) $(WOS_LIBRARY_DIRS) -o $@ \
+		$(WOS_STARTFILE) $(QUAKE_OBJS) $(MGL_DIR)/lib/libminigl.a \
+		$(WOS_RUNTIME_LIBS) $(WOS_ENDFILE)
+	$(call WOS_VALIDATE_ETREL,$@)
+
+##
+
+# Default rule: X.o from X.c
+$(BUILDDIR)/%.o : %.c $(INCS) | $(BUILDDIR)
+	$(DO_CC)
+
+# Files with non-default source mapping (same as historic WOS builds)
+
+# Compile the archive's MiniGLOpen wrapper ourselves with the DLL path
+# override; linked ahead of libminigl.a it replaces the archive member
+# (whose DLL name is baked in at archive-build time).
+$(BUILDDIR)/minigl_ppc_open.o : $(MGL_DIR)/client/minigl_ppc_open.c | $(BUILDDIR)
+	$(CC) $(CFLAGS) -I$(MGL_DIR)/hyperion_dll \
+	  -DMINIGL_PPC_DLLNAME="\"$(MGL_DLL_OVERRIDE)\"" \
+	  -o $@ -c $<
+
+$(BUILDDIR)/sys_amiga.o :           sys_amiga_std.c $(INCS) | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/snd_amiga.o :           snd_amiga_AHI.c $(INCS) | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/snd_mix.o :             snd_mix_AHI.c $(INCS) | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/net_bsdsocket.o :       net_bsdsocket.c $(INCS) | $(BUILDDIR)
+	$(DO_CCNET)
+
+$(BUILDDIR)/gl_vidamiga.o :         gl_vidamiga.c $(INCS) | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/miniglext.o :           miniglext.c $(INCS) | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/gl_model.o :            gl_model.c $(INCS) gl_model.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/keys.o :                keys.c $(INCS) sys_amigaclip.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/sys_amigaclip.o :       sys_amigaclip.c $(INCS) sys_amigaclip.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/in_amiga.o :            in_amiga.c $(INCS) in_amiga.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/host.o :                host.c $(INCS) r_local.h r_shared.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/nonintel.o :            nonintel.c $(INCS) r_local.h r_shared.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/r_part.o :              r_part.c $(INCS) r_local.h r_shared.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/net_amiga.o :           net_amiga.c $(INCS) net_loop.h net_dgrm.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/net_dgrm.o :            net_dgrm.c $(INCS) net_dgrm.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/net_loop.o :            net_loop.c $(INCS) net_loop.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/net_main.o :            net_main.c $(INCS) net_vcr.h | $(BUILDDIR)
+	$(DO_CC)
+
+$(BUILDDIR)/net_vcr.o :             net_vcr.c $(INCS) net_vcr.h | $(BUILDDIR)
+	$(DO_CC)
+
+
+#############################################################################
+# MISC
+#############################################################################
+
+clean:
+	rm -rf $(BUILDDIR)

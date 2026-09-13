@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdarg.h>
 #include <stdio.h>
 #include "miniglclient.h"
-#ifdef MINIGL_DISPATCH_CLIENT
+#if defined(MINIGL_PERF_DIAGNOSTICS) || defined(MINIGL_DIAGNOSTICS)
 #include <libraries/minigl_perf.h>
 #endif
 
@@ -70,6 +70,14 @@ unsigned char rawkeyconv[] = {
 int shutdown_keyboard = 0;
 
 struct Window *QuakeWindow = NULL;
+
+#ifdef WOS
+/* MOS2WOS does not define the Intuition/Graphics library bases (the old
+ * PowerUp toolchain libs used to provide them). Defined here and opened in
+ * VID_Init; in_amigamouse/in_amigapsx/in_amigajoy/snd_amiga reference them. */
+struct GfxBase *GfxBase = NULL;
+struct IntuitionBase *IntuitionBase = NULL;
+#endif
 
 GLboolean zbuffer = GL_TRUE;
 
@@ -150,6 +158,10 @@ void VID_Shutdown(void)
 {
       mglDeleteContext();
       MGLTerm();
+#ifdef WOS
+      if (GfxBase) { CloseLibrary((struct Library *)GfxBase); GfxBase = NULL; }
+      if (IntuitionBase) { CloseLibrary((struct Library *)IntuitionBase); IntuitionBase = NULL; }
+#endif
 }
 
 static void VID_ConfigureInputWindow(void)
@@ -354,6 +366,7 @@ void CheckMultiTextureExtensions (void)
 GL_Init
 ===============
 */
+#ifdef MINIGL_DIAGNOSTICS
 void GL_CheckErrors (char *where)
 {
 #ifdef MINIGL_DISPATCH_CLIENT
@@ -382,9 +395,13 @@ void GL_CheckErrors (char *where)
   }
 #endif
 }
+#endif
 
 void GL_Init (void)
 {
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("g0: glstring\n"); }
+#endif
   gl_vendor = glGetString (GL_VENDOR);
   Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
   gl_renderer = glGetString (GL_RENDERER);
@@ -394,8 +411,14 @@ void GL_Init (void)
   Con_Printf ("GL_VERSION: %s\n", gl_version);
   gl_extensions = glGetString (GL_EXTENSIONS);
   Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("g1: extcheck\n"); }
+#endif
 
   CheckMultiTextureExtensions();
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("g2: mtex\n"); }
+#endif
 
 #ifdef MINIGL_DISPATCH_CLIENT
   gl_lightmap_format = GL_LUMINANCE;
@@ -421,8 +444,11 @@ void GL_Init (void)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("g3: state\n"); }
+#endif
 
-#ifdef MINIGL_DISPATCH_CLIENT
+#ifdef MINIGL_PERF_DIAGNOSTICS
   /* Temporary Phase 1 diagnostics: reset and enable the R200 counters before
    * any game frame is submitted. */
   glHint(MGL_PERF_COUNTERS_HINT, GL_NICEST);
@@ -440,6 +466,14 @@ GL_BeginRendering
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
+  static qboolean first_begin = true;
+  if (first_begin)
+  {
+#ifdef WOS
+    { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("r0: first begin\n"); }
+#endif
+    first_begin = false;
+  }
   *x = *y = 0;
   *width = scr_width;
   *height = scr_height;
@@ -450,21 +484,39 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 
 void GL_EndRendering (void)
 {
-#ifdef MINIGL_DISPATCH_CLIENT
+#ifdef MINIGL_DIAGNOSTICS
    static int diagnostic_frames;
+   static int diagnostic_limit;
    GLint flushes, textured, untextured, drawrect, tex0, tex0mips;
    GLint tex1, tex1mips, degenerate, bound0;
 #endif
 
+#ifdef WOS
+   { extern int host_framecount;
+     extern void Sys_WOSTraceFrame (const char *tag, int n);
+     if (host_framecount < 64) Sys_WOSTraceFrame ("pre-swap", host_framecount); }
+#endif
    mglSwitchDisplay(); //performs unlock
+#ifdef WOS
+   { extern int host_framecount;
+     extern void Sys_WOSTraceFrame (const char *tag, int n);
+     if (host_framecount < 64) Sys_WOSTraceFrame ("post-swap", host_framecount); }
+   { static int first_end = 1; if (first_end) { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("r1: first end\n"); first_end = 0; } }
+#endif
 
-#ifdef MINIGL_DISPATCH_CLIENT
-   if (diagnostic_frames < 16)
+#ifdef MINIGL_DIAGNOSTICS
+   /* -diag keeps the per-frame MiniGL error drain alive for the whole run
+    * (reporting every 256th frame) instead of only the first 16 frames, so
+    * errors raised by mid-game effects stay visible in qconsole.log. */
+   if (!diagnostic_limit)
+      diagnostic_limit = COM_CheckParm("-diag") ? 0x40000000 : 16;
+   if (diagnostic_frames < diagnostic_limit)
    {
       GL_CheckErrors("frame submission");
       diagnostic_frames++;
       if (diagnostic_frames == 1 || diagnostic_frames == 8 ||
-          diagnostic_frames == 16)
+          diagnostic_frames == 16 ||
+          (diagnostic_frames > 16 && (diagnostic_frames & 255) == 0))
       {
          glGetIntegerv(MGL_PERF_FLUSH_CALLS, &flushes);
          glGetIntegerv(MGL_PERF_FLUSH_TEXTURED0, &textured);
@@ -654,6 +706,18 @@ void VID_Init(unsigned char *palette)
   int i;
   char gldir[MAX_OSPATH];
 
+#ifdef WOS
+  if (!(IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 37)))
+    Sys_Error ("VID_Init: cannot open intuition.library\n");
+  if (!(GfxBase = (struct GfxBase *)OpenLibrary("graphics.library", 37)))
+    Sys_Error ("VID_Init: cannot open graphics.library\n");
+#endif
+  {
+    extern void Sys_WOSTrace (const char *s);
+#ifdef WOS
+    Sys_WOSTrace("v0: vid_init enter\n");
+#endif
+  }
 
 	if (firstinit)
 	{
@@ -778,8 +842,14 @@ void VID_Init(unsigned char *palette)
 	gl_width.value = vid.width;
 
 	Con_Printf("Calling MGLInit...\n");
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v1: calling MGLInit\n"); }
+#endif
 	if (!MGLInit())
     Sys_Error("MiniGLOpen failed\n");
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v2: MGLInit ok\n"); }
+#endif
 
 	mglChooseGuardBand(guardband);
 	
@@ -815,23 +885,41 @@ void VID_Init(unsigned char *palette)
 	}   
   
 	Con_Printf("Creating context...\n");
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v3: calling CreateContext\n"); }
+#endif
 
 	if (mglCreateContext(0,0, vid.width, vid.height))
 	{
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v4: context ok\n"); }
+#endif
 
 	Con_Printf("Switching sync...\n");
 	mglEnableSync(gl_videosync);	 
 
 	mglLockMode(gl_lockmode);
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v5: lockmode\n"); }
+#endif
 
 #ifndef MINIGL_DISPATCH_CLIENT
 	glEnable(GL_DITHER);
 #endif
 
 	VID_ConfigureInputWindow();
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v6: inputwin\n"); }
+#endif
 	GL_Init();
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v7: gl_init\n"); }
+#endif
 
 	glHint(MGL_W_ONE_HINT, GL_FASTEST);
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v8: hint\n"); }
+#endif
 
 //global setting for legacy MiniGL since there is no quality loss
 #ifndef MINIGL_DISPATCH_CLIENT
@@ -839,13 +927,22 @@ void VID_Init(unsigned char *palette)
 #endif
      
 	mglSetZOffset(gl_polyoffset);
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("v9: zoffset\n"); }
+#endif
 	GL_CheckErrors("video setup");
 
 	sprintf (gldir, "%s/glquake", com_gamedir);
 	Sys_mkdir (gldir);
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("vA: mkdir\n"); }
+#endif
 
 	Check_Gamma(palette);
 	VID_SetPalette(palette);
+#ifdef WOS
+	{ extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("vB: palette\n"); }
+#endif
 
 	Con_SafePrintf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 

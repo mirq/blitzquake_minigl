@@ -532,6 +532,7 @@ void Host_ClearMemory (void)
 {
   Con_DPrintf ("Clearing memory\n");
   D_FlushCaches ();
+  R_ClearWorldBatchData ();
   Mod_ClearAll ();
   if (host_hunklevel)
     Hunk_FreeToLowMark (host_hunklevel);
@@ -708,19 +709,35 @@ void _Host_Frame (float time)
     
 // get new key events
   Sys_SendKeyEvents ();
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("ke", host_framecount); }
+#endif
 
 // allow mice or other external controllers to add commands
   IN_Commands ();
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("ic", host_framecount); }
+#endif
 
 // process console commands
   Cbuf_Execute ();
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("cb", host_framecount); }
+#endif
 
   NET_Poll();
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("np", host_framecount); }
+#endif
 
 // if running the server locally, make intentions now
   if (sv.active)
     CL_SendCmd ();
-  
+
 //-------------------
 //
 // server operations
@@ -729,9 +746,19 @@ void _Host_Frame (float time)
 
 // check for commands typed to the host
   Host_GetConsoleCommands ();
-  
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("cc", host_framecount); }
+#endif
+
   if (sv.active)
+  {
     Host_ServerFrame ();
+#ifdef WOS
+    { extern void Sys_WOSTraceFrame (const char *tag, int n);
+      if (host_framecount < 64) Sys_WOSTraceFrame ("srv-done", host_framecount); }
+#endif
+  }
 
 //-------------------
 //
@@ -743,6 +770,10 @@ void _Host_Frame (float time)
 // the incoming messages have been read
   if (!sv.active)
     CL_SendCmd ();
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("sc", host_framecount); }
+#endif
 
   host_time += host_frametime;
 
@@ -751,12 +782,24 @@ void _Host_Frame (float time)
   {
     CL_ReadFromServer ();
   }
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("rf", host_framecount); }
+#endif
 
 // update video
   if (host_speeds.value)
     time1 = Sys_FloatTime ();
-    
+
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("scr", host_framecount); }
+#endif
   SCR_UpdateScreen ();
+#ifdef WOS
+  { extern void Sys_WOSTraceFrame (const char *tag, int n);
+    if (host_framecount < 64) Sys_WOSTraceFrame ("scr-done", host_framecount); }
+#endif
 
   if (host_speeds.value)
     time2 = Sys_FloatTime ();
@@ -913,21 +956,42 @@ void Host_Init (quakeparms_t *parms)
   com_argv = parms->argv;
 
   Memory_Init (parms->membase, parms->memsize);
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h0: mem_init\n"); }
+#endif
   Cbuf_Init ();
   Cmd_Init ();  
   V_Init ();
   Chase_Init ();
   Host_InitVCR (parms);
   COM_Init (parms->basedir);
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h1: com_init\n"); }
+#endif
   Host_InitLocal ();
   W_LoadWadFile ("gfx.wad");
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h2: wad\n"); }
+#endif
   Key_Init ();
   Con_Init ();  
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h3: con_init\n"); }
+#endif
   M_Init ();  
   PR_Init ();
   Mod_Init ();
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h4: pr_mod\n"); }
+#endif
   NET_Init ();
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h5: net_init\n"); }
+#endif
   SV_Init ();
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h6: sv_init\n"); }
+#endif
 
 #ifdef AMIGA
 	#ifndef GLQUAKE
@@ -1019,8 +1083,14 @@ void Host_Init (quakeparms_t *parms)
 
 #ifdef AMIGA
     VID_Init(host_basepal);
+#ifdef WOS
+    { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h7: vid_done\n"); }
+#endif
 
     IN_Init();
+#ifdef WOS
+    { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h8: in_done\n"); }
+#endif
 
 #else
 	#ifndef _WIN32 // on non win32, mouse comes before video for security reasons
@@ -1031,10 +1101,19 @@ void Host_Init (quakeparms_t *parms)
 #endif
 
     Draw_Init ();
+#ifdef WOS
+    { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("h9: draw_init\n"); }
+#endif
 
     SCR_Init ();
+#ifdef WOS
+    { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("hA: scr_init\n"); }
+#endif
 
     R_Init ();
+#ifdef WOS
+    { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("hB: r_init\n"); }
+#endif
 
 #ifndef _WIN32
 	// on Win32, sound initialization has to come before video initialization, so we
@@ -1059,9 +1138,6 @@ void Host_Init (quakeparms_t *parms)
     Sbar_Init ();
     CL_Init ();
 
-    /* Config files normally run before the GL renderer has registered its
-     * cvars.  Queue this explicit benchmark config after all renderer and
-     * timedemo commands exist, so command-line automation is reproducible. */
     benchmarkcfg = COM_CheckParm ("-benchmarkcfg");
     if (benchmarkcfg && benchmarkcfg < com_argc - 1)
       Cbuf_AddText (va ("exec %s\n", com_argv[benchmarkcfg + 1]));

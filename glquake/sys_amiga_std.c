@@ -52,7 +52,15 @@ extern struct Library *UtilityBase;
 #else
 	#ifdef __GNUC__
 	struct Library *UtilityBase = NULL;
+	#ifndef WOS
 	struct Device *TimerBase = NULL;
+	#else /* WOS */
+	struct Library *TimerBase = NULL;
+	/* PowerUp API base (GetSysTimePPC/GetSysTime, used by MOS2WOS inline
+	 * stubs and the SDK runtime). Provided by ppclibemu on WarpOS; opened
+	 * in main() before first use. */
+	struct Library *PowerPCBase = NULL;
+	#endif
 	#else //VBCC
 	struct Library *TimerBase = NULL;
 	struct Library *UtilityBase = NULL;
@@ -260,6 +268,28 @@ int strncasecmp(const char *str1, const char *str2, size_t n)
 
 static qboolean prevent_crash = true; //surgeon
 
+#ifdef WOS
+double WOS_EClockTime (void);
+/* Stage tracing to RAM:gqtrace via direct dos.library calls (stdio-independent,
+ * per-line open/append/close). */
+#include <string.h>
+void Sys_WOSTrace (const char *s)
+{
+  BPTR f = Open("RAM:gqtrace", MODE_OLDFILE);
+  if (!f) f = Open("RAM:gqtrace", MODE_NEWFILE);
+  if (f) { Seek(f, 0, OFFSET_END); Write(f, (STRPTR)s, strlen(s)); Close(f); }
+}
+/* Numbered frame-loop marker with absolute clock: "f<N> <tag> <secs>".
+ * Used only for hang/stall diagnosis (first ~64 frames) — per-line
+ * open/append/close is far too slow to leave in the steady-state path. */
+void Sys_WOSTraceFrame (const char *tag, int n)
+{
+  char buf[96];
+  sprintf (buf, "f%03d %s %.3f\n", n, tag, WOS_EClockTime ());
+  Sys_WOSTrace (buf);
+}
+#endif
+
 static void cleanup(int rc)
 {
   int i;
@@ -374,12 +404,15 @@ double Sys_FloatTime (void)
 {
   struct timeval tv;
 
-#ifdef __PPC__
+#ifdef WOS
+  return WOS_EClockTime();
+#elif defined(__PPC__)
   GetSysTimePPC(&tv);
+  return ((double)(tv.tv_secs-FirstTime) + (((double)tv.tv_micro) / 1000000.0));
 #else
   GetSysTime(&tv);
-#endif
   return ((double)(tv.tv_secs-FirstTime) + (((double)tv.tv_micro) / 1000000.0));
+#endif
 }
 
 char *Sys_ConsoleInput (void)
@@ -424,6 +457,23 @@ void Sys_HighFPPrecision (void)
 {
 }
 
+#ifdef WOS
+/* WarpOS timing: dos.library DateStamp() (1/50s), same approach as the
+ * validated MiniGL gears client ("ported ... instead of the PPC-only
+ * GetSysTimePPC/SubTimePPC it used"). timer.device ReadEClock/GetSysTime
+ * LP calls crash from a WarpOS PPC task on this stack. */
+double WOS_EClockTime (void)
+{
+  struct DateStamp now;
+  DateStamp(&now);
+  /* all unit math in double: ds_Tick is 1/50s units while Days/Minute are
+   * calendar units, and days*86400*50 overflows 32-bit long on PPC. */
+  return (double)now.ds_Days * 86400.0
+       + (double)now.ds_Minute * 60.0
+       + (double)now.ds_Tick / 50.0;
+}
+#endif
+
 void Sys_LowFPPrecision (void)
 {
 }
@@ -443,11 +493,22 @@ main (int argc, char *argv[])
   struct GfxBase *GfxBase;
   int i;
 
+#ifdef WOS
+  /* NOTE: do NOT open ppc.library from a PPC task - ppclibemu's per-task
+   * 68k emulation init crashes under WarpOS (PowerPC Exception). The
+   * libglosswos runtime falls back gracefully with PowerPCBase == NULL,
+   * and timing goes through ReadEClock (WOS_EClockTime), not the emu. */
+  Sys_WOSTrace("t0: enter main\n");
+#endif
+
+  setvbuf(stdout, NULL, _IONBF, 0);  /* survive crashes with live output */
+  Sys_WOSTrace("t1: setvbuf\n");
   memset(&parms,0,sizeof(parms));
   parms.memsize = 16*1024*1024;  /* 16MB is default */
 
   /* parse command string */
   COM_InitArgv (argc, argv);
+  Sys_WOSTrace("t2: argv\n");
   parms.argc = com_argc;
   parms.argv = com_argv;
   host_parms.membase = parms.cachedir = NULL;
@@ -461,6 +522,7 @@ main (int argc, char *argv[])
   if ((UtilityBase = OpenLibrary("utility.library",36)) == NULL ||
       (LowLevelBase = OpenLibrary("lowlevel.library",36)) == NULL)
     Sys_Error("OS2.0 required!");
+  Sys_WOSTrace("t3: libs\n");
 #ifdef __PPC__
   no68kFPU = COM_CheckParm("-no68kfpu") != 0;
   if (no68kFPU) {
@@ -496,14 +558,25 @@ main (int argc, char *argv[])
 
   if (!TimerBase)
     Sys_Error("Can't open timer.device");
+  Sys_WOSTrace("t4: timer\n");
+#ifdef WOS
+  /* usleep() (libglosswos) crashes with an unopened PowerPCBase; the plain
+   * dos.library Delay() serves the same purpose here. */
+  Delay(1);
+#else
   usleep(1);  /* don't delete, otherwise we can't do timer.device cleanup */
+#endif
+  Sys_WOSTrace("t5: usleep\n");
 
 #if defined(__PPC__) && !defined(WOS)
   /* init GetSysTimePPC() emulation for PowerUp */
   InitSysTimePPC();
 #endif
 
-#ifdef __PPC__
+#ifdef WOS
+  FirstTime2 = FirstTime = (long)WOS_EClockTime();
+  Sys_WOSTrace("t6: eclock\n");
+#elif defined(__PPC__)
   GetSysTimePPC(&tv);
   FirstTime = tv.tv_secs;
   GetSysTime(&tv);
@@ -543,7 +616,9 @@ main (int argc, char *argv[])
     CloseLibrary((struct Library *)GfxBase);
   }
 
+  Sys_WOSTrace("t8: calling host_init\n");
   Host_Init (&parms);
+  Sys_WOSTrace("t9: host_init returned\n");
   oldtime = Sys_FloatTime () - 0.1;
 
   while (1) {
