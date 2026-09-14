@@ -503,6 +503,22 @@ main (int argc, char *argv[])
 
   setvbuf(stdout, NULL, _IONBF, 0);  /* survive crashes with live output */
   Sys_WOSTrace("t1: setvbuf\n");
+#ifdef WOS
+  /* The 68k MiniGL host saturates the 68k side while draining the dispatch
+   * ring during heavy frames, so every exec/dos gateway call from this PPC
+   * task queues behind it (~200 ms each, measured with f-markers: input
+   * poll, DateStamp, even RAM: appends — uniform slowdown). Raise our exec
+   * priority so gateway calls are served promptly; the host keeps the CPU
+   * whenever this task blocks. -clpri N overrides (0 restores old behavior). */
+  {
+    long pri = 5;
+    int pi = COM_CheckParm("-clpri");
+    if (pi && pi + 1 < com_argc)
+      pri = atol(com_argv[pi + 1]);
+    if (pri)
+      SetTaskPri (FindTask (NULL), (char)pri);
+  }
+#endif
   memset(&parms,0,sizeof(parms));
   parms.memsize = 16*1024*1024;  /* 16MB is default */
 

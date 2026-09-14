@@ -1,0 +1,39 @@
+#
+# GLQuake WOS diagnostic probes (R200 MiniGL dispatch stack)
+#
+# Builds warpos_gcc_v19/probe/<name>.warpelf from probe/<name>.c with the
+# same toolchain/link contract as the game makefile. Convert on the Amiga:
+#   Stack 100000
+#   Elf2Exe2 <name>.warpelf <name>
+#
+# Usage:  make -f Makefile.GCCAmigaWOS_probe PROBE=gqs
+#
+
+MGL_DIR ?= /home/mirek/MiniGL_WOS_V19_mglQ3
+CPU ?= 604e
+include $(MGL_DIR)/Makefile.wos.gcc.common
+
+ARCH=warpos_gcc_v19/probe
+
+PROBE ?= gqs
+
+MINIGL_INC = -I$(MGL_DIR)/include
+
+CFLAGS = -std=gnu89 $(WOS_ARCH_CFLAGS) -O2 -ffast-math -fomit-frame-pointer -w \
+	-DWOS -DAMIGA -DNDEBUG $(MINIGL_INC) $(WOS_CPPFLAGS)
+
+.PHONY: all clean
+
+all: $(ARCH)/$(PROBE).warpelf
+
+$(ARCH)/$(PROBE).o : $(ARCH)/$(PROBE).c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(ARCH)/$(PROBE).warpelf : $(ARCH)/$(PROBE).o $(MGL_DIR)/lib/libminigl.a $(WOS_ETREL_LDSCRIPT)
+	$(LD) $(WOS_LINK_FLAGS) $(WOS_LIBRARY_DIRS) -o $@ \
+		$(WOS_STARTFILE) $< $(MGL_DIR)/lib/libminigl.a \
+		$(WOS_RUNTIME_LIBS) $(WOS_ENDFILE)
+	$(call WOS_VALIDATE_ETREL,$@)
+
+clean:
+	rm -f $(ARCH)/$(PROBE).o $(ARCH)/$(PROBE).warpelf
