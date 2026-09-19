@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // vid buffer
 
 #include "quakedef.h"
+#include "frame_profile.h"
+#include "wos_stalltrace.h"
 #ifndef MINIGL_DISPATCH_CLIENT
 #include <mgl/mglmacros.h>
 #endif
@@ -441,6 +443,9 @@ void Draw_TextureMode_f (void)
 Draw_Init
 ===============
 */
+#ifdef MINIGL_DISPATCH_CLIENT
+void Draw_AlphaFillPrewarm (void);
+#endif
 void Draw_Init (void)
 {
   int   i;
@@ -483,18 +488,29 @@ void Draw_Init (void)
   // string into the background before turning
   // it into a texture
   draw_chars = W_GetLumpName ("conchars");
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s);
+    if (!draw_chars) { Sys_WOSTrace("d3: conchars NULL!\n"); Sys_Error ("Draw_Init: no conchars lump (gfx.wad missing?)"); }
+    Sys_WOSTrace("d3: conchars ok\n"); }
+#endif
   for (i=0 ; i<256*64 ; i++)
     if (draw_chars[i] == 0)
       draw_chars[i] = 255;  // proper transparent color
 
   // now turn them into textures
   char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true);
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("d4: charset tex\n"); }
+#endif
 
   start = Hunk_LowMark();
 
   cb = (qpic_t *)COM_LoadTempFile ("gfx/conback.lmp");  
   if (!cb)
     Sys_Error ("Couldn't load gfx/conback.lmp");
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("d4a: conback lmp\n"); }
+#endif
   SwapPic (cb);
 
   // hack the version number directly into the pic
@@ -542,13 +558,18 @@ void Draw_Init (void)
   conback->height = cb->height;
   ncdata = cb->data;
 #endif
-
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("d4b: conback pic\n"); }
+#endif
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);  // 13/02/2000 changed: M.Tretene
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
   gl = (glpic_t *)conback->data;
   //gl->texnum = GL_LoadTexture ("conback", conback->width, conback->height, ncdata, false, false);     //  30/01/2000 modified: M.Tretene
   gl->texnum = GL_LoadTexture ("conback", conback->width, conback->height, ncdata, false, true);
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("d4c: conback tex\n"); }
+#endif
   gl->sl = 0;
   gl->sh = 1;
   gl->tl = 0;
@@ -558,6 +579,9 @@ void Draw_Init (void)
 
   // free loaded console
   Hunk_FreeToLowMark(start);
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("d4d: hunkfree\n"); }
+#endif
 
   // save a texture slot for translated picture
   translate_texture = texture_extension_number++;
@@ -573,7 +597,20 @@ void Draw_Init (void)
   //
 
   draw_disc = Draw_PicFromWad ("disc");
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("d4e: disc\n"); }
+#endif
   draw_backtile = Draw_PicFromWad ("backtile");
+#ifdef WOS
+  { extern void Sys_WOSTrace (const char *s); Sys_WOSTrace("d5: draw_init done\n"); }
+#endif
+
+#ifdef MINIGL_DISPATCH_CLIENT
+  /* Plan 2026-09-20 phase 2.1: create the 15 alpha-level fill textures now,
+   * during init, instead of lazily on the first pickup/damage flash of each
+   * level during gameplay. */
+  Draw_AlphaFillPrewarm ();
+#endif
 }
 
 
@@ -1025,16 +1062,15 @@ void Draw_FadeScreen (void)
  * Texture alpha is correct. Cache sixteen white 1x1 textures, one per alpha
  * step, and modulate their RGB with diffuse color. This avoids reallocating a
  * resident Radeon texture on every frame of a damage/bonus flash. */
-void Draw_AlphaFill (int x, int y, int w, int h,
-                      float red, float green, float blue, float alpha)
+static int fill_texture[16];
+
+/* Create-on-first-use (now normally only during Draw_Init's prewarm) and
+ * bind the alpha-level fill texture. The FP_CountOverlay calls let the frame
+ * profiler separate overlay draws from any residual in-game creation. */
+static int Draw_AlphaFillTexture (int level)
 {
-  static int fill_texture[16];
-  int level;
   byte pixel[4];
 
-  level = (int)(alpha * 15.0f + 0.5f);
-  if (level < 0) level = 0;
-  if (level > 15) level = 15;
   if (!fill_texture[level])
   {
     fill_texture[level] = texture_extension_number++;
@@ -1045,9 +1081,35 @@ void Draw_AlphaFill (int x, int y, int w, int h,
                    GL_RGBA, GL_UNSIGNED_BYTE, pixel);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    FP_CountOverlay (1);
   }
   else
+  {
     GL_Bind (fill_texture[level]);
+    FP_CountOverlay (0);
+  }
+  return fill_texture[level];
+}
+
+void Draw_AlphaFillPrewarm (void)
+{
+  int level;
+
+  for (level = 1 ; level <= 15 ; level++)
+    Draw_AlphaFillTexture (level);
+}
+
+void Draw_AlphaFill (int x, int y, int w, int h,
+                      float red, float green, float blue, float alpha)
+{
+  int level;
+
+  level = (int)(alpha * 15.0f + 0.5f);
+  if (level < 0) level = 0;
+  if (level > 15) level = 15;
+  if (level == 0)
+    return; /* texture alpha 0: fill is invisible; skip the whole state phase */
+  Draw_AlphaFillTexture (level);
 
   glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   glDisable (GL_ALPHA_TEST);
@@ -1564,7 +1626,12 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
   glt = &gltextures[numgltextures];
   numgltextures++;
 
-  strcpy (glt->identifier, identifier);
+  /* GL_LoadPicTexture passes identifier == NULL (a read from low memory,
+   * tolerated on 68k, fatal on PPC) */
+  if (identifier)
+    strcpy (glt->identifier, identifier);
+  else
+    glt->identifier[0] = 0;
   glt->texnum = texture_extension_number;
   glt->width = width;
   glt->height = height;

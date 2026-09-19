@@ -33,7 +33,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <clib/powerpc_protos.h>
 #elif defined(__GNUC__) && defined(__PPC__)
 #include <powerpc/powerpc_protos.h>
+#ifndef WOS
+/* MOS2WOS does not ship powerup/ppcinline/alib.h; prototypes come from
+ * <proto/exec.h> + <clib/alib_protos.h> already included above. */
 #include <powerup/ppcinline/alib.h>
+#endif
 #endif
 
 #pragma default-align

@@ -34,6 +34,8 @@
 #pragma default-align
 
 #include "quakedef.h"
+#include "frame_profile.h"
+#include "wos_stalltrace.h"
 #if defined(__PPC__) && !defined(WOS)
 #include "sys_timer.h"  /* GetSysTimePPC() emulation for PowerUp */
 #endif
@@ -230,11 +232,17 @@ usleep
 */
 void usleep(unsigned long timeout)
 {
+#ifdef WOS
+  /* WarpOS uses DateStamp for timing; do not issue timer.device IO from
+   * this PPC task. Round up without overflowing the microsecond count. */
+  Delay(timeout / 20000UL + (timeout % 20000UL != 0));
+#else
   timerio->tr_node.io_Command = TR_ADDREQUEST;
   timerio->tr_time.tv_secs = timeout / 1000000;
   timerio->tr_time.tv_micro = timeout % 1000000;
   SendIO(&timerio->tr_node);
   WaitIO(&timerio->tr_node);
+#endif
 }
 
 /*
@@ -270,6 +278,8 @@ static qboolean prevent_crash = true; //surgeon
 
 #ifdef WOS
 double WOS_EClockTime (void);
+#endif
+#if defined(WOS) && WOS_DIAGNOSTICS
 /* Stage tracing to RAM:gqtrace via direct dos.library calls (stdio-independent,
  * per-line open/append/close). */
 #include <string.h>
@@ -288,11 +298,29 @@ void Sys_WOSTraceFrame (const char *tag, int n)
   sprintf (buf, "f%03d %s %.3f\n", n, tag, WOS_EClockTime ());
   Sys_WOSTrace (buf);
 }
+/* -stalltrace writes at most 8192 flushed records (~1 MB). Sequence numbers
+ * distinguish repeated loading-screen updates within the same host frame.
+ * A missing leave record localizes a blocked call, not necessarily its cause. */
+void Sys_WOSStallTrace(const char *stage, const char *detail, int value)
+{
+  static unsigned sequence;
+  char buf[192];
+  if (!COM_CheckParm("-stalltrace") || sequence >= 8192)
+    return;
+  sprintf(buf, "S%04u f%d %.3f %.40s [%d] %.64s\n",
+    sequence++, host_framecount, WOS_EClockTime(), stage, value,
+    detail ? detail : "");
+  Sys_WOSTrace(buf);
+  if (sequence == 8192)
+    Sys_WOSTrace("STALL TRACE LIMIT REACHED\n");
+}
 #endif
 
 static void cleanup(int rc)
 {
   int i;
+
+  FP_AutoDump ();  /* frame profiler: write the report once, at exit */
 
   if(prevent_crash)
   Host_Shutdown();
@@ -300,14 +328,21 @@ static void cleanup(int rc)
   if (coninput)
     SetMode(amiga_stdin,0);  /* put console back into normal CON mode */
 
+#ifdef WOS
+  Sys_WOSStallTrace("cleanup hunk enter", "", host_parms.memsize);
+#endif
   if (host_parms.membase)
     FreeMem((byte *)host_parms.membase-membase_offs,host_parms.memsize+3*32);
+#ifdef WOS
+  Sys_WOSStallTrace("cleanup hunk leave", "", 0);
+#endif
 
 #ifndef __PPC__
   if (COM_CheckParm("-hack"))
   MMUHackOff();
 #endif
 
+#ifndef WOS
   if (TimerBase) {
     if (!CheckIO((struct IORequest *)timerio)) {
       AbortIO((struct IORequest *)timerio);
@@ -317,6 +352,7 @@ static void cleanup(int rc)
     DeletePort(timerio->tr_node.io_Message.mn_ReplyPort);
     DeleteExtIO((struct IORequest *)timerio);
   }
+#endif
 
 #ifdef __PPC__
   if (no68kFPU) {
@@ -325,8 +361,14 @@ static void cleanup(int rc)
   }
 #endif
 
+#ifdef WOS
+  Sys_WOSStallTrace("cleanup lowlevel close", "", 0);
+#endif
   if (LowLevelBase)
     CloseLibrary(LowLevelBase);
+#ifdef WOS
+  Sys_WOSStallTrace("cleanup utility close", "", 0);
+#endif
   if (UtilityBase)
     CloseLibrary(UtilityBase);
 
@@ -334,6 +376,9 @@ static void cleanup(int rc)
     if (sys_handles[i])
       Close(sys_handles[i]);
   }
+#ifdef WOS
+  Sys_WOSStallTrace("cleanup exit libc", "", rc);
+#endif
   exit(rc);
 }
 
@@ -502,8 +547,13 @@ main (int argc, char *argv[])
 #endif
 
   setvbuf(stdout, NULL, _IONBF, 0);  /* survive crashes with live output */
-  Sys_WOSTrace("t1: setvbuf\n");
+
+  /* parse command string FIRST. Everything below that inspects arguments
+   * (-clpri, -frameprofile, -console, ...) was silently broken before this
+   * move: -clpri used to be parsed while com_argv was still empty. */
+  COM_InitArgv (argc, argv);
 #ifdef WOS
+  Sys_WOSTrace("t1: setvbuf\n");
   /* The 68k MiniGL host saturates the 68k side while draining the dispatch
    * ring during heavy frames, so every exec/dos gateway call from this PPC
    * task queues behind it (~200 ms each, measured with f-markers: input
@@ -518,12 +568,13 @@ main (int argc, char *argv[])
     if (pri)
       SetTaskPri (FindTask (NULL), (char)pri);
   }
+  /* Frame profiler (plan 2026-09-20): opt-in via -frameprofile [path].
+   * Calibrates the PPC timebase with one 0.5 s Delay when enabled. */
+  FP_Init ();
 #endif
   memset(&parms,0,sizeof(parms));
   parms.memsize = 16*1024*1024;  /* 16MB is default */
 
-  /* parse command string */
-  COM_InitArgv (argc, argv);
   Sys_WOSTrace("t2: argv\n");
   parms.argc = com_argc;
   parms.argv = com_argv;
@@ -555,6 +606,9 @@ main (int argc, char *argv[])
   if (coninput)
     SetMode(amiga_stdin,1);  /* put console into RAW mode */
 
+  /* The native path needs a completed timer request for usleep/cleanup.
+   * WOS uses DateStamp + Delay and must not create this unused request. */
+#ifndef WOS
   /* open timer.device */
   if (timerport = CreatePort(NULL,0)) {
     if (timerio = (struct timerequest *)
@@ -574,6 +628,7 @@ main (int argc, char *argv[])
 
   if (!TimerBase)
     Sys_Error("Can't open timer.device");
+#endif
   Sys_WOSTrace("t4: timer\n");
 #ifdef WOS
   /* usleep() (libglosswos) crashes with an unopened PowerPCBase; the plain

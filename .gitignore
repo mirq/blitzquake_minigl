@@ -8,6 +8,17 @@
 
 # Amiga MiniGL dispatch build directory
 glquake/m68k_gcc/
+glquake/m68k_gcc_perf/
+
+# WarpOS build + deployment staging trees (artifacts only; probe .c/.md kept)
+glquake/warpos_gcc_v19/glquake/
+glquake/warpos_flash/
+glquake/warpos_opt/
+glquake/warpos_part/
+glquake/warpos_qorigin/
+glquake/warpos_release/
+glquake/warpos_gcc_v19/probe/*.warpelf
+glquake/warpos_gcc_v19/probe/qfail
 
 # Local tool output
 a.out

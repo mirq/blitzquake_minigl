@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_parse.c  -- parse a message received from the server
 
 #include "quakedef.h"
+#include "wos_stalltrace.h"
 
 char *svc_strings[] =
 {
@@ -288,15 +289,20 @@ void CL_ParseServerInfo (void)
 
   for (i=1 ; i<nummodels ; i++)
   {
+    WOS_STALL("model enter", model_precache[i], i);
     cl.model_precache[i] = Mod_ForName (model_precache[i], false);
+    WOS_STALL("model leave", model_precache[i], i);
     if (cl.model_precache[i] == NULL)
     {
       Con_Printf("Model %s not found\n", model_precache[i]);
       return;
     }
+    WOS_STALL("keepalive enter", "model", i);
     CL_KeepaliveMessage ();
+    WOS_STALL("keepalive leave", "model", i);
   }
 
+  WOS_STALL("sound precache enter", "", numsounds);
   S_BeginPrecaching ();
   for (i=1 ; i<numsounds ; i++)
   {
@@ -304,14 +310,19 @@ void CL_ParseServerInfo (void)
     CL_KeepaliveMessage ();
   }
   S_EndPrecaching ();
+  WOS_STALL("sound precache leave", "", numsounds);
 
 
 // local state
   cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
 
+  WOS_STALL("locations enter", "", 0);
   LOC_LoadLocations();  // JPG - read in the location data for the new map
+  WOS_STALL("locations leave", "", 0);
   
+  WOS_STALL("newmap enter", "", 0);
   R_NewMap ();
+  WOS_STALL("newmap leave", "", 0);
 
   Hunk_Check ();    // make sure nothing is hurt
   
@@ -1180,4 +1191,3 @@ void CL_ParseServerMessage (void)
     }
   }
 }
-

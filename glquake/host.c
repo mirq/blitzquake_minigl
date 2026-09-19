@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // host.c -- coordinates spawning and killing of local servers
 
 #include "quakedef.h"
+#include "frame_profile.h"
+#include "wos_stalltrace.h"
 #include "r_local.h"
 
 /*
@@ -706,7 +708,9 @@ void _Host_Frame (float time)
       CL_SendLagMove();
     return;     // don't run too fast, or packets will flood out
   }
-    
+
+  FP_FrameBegin ();  // frame profiler (no-op unless -frameprofile)
+
 // get new key events
   Sys_SendKeyEvents ();
 #ifdef WOS
@@ -780,7 +784,11 @@ void _Host_Frame (float time)
 // fetch results from server
   if (cls.state == ca_connected)
   {
+    if (host_framecount < 64 || !(host_framecount & 255))
+      WOS_STALL("server read enter", "signon", cls.signon);
     CL_ReadFromServer ();
+    if (host_framecount < 64 || !(host_framecount & 255))
+      WOS_STALL("server read leave", "signon", cls.signon);
   }
 #ifdef WOS
   { extern void Sys_WOSTraceFrame (const char *tag, int n);
@@ -795,7 +803,9 @@ void _Host_Frame (float time)
   { extern void Sys_WOSTraceFrame (const char *tag, int n);
     if (host_framecount < 64) Sys_WOSTraceFrame ("scr", host_framecount); }
 #endif
-  SCR_UpdateScreen ();
+  { unsigned long fp_t = FP_Enter (FP_SCREEN);
+    SCR_UpdateScreen ();
+    FP_Exit (FP_SCREEN, fp_t); }
 #ifdef WOS
   { extern void Sys_WOSTraceFrame (const char *tag, int n);
     if (host_framecount < 64) Sys_WOSTraceFrame ("scr-done", host_framecount); }
@@ -827,6 +837,8 @@ void _Host_Frame (float time)
   
   host_framecount++;
   fps_count++;
+
+  FP_FrameEnd ();
 }
 
 void Host_Frame (float time)
@@ -1188,16 +1200,24 @@ void Host_Shutdown(void)
   Host_WriteConfiguration (); 
 
 #ifdef GLQUAKE
+  WOS_STALL("shutdown particles enter", "", 0);
   R_FreeParticles();
+  WOS_STALL("shutdown particles leave", "", 0);
+  WOS_STALL("shutdown arrays enter", "", 0);
   qgl_FreeArrays();
+  WOS_STALL("shutdown arrays leave", "", 0);
 #endif
 
+  WOS_STALL("shutdown devices enter", "", 0);
   CDAudio_Shutdown ();
   NET_Shutdown ();
   S_Shutdown();
   IN_Shutdown ();
+  WOS_STALL("shutdown devices leave", "", 0);
   if (cls.state != ca_dedicated)
   {
+    WOS_STALL("shutdown video enter", "", 0);
     VID_Shutdown();
+    WOS_STALL("shutdown video leave", "", 0);
   }
 }

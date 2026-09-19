@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // r_surf.c: surface-related refresh code
 
 #include "quakedef.h"
+#include "frame_profile.h"
+#include "wos_stalltrace.h"
 
 #ifndef MINIGL_DISPATCH_CLIENT
 #include <mgl/mglmacros.h>
@@ -97,7 +99,135 @@ static msurface_t  *skychain = NULL;
 static msurface_t  *waterchain = NULL;
 /*surgeon:static*/
 
+cvar_t r_worldbatch = {"r_worldbatch", "0", true};
+
+#define WORLD_BATCH_MAX_VERTICES 65535
+
+typedef struct worldbatchsurface_s {
+  int segment;
+  int firstvert;
+  int numverts;
+  int drawframe;
+  int lightmap_next;
+} worldbatchsurface_t;
+
+typedef struct worldbatchsegment_s {
+  float *verts;
+  int numverts;
+} worldbatchsegment_t;
+
+static worldbatchsurface_t *worldbatch_surfaces;
+static worldbatchsegment_t *worldbatch_segments;
+static unsigned short *worldbatch_indices;
+static int worldbatch_numsegments;
+static int worldbatch_maxindices;
+static int worldbatch_lightmap_heads[MAX_LIGHTMAPS];
+static qboolean worldbatch_blending_world;
+
 void R_RenderDynamicLightmaps (msurface_t *fa);
+
+static qboolean R_WorldBatchSurface (msurface_t *surf)
+{
+  int surfnum;
+
+  if (!gl_texsort.value || FAKE_MULTITEXTURE_VALUE)
+    return false;
+  if (!worldbatch_surfaces || !cl.worldmodel || !surf->polys)
+    return false;
+  if (surf->flags & (SURF_DRAWSKY | SURF_DRAWTURB | SURF_UNDERWATER))
+    return false;
+
+  surfnum = surf - cl.worldmodel->surfaces;
+  if (surfnum < 0 || surfnum >= cl.worldmodel->numsurfaces)
+    return false;
+
+  return worldbatch_surfaces[surfnum].numverts >= 3;
+}
+
+static void R_EnableWorldBatchArrays (worldbatchsegment_t *segment,
+  int texcoord)
+{
+  glDisableClientState (GL_COLOR_ARRAY);
+  glEnableClientState (GL_VERTEX_ARRAY);
+  glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+  glVertexPointer (3, GL_FLOAT, VERTEXSIZE * sizeof(float), segment->verts);
+  glTexCoordPointer (2, GL_FLOAT, VERTEXSIZE * sizeof(float),
+    segment->verts + texcoord);
+}
+
+static void R_DisableWorldBatchArrays (void)
+{
+  glDisableClientState (GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState (GL_VERTEX_ARRAY);
+}
+
+static void R_DrawWorldTextureBatch (texture_t *texture, msurface_t *chain,
+  int segmentnum)
+{
+  int numindices = 0;
+  msurface_t *surf;
+  texture_t *animated;
+
+  for (surf = chain; surf; surf = surf->texturechain)
+  {
+    worldbatchsurface_t *batchsurf;
+    int i;
+
+    if (!R_WorldBatchSurface (surf))
+      continue;
+
+    batchsurf = &worldbatch_surfaces[surf - cl.worldmodel->surfaces];
+    if (batchsurf->drawframe != r_framecount ||
+      batchsurf->segment != segmentnum)
+      continue;
+
+    for (i = 1; i < batchsurf->numverts - 1; i++)
+    {
+      worldbatch_indices[numindices++] = batchsurf->firstvert;
+      worldbatch_indices[numindices++] = batchsurf->firstvert + i;
+      worldbatch_indices[numindices++] = batchsurf->firstvert + i + 1;
+    }
+  }
+
+  if (!numindices)
+    return;
+
+  animated = R_TextureAnimation (texture);
+  GL_Bind (animated->gl_texturenum);
+  glDrawElements (GL_TRIANGLES, numindices, GL_UNSIGNED_SHORT,
+    worldbatch_indices);
+}
+
+static void R_DrawWorldLightmapBatch (int lightmapnum, int segmentnum)
+{
+  int surfnum = worldbatch_lightmap_heads[lightmapnum];
+  int numindices = 0;
+
+  while (surfnum >= 0)
+  {
+    worldbatchsurface_t *batchsurf = &worldbatch_surfaces[surfnum];
+    int i;
+
+    if (batchsurf->segment != segmentnum)
+    {
+      surfnum = batchsurf->lightmap_next;
+      continue;
+    }
+
+    for (i = 1; i < batchsurf->numverts - 1; i++)
+    {
+      worldbatch_indices[numindices++] = batchsurf->firstvert;
+      worldbatch_indices[numindices++] = batchsurf->firstvert + i;
+      worldbatch_indices[numindices++] = batchsurf->firstvert + i + 1;
+    }
+
+    surfnum = batchsurf->lightmap_next;
+  }
+
+  if (numindices)
+    glDrawElements (GL_TRIANGLES, numindices, GL_UNSIGNED_SHORT,
+      worldbatch_indices);
+}
 
 /*
 ===============
@@ -641,9 +771,10 @@ if (! (s->flags & (SURF_DRAWSKY|SURF_DRAWTURB|(r_dowarp ? SURF_UNDERWATER : 0)) 
       {
         lightmap_modified[i] = false;
         theRect = &lightmap_rectchange[i];
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
           BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
           lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+        FP_CountLMUpload (theRect->h * BLOCK_WIDTH * lightmap_bytes);
         theRect->l = BLOCK_WIDTH;
         theRect->t = BLOCK_HEIGHT;
         theRect->h = 0;
@@ -801,16 +932,17 @@ if (! (s->flags & (SURF_DRAWSKY|SURF_DRAWTURB|(r_dowarp ? SURF_UNDERWATER : 0)) 
     {
       lightmap_modified[i] = false;
       theRect = &lightmap_rectchange[i];
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
         BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
         lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+      FP_CountLMUpload (theRect->h * BLOCK_WIDTH * lightmap_bytes);
       theRect->l = BLOCK_WIDTH;
       theRect->t = BLOCK_HEIGHT;
       theRect->h = 0;
       theRect->w = 0;
     }
 
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); 
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     glBegin (GL_TRIANGLE_FAN);
     v = p->verts[0];
@@ -1036,8 +1168,11 @@ void R_BlendLightmaps (void)
 
   for (i=0 ; i<MAX_LIGHTMAPS ; i++)
   {
+    qboolean draw_world_batch = worldbatch_blending_world &&
+      worldbatch_lightmap_heads[i] >= 0;
+
     p = lightmap_polys[i];
-    if (!p)
+    if (!p && !draw_world_batch)
       continue;
 
     GL_Bind(lightmap_textures+i);
@@ -1045,10 +1180,10 @@ void R_BlendLightmaps (void)
     {
       lightmap_modified[i] = false;
       theRect = &lightmap_rectchange[i];
-
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
         BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
         lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+      FP_CountLMUpload (theRect->h * BLOCK_WIDTH * lightmap_bytes);
       theRect->l = BLOCK_WIDTH;
       theRect->t = BLOCK_HEIGHT;
       theRect->h = 0;
@@ -1081,6 +1216,23 @@ if(fake_multitexture)
 #endif
       }
     }
+  }
+
+  if (worldbatch_blending_world && worldbatch_surfaces)
+  {
+    int segmentnum;
+
+    for (segmentnum = 0; segmentnum < worldbatch_numsegments; segmentnum++)
+    {
+      R_EnableWorldBatchArrays (&worldbatch_segments[segmentnum], 5);
+      for (i = 0; i < MAX_LIGHTMAPS; i++)
+        if (worldbatch_lightmap_heads[i] >= 0)
+        {
+          GL_Bind (lightmap_textures + i);
+          R_DrawWorldLightmapBatch (i, segmentnum);
+        }
+    }
+    R_DisableWorldBatchArrays ();
   }
 
 if(fake_multitexture)
@@ -1216,10 +1368,18 @@ dynamic:
 
 #ifdef LITFILES
 	if(eyecandy)
-	R_BuildLightMapColor (fa, base, BLOCK_WIDTH*lightmap_bytes);
+	{
+	  unsigned long fp_t = FP_Enter (FP_LMBUILD);
+	  R_BuildLightMapColor (fa, base, BLOCK_WIDTH*lightmap_bytes);
+	  FP_Exit (FP_LMBUILD, fp_t);
+	}
 	else
 #endif
-      R_BuildLightMap (fa, base, BLOCK_WIDTH*lightmap_bytes);   
+      {
+        unsigned long fp_t = FP_Enter (FP_LMBUILD);
+        R_BuildLightMap (fa, base, BLOCK_WIDTH*lightmap_bytes);
+        FP_Exit (FP_LMBUILD, fp_t);
+      }
     }
   }
 }
@@ -1243,8 +1403,11 @@ void R_RenderDynamicLightmaps (msurface_t *fa)
   if (fa->flags & ( SURF_DRAWSKY | SURF_DRAWTURB) )
     return;
 
-  fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
-  lightmap_polys[fa->lightmaptexturenum] = fa->polys;
+  if (!R_WorldBatchSurface (fa))
+  {
+    fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
+    lightmap_polys[fa->lightmaptexturenum] = fa->polys;
+  }
 
   // check for lightmap modification
   for (maps = 0 ; maps < MAXLIGHTMAPS && fa->styles[maps] != 255 ;
@@ -1453,6 +1616,7 @@ void DrawTextureChains (void)
   int   i;
   msurface_t  *s;
   texture_t *t;
+  qboolean draw_world_batches = r_worldbatch.value && worldbatch_surfaces;
 
   if (!gl_texsort.value) {
     if(mtexenabled) GL_DisableMultitexture();
@@ -1485,12 +1649,79 @@ void DrawTextureChains (void)
       if ((s->flags & SURF_DRAWTURB) && r_wateralpha.value != 1.0)
         continue; // draw translucent water later
 
-    for ( ; s ; s=s->texturechain)
-        R_RenderBrushPoly (s);
+      if (draw_world_batches)
+      {
+        msurface_t *batchsurf;
+        qboolean has_batch = false;
+
+        for (batchsurf = s; batchsurf; batchsurf = batchsurf->texturechain)
+          if (R_WorldBatchSurface (batchsurf))
+          {
+            worldbatchsurface_t *batchmeta =
+              &worldbatch_surfaces[batchsurf - cl.worldmodel->surfaces];
+            batchmeta->drawframe = r_framecount;
+            batchmeta->lightmap_next =
+              worldbatch_lightmap_heads[batchsurf->lightmaptexturenum];
+            worldbatch_lightmap_heads[batchsurf->lightmaptexturenum] =
+              batchsurf - cl.worldmodel->surfaces;
+            R_RenderDynamicLightmaps (batchsurf);
+            has_batch = true;
+          }
+
+        for ( ; s ; s=s->texturechain)
+          if (!R_WorldBatchSurface (s))
+            R_RenderBrushPoly (s);
+
+        if (has_batch)
+          continue;
+      }
+      else
+      {
+        for ( ; s ; s=s->texturechain)
+          R_RenderBrushPoly (s);
+      }
 
     }
 
     t->texturechain = NULL;
+  }
+
+  if (draw_world_batches)
+  {
+    int segmentnum;
+
+    if (mtexenabled)
+      GL_DisableMultitexture ();
+
+    for (segmentnum = 0; segmentnum < worldbatch_numsegments; segmentnum++)
+    {
+      R_EnableWorldBatchArrays (&worldbatch_segments[segmentnum], 3);
+      for (i = 0; i < cl.worldmodel->numtextures; i++)
+      {
+        t = cl.worldmodel->textures[i];
+        if (t && t->texturechain && i != skytexturenum &&
+          !(i == mirrortexturenum && r_mirroralpha.value != 1.0))
+          R_DrawWorldTextureBatch (t, t->texturechain, segmentnum);
+      }
+    }
+    R_DisableWorldBatchArrays ();
+
+    for (i = 0; i < cl.worldmodel->numtextures; i++)
+    {
+      t = cl.worldmodel->textures[i];
+      if (!t ||
+        (i == mirrortexturenum && r_mirroralpha.value != 1.0))
+        continue;
+
+      for (s = t->texturechain; s; s = s->texturechain)
+        if (R_WorldBatchSurface (s) &&
+          worldbatch_surfaces[s - cl.worldmodel->surfaces].drawframe ==
+            r_framecount)
+        {
+          t->texturechain = NULL;
+          break;
+        }
+    }
   }
 }
 
@@ -1513,7 +1744,9 @@ void R_DrawBrushModel (entity_t *e)
 
   currententity = e;
   GL_SelectTexture(GL_TEXTURE0_ARB);
+#ifndef MINIGL_DISPATCH_CLIENT
   currenttexture = -1;
+#endif
 
   clmodel = e->model;
 
@@ -1775,11 +2008,14 @@ void R_DrawWorld (void)
 
   currententity = &ent;
   GL_SelectTexture(GL_TEXTURE0_ARB);
+#ifndef MINIGL_DISPATCH_CLIENT
   currenttexture = -1;
+#endif
 
   glColor3f (1,1,1);
 
   memset (lightmap_polys, 0, sizeof(lightmap_polys));
+  memset (worldbatch_lightmap_heads, -1, sizeof(worldbatch_lightmap_heads));
 
 
 //#ifdef QUAKE2
@@ -1787,12 +2023,20 @@ if(r_skybox)
   R_ClearSkyBox ();
 //#endif
 
-  R_RecursiveWorldNode (cl.worldmodel->nodes);
+  { unsigned long fp_t = FP_Enter (FP_VIS);
+    R_RecursiveWorldNode (cl.worldmodel->nodes);
+    FP_Exit (FP_VIS, fp_t); }
 
-  DrawTextureChains ();
+  { unsigned long fp_t = FP_Enter (FP_CHAINS);
+    DrawTextureChains ();
+    FP_Exit (FP_CHAINS, fp_t); }
 
-  R_BlendLightmaps ();
-
+  worldbatch_blending_world = true;
+  { unsigned long fp_t = FP_Enter (FP_LMBLEND);
+    R_BlendLightmaps ();
+    FP_Exit (FP_LMBLEND, fp_t); }
+  worldbatch_blending_world = false;
+  memset (worldbatch_lightmap_heads, -1, sizeof(worldbatch_lightmap_heads));
   if(FAKE_MULTITEXTURE_VALUE)
   R_DrawMultitextureBuffer();
 
@@ -2064,6 +2308,110 @@ void GL_CreateSurfaceLightmap (msurface_t *surf)
   R_BuildLightMap (surf, base, BLOCK_WIDTH*lightmap_bytes);
 }
 
+void R_ClearWorldBatchData (void)
+{
+  worldbatch_surfaces = NULL;
+  worldbatch_segments = NULL;
+  worldbatch_indices = NULL;
+  worldbatch_numsegments = 0;
+  worldbatch_maxindices = 0;
+  worldbatch_blending_world = false;
+  memset (worldbatch_lightmap_heads, -1, sizeof(worldbatch_lightmap_heads));
+}
+
+static void R_BuildWorldBatchData (void)
+{
+  int i;
+  int segmentnum = 0;
+  int segmentverts = 0;
+  int totalverts = 0;
+  int totalindices = 0;
+  int firstsurface;
+  int lastsurface;
+  model_t *world = cl.worldmodel;
+
+  R_ClearWorldBatchData ();
+
+  if (!r_worldbatch.value || !gl_texsort.value || FAKE_MULTITEXTURE_VALUE ||
+    !world || !world->numsurfaces)
+    return;
+
+  firstsurface = world->firstmodelsurface;
+  if (firstsurface < 0 || world->nummodelsurfaces < 0 ||
+    firstsurface > world->numsurfaces ||
+    world->nummodelsurfaces > world->numsurfaces - firstsurface)
+    return;
+  lastsurface = firstsurface + world->nummodelsurfaces;
+
+  worldbatch_surfaces = Hunk_AllocName (
+    world->numsurfaces * sizeof(*worldbatch_surfaces), "wbsurf");
+  memset (worldbatch_surfaces, 0,
+    world->numsurfaces * sizeof(*worldbatch_surfaces));
+
+  for (i = firstsurface; i < lastsurface; i++)
+  {
+    msurface_t *surf = &world->surfaces[i];
+    int numverts;
+
+    if (!surf->polys ||
+      (surf->flags & (SURF_DRAWSKY | SURF_DRAWTURB | SURF_UNDERWATER)))
+      continue;
+
+    numverts = surf->polys->numverts;
+    if (numverts < 3 || numverts > WORLD_BATCH_MAX_VERTICES)
+      continue;
+
+    if (segmentverts && segmentverts + numverts > WORLD_BATCH_MAX_VERTICES)
+    {
+      segmentnum++;
+      segmentverts = 0;
+    }
+
+    worldbatch_surfaces[i].segment = segmentnum;
+    worldbatch_surfaces[i].firstvert = segmentverts;
+    worldbatch_surfaces[i].numverts = numverts;
+    segmentverts += numverts;
+    totalverts += numverts;
+    totalindices += (numverts - 2) * 3;
+  }
+
+  if (!totalverts)
+    return;
+
+  worldbatch_numsegments = segmentnum + 1;
+  worldbatch_maxindices = totalindices;
+  worldbatch_segments = Hunk_AllocName (
+    worldbatch_numsegments * sizeof(*worldbatch_segments), "wbseg");
+  memset (worldbatch_segments, 0,
+    worldbatch_numsegments * sizeof(*worldbatch_segments));
+
+  for (i = firstsurface; i < lastsurface; i++)
+  {
+    worldbatchsurface_t *batchsurf = &worldbatch_surfaces[i];
+    if (batchsurf->numverts)
+      worldbatch_segments[batchsurf->segment].numverts += batchsurf->numverts;
+  }
+
+  for (i = 0; i < worldbatch_numsegments; i++)
+    worldbatch_segments[i].verts = Hunk_AllocName (
+      worldbatch_segments[i].numverts * VERTEXSIZE * sizeof(float), "wbverts");
+
+  worldbatch_indices = Hunk_AllocName (
+    worldbatch_maxindices * sizeof(*worldbatch_indices), "wbindex");
+
+  for (i = firstsurface; i < lastsurface; i++)
+  {
+    worldbatchsurface_t *batchsurf = &worldbatch_surfaces[i];
+    if (batchsurf->numverts)
+      memcpy (worldbatch_segments[batchsurf->segment].verts +
+        batchsurf->firstvert * VERTEXSIZE, world->surfaces[i].polys->verts[0],
+        batchsurf->numverts * VERTEXSIZE * sizeof(float));
+  }
+
+  Con_DPrintf ("World batch: %i vertices, %i indices, %i segments\n",
+    totalverts, totalindices, worldbatch_numsegments);
+}
+
 
 /*
 ==================
@@ -2139,6 +2487,7 @@ void GL_BuildLightmaps (void)
       continue;
     r_pcurrentvertbase = m->vertexes;
     currentmodel = m;
+    WOS_STALL("lightmap build enter", m->name, m->numsurfaces);
     for (i=0 ; i<m->numsurfaces ; i++)
     {
       GL_CreateSurfaceLightmap (m->surfaces + i);
@@ -2153,6 +2502,10 @@ void GL_BuildLightmaps (void)
       BuildSurfaceDisplayList (m->surfaces + i);
     }
   }
+
+  WOS_STALL("worldbatch enter", "", 0);
+  R_BuildWorldBatchData ();
+  WOS_STALL("worldbatch leave", "", 0);
 
   if (gl_mtexable)
     GL_SelectTexture(GL_TEXTURE1_ARB);
@@ -2174,8 +2527,10 @@ void GL_BuildLightmaps (void)
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    WOS_STALL("lightmap upload enter", "", i);
     glTexImage2D (GL_TEXTURE_2D, 0, gl_lightmap_format, BLOCK_WIDTH, BLOCK_HEIGHT, 0, 
     gl_lightmap_format, GL_UNSIGNED_BYTE, lightmaps+(i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes));
+    WOS_STALL("lightmap upload leave", "", i);
 #ifdef MINIGL_DISPATCH_CLIENT
     GL_CheckErrors ("lightmap upload");
 #endif

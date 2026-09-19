@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #include "quakedef.h"
+#include "frame_profile.h"
 
 #ifndef MINIGL_DISPATCH_CLIENT
 #include <mgl/mglmacros.h>
@@ -2169,11 +2170,15 @@ void R_PolyBlend (void)
 
 #ifdef MINIGL_DISPATCH_CLIENT
   /* Protect the status-bar rows in hardware as well as by geometry. */
-  glEnable (GL_SCISSOR_TEST);
-  glScissor (0, sb_lines, vid.width, vid.height - sb_lines);
+  if (sb_lines)
+  {
+    glEnable (GL_SCISSOR_TEST);
+    glScissor (0, sb_lines, vid.width, vid.height - sb_lines);
+  }
   Draw_AlphaFill (0, 0, vid.width, vid.height - sb_lines,
                    v_blend[0], v_blend[1], v_blend[2], v_blend[3]);
-  glDisable (GL_SCISSOR_TEST);
+  if (sb_lines)
+    glDisable (GL_SCISSOR_TEST);
   return;
 #endif
 
@@ -2569,29 +2574,41 @@ void R_RenderScene (void)
 
      glColor4f(1,1,1,1); //brushmodels, world and sprites are drawn before alias models
 
-     R_DrawEntitiesOnList (1); //brushmodels
+     { unsigned long fp_t = FP_Enter (FP_ENTBRUSH);
+       R_DrawEntitiesOnList (1); //brushmodels
+       FP_Exit (FP_ENTBRUSH, fp_t); }
 
-     R_DrawWorld ();   // adds static entities to the list
+     { unsigned long fp_t = FP_Enter (FP_WORLD);
+       R_DrawWorld ();   // adds static entities to the list
+       FP_Exit (FP_WORLD, fp_t); }
 
      S_ExtraUpdate (); // don't let sound get messed up if going slow
  
      if(gl_cull.value)
      glEnable(GL_CULL_FACE);
 
-     R_DrawEntitiesOnList (2);
+     { unsigned long fp_t = FP_Enter (FP_ENTALIAS);
+       R_DrawEntitiesOnList (2);
+       FP_Exit (FP_ENTALIAS, fp_t); }
 
   glShadeModel (GL_SMOOTH); //SuRgEoN
 
   #ifdef GLOWEFFECTS
 	if(gl_glows.value)
-	R_RenderGlows ();
+	{ unsigned long fp_t = FP_Enter (FP_GLOW);
+	  R_RenderGlows ();
+	  FP_Exit (FP_GLOW, fp_t); }
   #endif
 
-  R_RenderDlights ();
+  { unsigned long fp_t = FP_Enter (FP_GLOW);
+    R_RenderDlights ();
+    FP_Exit (FP_GLOW, fp_t); }
 
   glDisable(GL_CULL_FACE); //Surgeon: particle cullung is a waste of time
 
-  R_DrawParticles ();
+  { unsigned long fp_t = FP_Enter (FP_PARTICLES);
+    R_DrawParticles ();
+    FP_Exit (FP_PARTICLES, fp_t); }
 
 if(gl_cull.value)
   glEnable(GL_CULL_FACE);
@@ -2768,7 +2785,9 @@ void R_RenderView (void)
   if (gl_finish.value)
     glFinish ();
 
-  R_Clear ();
+  { unsigned long fp_t = FP_Enter (FP_CLEAR);
+    R_Clear ();
+    FP_Exit (FP_CLEAR, fp_t); }
 
   // render normal view
   
@@ -2786,23 +2805,32 @@ void R_RenderView (void)
      glFogf(GL_FOG_END, 2048.0);
 
      glFogf(GL_FOG_DENSITY, 0.2); //surgeon
+
      glEnable(GL_FOG);
   }   
 /********************************************/
 
 
-  R_RenderScene ();
+  { unsigned long fp_t = FP_Enter (FP_SCENE);
+    R_RenderScene ();
+    FP_Exit (FP_SCENE, fp_t); }
 
-  R_DrawWaterSurfaces ();
+  { unsigned long fp_t = FP_Enter (FP_WATER);
+    R_DrawWaterSurfaces ();
+    FP_Exit (FP_WATER, fp_t); }
 
 //  More fog code right here :)
   if (gl_fog.value) glDisable(GL_FOG);
 //  End of all fog code...
 
   // render mirror view
-  R_Mirror ();
+  { unsigned long fp_t = FP_Enter (FP_MIRROR);
+    R_Mirror ();
+    FP_Exit (FP_MIRROR, fp_t); }
 
-  R_PolyBlend ();
+  { unsigned long fp_t = FP_Enter (FP_BLEND);
+    R_PolyBlend ();
+    FP_Exit (FP_BLEND, fp_t); }
 
   if (r_speeds.value)
   {

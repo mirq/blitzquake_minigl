@@ -114,5 +114,4 @@ _FloatSwap__r
 		ror     #8,d0
 		swap    d0
 		ror     #8,d0
-		fmove.s d0,fp0
 		rts

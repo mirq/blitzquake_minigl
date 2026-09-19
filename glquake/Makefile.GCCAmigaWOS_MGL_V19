@@ -28,12 +28,13 @@ include $(MGL_DIR)/Makefile.wos.gcc.common
 
 ARCH=warpos_gcc_v19/glquake
 BUILDDIR=$(ARCH)
+DIAGNOSTICS ?= 0
 
 MINIGL_INC = -I$(MGL_DIR)/include
 
 CFLAGS = -std=gnu89 $(WOS_ARCH_CFLAGS) -O2 -ffast-math -fomit-frame-pointer -w \
 	-DWOS -DAMIGA -DGLQUAKE -DNOMOUSEASM -DFASTBOPS -DLITFILES -DGLOWEFFECTS \
-	-DMINIGL_DISPATCH_CLIENT -Dstricmp=strcasecmp -DNDEBUG \
+	-DMINIGL_DISPATCH_CLIENT -Dstricmp=strcasecmp -DNDEBUG -DWOS_DIAGNOSTICS=$(DIAGNOSTICS) \
 	$(MINIGL_INC) $(WOS_CPPFLAGS)
 
 # Load the MiniGL DLL from the authoritative dev location instead of CWD
@@ -45,6 +46,9 @@ NETINC = -I$(WOS_SDK_ROOT)/netinclude
 DO_CC=$(CC) $(CFLAGS) -o $@ -c $<
 DO_CCNET=$(CC) $(CFLAGS) $(NETINC) -o $@ -c $<
 
+# Stall trace declarations are shared by these translation units.
+# Keep the dependency after the default all target (see below).
+
 
 #############################################################################
 # SETUP AND BUILD
@@ -55,6 +59,10 @@ TARGETS=$(BUILDDIR)/glquake_wos.warpelf
 .PHONY: all clean check-tools
 
 all: check-tools $(TARGETS)
+
+$(BUILDDIR)/host.o $(BUILDDIR)/cl_main.o $(BUILDDIR)/cl_parse.o \
+$(BUILDDIR)/gl_screen.o $(BUILDDIR)/gl_rsurf.o $(BUILDDIR)/gl_draw.o \
+$(BUILDDIR)/gl_vidamiga.o $(BUILDDIR)/sys_amiga.o: wos_stalltrace.h
 
 check-tools:
 	test -x "$(CC)"
@@ -135,7 +143,8 @@ QUAKE_OBJS= \
 	$(BUILDDIR)/snd_mix.o \
 	$(BUILDDIR)/snd_mem.o \
 	$(BUILDDIR)/sys_amiga.o \
-	$(BUILDDIR)/sys_amigaclip.o
+	$(BUILDDIR)/sys_amigaclip.o \
+	$(BUILDDIR)/frame_profile.o
 
 
 INCS = quakedef.h \
@@ -148,7 +157,7 @@ INCS = quakedef.h \
        world.h keys.h console.h location.h \
        view.h menu.h crc.h cdaudio.h \
        pr_comp.h progdefs.h modelgen.h spritegn.h glquake.h \
-       miniglclient.h
+       miniglclient.h frame_profile.h
 
 
 $(BUILDDIR)/glquake_wos.warpelf: $(QUAKE_OBJS) $(MGL_DIR)/lib/libminigl.a $(WOS_ETREL_LDSCRIPT) | $(BUILDDIR)

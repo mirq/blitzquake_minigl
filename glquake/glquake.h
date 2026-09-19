@@ -237,7 +237,11 @@ extern  const char *gl_renderer;
 extern  const char *gl_version;
 extern  const char *gl_extensions;
 
+#ifdef MINIGL_DIAGNOSTICS
 void GL_CheckErrors (char *where);
+#else
+#define GL_CheckErrors(where) ((void)0)
+#endif
 
 void R_TranslatePlayerSkin (int playernum);
 void GL_Bind (int texnum);
@@ -294,4 +298,5 @@ extern void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
 //
 extern void R_DrawBrushModel (entity_t *e);
 extern void R_DrawWorld (void);
+extern void R_ClearWorldBatchData (void);
 extern void GL_BuildLightmaps (void);

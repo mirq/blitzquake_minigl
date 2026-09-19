@@ -19,9 +19,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "quakedef.h"
+#include "frame_profile.h"
+#ifdef MINIGL_PERF_DIAGNOSTICS
 #include <libraries/minigl_perf.h>
+#endif
 
 void CL_FinishTimeDemo (void);
+#ifdef MINIGL_PERF_DIAGNOSTICS
 static FILE *mgl_perf_log;
 
 static void CL_PrintMiniGLPerfDerived (void)
@@ -86,6 +90,41 @@ static void CL_PrintMiniGLPerfCounter (char *name, GLenum counter, GLint rate)
   }
 }
 
+static void CL_PrintMiniGLWorstFrames (GLint rate)
+{
+  GLint count, index;
+  GLint frame, total, serialize, execute, wait, present, residency;
+  double scale = rate ? 1000.0 / (double)rate : 0.0;
+
+  glGetIntegerv (MGL_PERF_WORST_FRAME_COUNT, &count);
+  if (count > 10)
+    count = 10;
+  for (index = 0; index < count; ++index)
+  {
+    glGetIntegerv (MGL_PERF_WORST_FRAME_NUMBER(index), &frame);
+    glGetIntegerv (MGL_PERF_WORST_FRAME_TICKS(index), &total);
+    glGetIntegerv (MGL_PERF_WORST_SERIALIZE_TICKS(index), &serialize);
+    glGetIntegerv (MGL_PERF_WORST_EXECUTE_TICKS(index), &execute);
+    glGetIntegerv (MGL_PERF_WORST_WAIT_TICKS(index), &wait);
+    glGetIntegerv (MGL_PERF_WORST_PRESENT_TICKS(index), &present);
+    glGetIntegerv (MGL_PERF_WORST_RESIDENCY_TICKS(index), &residency);
+    Con_Printf ("MGL_PERF_WORST rank=%ld frame=%ld ms=%.3f "
+                "serialize_ms=%.3f execute_ms=%.3f wait_ms=%.3f "
+                "present_ms=%.3f residency_ms=%.3f\n",
+                (long)index, (long)frame, total * scale,
+                serialize * scale, execute * scale, wait * scale,
+                present * scale, residency * scale);
+    if (mgl_perf_log)
+      fprintf (mgl_perf_log,
+               "MGL_PERF_WORST rank=%ld frame=%ld ms=%.3f "
+               "serialize_ms=%.3f execute_ms=%.3f wait_ms=%.3f "
+               "present_ms=%.3f residency_ms=%.3f\n",
+               (long)index, (long)frame, total * scale,
+               serialize * scale, execute * scale, wait * scale,
+               present * scale, residency * scale);
+  }
+}
+
 static void CL_PrintMiniGLPerf (int frames, float time)
 {
   GLint rate;
@@ -141,6 +180,7 @@ static void CL_PrintMiniGLPerf (int frames, float time)
   CL_PrintMiniGLPerfCounter ("EXECUTE_FAILURES", MGL_PERF_EXECUTE_FAILURES, rate);
   CL_PrintMiniGLPerfCounter ("WAIT_FAILURES", MGL_PERF_WAIT_FAILURES, rate);
   CL_PrintMiniGLPerfCounter ("RHW_CLAMPS", MGL_PERF_RHW_CLAMPS, rate);
+  CL_PrintMiniGLWorstFrames (rate);
   CL_PrintMiniGLPerfDerived ();
   if (mgl_perf_log)
   {
@@ -149,6 +189,7 @@ static void CL_PrintMiniGLPerf (int frames, float time)
     mgl_perf_log = NULL;
   }
 }
+#endif
 
 /*
 ==============================================================================
@@ -286,7 +327,9 @@ int CL_GetMessage (void)
         if (host_framecount == cls.td_startframe + 1)
         {
           cls.td_starttime = realtime;
+#ifdef MINIGL_PERF_DIAGNOSTICS
           glHint (MGL_PERF_COUNTERS_HINT, GL_NICEST);
+#endif
         }
       }
       else if ( /* cl.time > 0 && */ cl.time <= cl.mtime[0])
@@ -512,6 +555,8 @@ CL_FinishTimeDemo
 void CL_FinishTimeDemo (void)
 {
   int   frames;
+  int   logparm;
+  FILE  *resultfile;
   float time;
   
   cls.timedemo = false;
@@ -522,7 +567,29 @@ void CL_FinishTimeDemo (void)
   if (!time)
     time = 1;
   Con_Printf ("%i frames %5.1f seconds %5.1f fps\n", frames, time, frames/time);
+#ifdef MINIGL_PERF_DIAGNOSTICS
   CL_PrintMiniGLPerf (frames, time);
+#endif
+  /* Optional result export, AFTER the timing interval has ended. This
+   * avoids stdout/condebug IO during measured gameplay. */
+  logparm = COM_CheckParm ("-benchmarklog");
+  if (logparm && logparm + 1 < com_argc)
+  {
+    resultfile = fopen (com_argv[logparm + 1], "w");
+    if (resultfile)
+    {
+      fprintf (resultfile, "%i frames %.3f seconds %.3f fps\n",
+               frames, time, frames/time);
+      fclose (resultfile);
+    }
+    else
+      Con_Printf ("Could not write timedemo result to %s\n", com_argv[logparm + 1]);
+  }
+  if (COM_CheckParm ("-benchmarkquit"))
+    Sys_Quit ();
+  /* Frame profiler report is written after the timing interval (and also
+   * from cleanup() for non-benchmark sessions). */
+  FP_AutoDump ();
 }
 
 /*

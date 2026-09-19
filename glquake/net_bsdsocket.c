@@ -5,15 +5,18 @@
 /* Quake includes */
 #include "quakedef.h"
 
-#if defined(__GNUC__) && defined(__PPC__)
+#if defined(WOS) && defined(__GNUC__) && defined(__PPC__)
 
+/* MOS2WOS: BSD-style socket API implemented by newlib/libglosswos (__P*
+ * stubs mapped by the netinclude sys/socket.h macros). Do NOT include
+ * proto/socket.h here: its clib/bsdsocket_protos.h declares the
+ * bsdsocket.library functions with AmigaOS LONG signatures, which conflict
+ * with the netinclude sys/socket.h prototypes. The few library entry
+ * points without a __P wrapper are declared manually below. */
 #include <exec/types.h>
 #include <exec/libraries.h>
-        #ifdef __PPC__
-        #include <powerup/ppcproto/exec.h>
-        #else
-        #include <proto/exec.h>
-        #endif
+#include <proto/exec.h>
+#include <utility/tagitem.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
@@ -22,13 +25,34 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <arpa/inet.h>
-
-#ifdef __PPC__
-#include <proto/socket.h>
-#else
-#include <inline/socket.h>
-#endif
 #include <amitcp/socketbasetags.h>
+
+/* Amiga-named bsdsocket.library entry points have no __P wrappers. Pull in
+ * the LPn inline-call machinery and define just the four we use (the full
+ * ppcinline/bsdsocket.h would clash with the POSIX __P* macros above).
+ * Macro bodies copied verbatim from powerup/ppcinline/bsdsocket.h. */
+#include <powerup/ppcinline/macros.h>
+#ifndef BSDSOCKET_BASE_NAME
+#define BSDSOCKET_BASE_NAME SocketBase
+#endif
+
+#define IoctlSocket(sock, req, argp) \
+	LP3(0x72, LONG, IoctlSocket, LONG, sock, d0, ULONG, req, d1, APTR, argp, a0, \
+	, BSDSOCKET_BASE_NAME, IF_CACHEFLUSHALL, NULL, 0, IF_CACHEFLUSHALL, NULL, 0)
+
+#define CloseSocket(sock) \
+	LP1(0x78, LONG, CloseSocket, LONG, sock, d0, \
+	, BSDSOCKET_BASE_NAME, IF_CACHEFLUSHALL, NULL, 0, IF_CACHEFLUSHALL, NULL, 0)
+
+#define Inet_NtoA(ip) \
+	LP1(0xae, STRPTR, Inet_NtoA, ULONG, ip, d0, \
+	, BSDSOCKET_BASE_NAME, IF_CACHEFLUSHALL, NULL, 0, IF_CACHEFLUSHALL, NULL, 0)
+
+#define SocketBaseTagList(tags) \
+	LP1(0x126, LONG, SocketBaseTagList, struct TagItem *, tags, a0, \
+	, BSDSOCKET_BASE_NAME, IF_CACHEFLUSHALL, NULL, 0, IF_CACHEFLUSHALL, NULL, 0)
+
+#elif defined(__GNUC__) && defined(__PPC__)
 
 #else
 
@@ -55,7 +79,13 @@
 
 #endif
 
+#ifdef WOS
+/* The libglosswos __P* stub layer defines SocketBase (auto-opened by its
+ * __init_bsdsocket constructor); just reference it here. */
+extern struct Library *SocketBase;
+#else
 struct Library *SocketBase = NULL;  /* bsdsocket.library */
+#endif
 #define SOCKETVERSION 4             /* required version */
 
 extern cvar_t hostname;
@@ -96,12 +126,30 @@ int UDP_Init (void)
   /* Amiga socket initialization */
   if (!(SocketBase = OpenLibrary("bsdsocket.library",SOCKETVERSION)))
     return (-1);
+#ifdef WOS
+  /* MOS2WOS: SocketBaseTags() is only a varargs macro shim in the SDK
+   * inline headers; the library entry point is SocketBaseTagList(). */
+  {
+    struct TagItem socktags[3];
+    socktags[0].ti_Tag  = SBTM_SETVAL(SBTC_ERRNOPTR(sizeof(errno)));
+    socktags[0].ti_Data = (ULONG)&errno;
+    socktags[1].ti_Tag  = SBTM_SETVAL(SBTC_LOGTAGPTR);
+    socktags[1].ti_Data = (ULONG)"QuakeAmiga UDP";
+    socktags[2].ti_Tag  = TAG_END;
+    socktags[2].ti_Data = 0;
+    if (SocketBaseTagList(socktags)) {
+      CloseLibrary(SocketBase);
+      return (-1);
+    }
+  }
+#else
   if (SocketBaseTags(SBTM_SETVAL(SBTC_ERRNOPTR(sizeof(errno))),&errno,
                      SBTM_SETVAL(SBTC_LOGTAGPTR),"QuakeAmiga UDP",
                      TAG_END)) {
     CloseLibrary(SocketBase);
     return (-1);
   }
+#endif
 
   p = COM_CheckParm ("-udpport");
   if (p == 0)

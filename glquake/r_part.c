@@ -47,6 +47,14 @@ int     r_numparticles;
 
 vec3_t      r_pright, r_pup, r_ppn;
 
+/* Particle point size. 0 keeps the automatic resolution-scaled size
+ * (0.5 + width/320, expanded to screen quads). The default 1 selects
+ * MiniGL's hardware point path: one vertex per particle instead of a
+ * CPU-expanded screen quad, roughly six times fewer record dwords during
+ * explosions (measured ~4% faster in demo1 at 800x600). Values above 1.5
+ * force the per-point screen-quad expansion; 3 restores the old 3 px look. */
+cvar_t  r_particle_size = {"r_particle_size","1"};
+
 
 /*
 ===============
@@ -715,7 +723,9 @@ glEnable(GL_BLEND);
 
   pcount = 0;
 
-  glPointSize (0.5f + (float)vid.width/320.f);
+  glPointSize (r_particle_size.value > 0.0f
+                 ? r_particle_size.value
+                 : 0.5f + (float)vid.width/320.f);
   glBegin (GL_POINTS);
 
   VectorScale (vup, 1.5, up);

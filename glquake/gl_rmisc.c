@@ -200,6 +200,8 @@ extern cvar_t r_model_maxdist;//Surgeon
 extern cvar_t r_elim_areasize; //Surgeon
 extern cvar_t r_interpolations; //Surgeon
 extern cvar_t r_particle_hack; //Surgeon
+extern cvar_t r_particle_size;
+extern cvar_t r_worldbatch;
 
 extern void R_InitParticles (void);
 extern void R_ClearParticles (void);
@@ -219,6 +221,8 @@ void R_Init (void)
   Cvar_RegisterVariable (&r_skybox_format);
   Cvar_RegisterVariable (&r_litfiles);
   Cvar_RegisterVariable (&r_particle_hack);
+  Cvar_RegisterVariable (&r_particle_size);
+  Cvar_RegisterVariable (&r_worldbatch);
   Cvar_RegisterVariable (&gl_glows);
   Cvar_RegisterVariable (&gl_fake_multitexture);
   Cvar_RegisterVariable (&r_interpolations);
@@ -512,5 +516,4 @@ void R_TimeRefresh_f (void)
 void D_FlushCaches (void)
 {
 }
-
 

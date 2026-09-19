@@ -42,7 +42,7 @@ qboolean    msg_suppress_1 = 0;
 
 void COM_InitFilesystem (void);
 
-#if defined(M68KASM) || defined(PPCASM) || defined(GLM68KASM) || defined(GLPPCASM)
+#if defined(M68KASM) || defined(PPCASM) || defined(GLM68KASM) || defined(GLPPCASM) || defined(COMMON68KASM)
 extern short ShortSwap(short);
 extern int LongSwap(int);
 extern float FloatSwap(float);
@@ -157,7 +157,7 @@ void Q_memset (void *dest, int fill, int count)
       ((byte *)dest)[i] = fill;
 }
 
-#if !defined(M68KASM) && !defined(PPCASM) && !defined(GLM68KASM) && !defined(GLPPCASM)
+#if !defined(M68KASM) && !defined(PPCASM) && !defined(GLM68KASM) && !defined(GLPPCASM) && !defined(COMMON68KASM)
 void Q_memcpy (void *dest, void *src, int count)
 {
   int             i;
@@ -448,7 +448,7 @@ int     (*LittleLong) (int l);
 float   (*BigFloat) (float l);
 float   (*LittleFloat) (float l);
 
-#if !defined(M68KASM) && !defined(PPCASM) && !defined(GLM68KASM) && !defined(GLPPCASM)
+#if !defined(M68KASM) && !defined(PPCASM) && !defined(GLM68KASM) && !defined(GLPPCASM) && !defined(COMMON68KASM)
 short   ShortSwap (short l)
 {
   byte    b1,b2;
@@ -482,7 +482,7 @@ int     LongNoSwap (int l)
   return l;
 }
 
-#if !defined(M68KASM) && !defined(PPCASM) && !defined(GLM68KASM) && !defined(GLPPCASM)
+#if !defined(M68KASM) && !defined(PPCASM) && !defined(GLM68KASM) && !defined(GLPPCASM) && !defined(COMMON68KASM)
 float FloatSwap (float f)
 {
   union
@@ -1865,4 +1865,3 @@ void COM_InitFilesystem (void)
   if (COM_CheckParm ("-proghack"))
     proghack = true;
 }
-

@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // screen.c -- master for refresh, status bar, console, chat, notify, etc
 
 #include "quakedef.h"
+#include "frame_profile.h"
+#include "wos_stalltrace.h"
 
 /*
 
@@ -972,6 +974,8 @@ void SCR_UpdateScreen (void)
   vrect_t   vrect;
 
 
+  if (host_framecount < 64 || !(host_framecount & 255))
+    WOS_STALL("screen enter", "signon", cls.signon);
   if (block_drawing)
     return;
 #ifndef AMIGA
@@ -984,6 +988,8 @@ void SCR_UpdateScreen (void)
 
   if (scr_disabled_for_loading)
   {
+    if (host_framecount < 64 || !(host_framecount & 255))
+      WOS_STALL("screen loading suppressed", "", 0);
     if (realtime - scr_disabled_time > 60)
     {
       scr_disabled_for_loading = false;
@@ -997,7 +1003,11 @@ void SCR_UpdateScreen (void)
     return;       // not initialized yet
 
 
+  if (host_framecount < 64 || !(host_framecount & 255))
+    WOS_STALL("lock enter", "", 0);
   GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
+  if (host_framecount < 64 || !(host_framecount & 255))
+    WOS_STALL("lock leave", "", 0);
   
   //
   // determine size of refresh window
@@ -1022,13 +1032,20 @@ void SCR_UpdateScreen (void)
 //
   SCR_SetUpToDrawConsole ();
   
-  V_RenderView ();
+  if (host_framecount < 64 || !(host_framecount & 255))
+    WOS_STALL("view enter", "", 0);
+  { unsigned long fp_t = FP_Enter (FP_VIEW);
+    V_RenderView ();
+    FP_Exit (FP_VIEW, fp_t); }
+  if (host_framecount < 64 || !(host_framecount & 255))
+    WOS_STALL("view leave", "", 0);
 
   GL_Set2D ();
 
   //
   // draw any areas not covered by the refresh
   //
+  { unsigned long fp_t = FP_Enter (FP_HUD);
   SCR_TileClear ();
 
   if (scr_drawdialog)
@@ -1069,7 +1086,30 @@ void SCR_UpdateScreen (void)
   }
 
   V_UpdatePalette ();
+  FP_Exit (FP_HUD, fp_t);
+  }
 
-  GL_EndRendering ();
+#if defined(WOS) && WOS_DIAGNOSTICS
+  if (COM_CheckParm("-stalltrace") &&
+      (host_framecount < 64 || !(host_framecount & 255)))
+  {
+    GLenum error = glGetError();
+    WOS_STALL("GL before present", "error", (int)error);
+  }
+#endif
+  if (host_framecount < 64 || !(host_framecount & 255))
+    WOS_STALL("present enter", "", 0);
+  { unsigned long fp_t = FP_Enter (FP_PRESENT);
+    GL_EndRendering ();
+    FP_Exit (FP_PRESENT, fp_t); }
+#if defined(WOS) && WOS_DIAGNOSTICS
+  if (COM_CheckParm("-stalltrace") &&
+      (host_framecount < 64 || !(host_framecount & 255)))
+  {
+    GLenum error = glGetError();
+    WOS_STALL("GL after present", "error", (int)error);
+  }
+#endif
+  if (host_framecount < 64 || !(host_framecount & 255))
+    WOS_STALL("present leave", "", 0);
 }
-

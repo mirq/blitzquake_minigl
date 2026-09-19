@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_main.c  -- client main loop
 
 #include "quakedef.h"
+#include "wos_stalltrace.h"
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
@@ -180,6 +181,7 @@ void CL_SignonReply (void)
 {
   char  str[8192];
 
+  WOS_STALL("signon reply", "", cls.signon);
 Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
 
   switch (cls.signon)
@@ -803,4 +805,3 @@ void CL_Init (void)
   Cmd_AddCommand ("playdemo", CL_PlayDemo_f);
   Cmd_AddCommand ("timedemo", CL_TimeDemo_f);
 }
-
