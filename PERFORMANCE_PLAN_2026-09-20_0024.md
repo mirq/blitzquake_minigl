@@ -1,5 +1,14 @@
 # GLQuake WarpOS performance plan — 2026-09-20 00:24 CEST
 
+**Committed 2026-09-20 ~01:55 CEST** (working trees were clean checkpoints
+of everything below):
+
+| repo | branch | commit |
+|---|---|---|
+| BlitzQuake_src | `wos-timedeo-hang` | `ff307fb` |
+| MiniGL_WOS_V19_mglQ3 | `main` | `48aee81` |
+| p96-driver | `main` | `39fc924` |
+
 Machine: Amiga 4000, 68060 host + Prometheus + Radeon 9200 (RV280),
 MPC7410 PPC 400 MHz, WarpOS. Benchmark: `timedemo demo1` (969 frames),
 fullscreen 800x600x32 (16-bit measured separately), `-noudp -nosound`,
