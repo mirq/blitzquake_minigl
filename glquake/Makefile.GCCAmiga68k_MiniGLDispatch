@@ -168,7 +168,7 @@ INCS = quakedef.h \
        world.h keys.h console.h location.h \
        view.h menu.h crc.h cdaudio.h \
        pr_comp.h progdefs.h modelgen.h spritegn.h glquake.h \
-       miniglclient.h
+       miniglclient.h frame_profile.h
 
 $(BUILDDIR)/glquake68k_060_perf: $(QUAKE_OBJS) $(QUAKE_AS_OBJS) | $(BUILDDIR)
 	$(CC) $(LDFLAGS) -o $@ $(QUAKE_OBJS) $(QUAKE_AS_OBJS) $(LDLIBS)

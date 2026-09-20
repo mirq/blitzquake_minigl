@@ -1,0 +1,1142 @@
+MiniGLPPC host: step=backend_open
+MiniGLPPC host: step=timer
+MiniGLPPC host: ready, MiniGL 12.0
+MiniGLPPC host: step=port_added
+MiniGLPPC host: priority=-1 previous=0
+MiniGLPPC host: step=service_enter
+[mgl] ctx fullscreen=1 depth=32 mode=0
+[mgl] fs=begin
+[mgl] fs=ok buffers=3
+MiniGLPPC host: create windowed=0 w=800 h=600 depth=32
+CP_RUN dispatches=15055 dwords=8490750 failed=0
+CP_PROF entries=15055 drain_ms=307 dispatch_ms=6038 total_ms=7452
+[minigl.library] LibClose count=0
+HOST_NATIVE cache_capacity=8 records=1 overflow_contexts=0 overflow_policy=drop_new output=after_cleanup
+HOST_NATIVE context=1 scope=whole_context_including_setup end=before_teardown counter_bits=32 coverage=native_backend_only excludes=host_direct_service_calls overlaps_host_stages=1 enable_error=0 pending_gl_error=0
+HOST_NATIVE context=1 clock_hz=709379 query_error=0
+HOST_NATIVE context=1 frames=978 query_error=0
+HOST_NATIVE context=1 serialize_ticks=0 query_error=0
+HOST_NATIVE context=1 execute_ticks=0 query_error=0
+HOST_NATIVE context=1 wait_ticks=0 query_error=0
+HOST_NATIVE context=1 present_ticks=1808167 query_error=0
+HOST_NATIVE context=1 residency_ticks=2516403 query_error=0
+HOST_NATIVE context=1 upload_ticks=401273 query_error=0
+HOST_NATIVE context=1 upload_bytes=2854524 query_error=0
+HOST_NATIVE context=1 upload_copies=781 query_error=0
+HOST_NATIVE context=1 upload_updates=1083 query_error=0
+HOST_NATIVE context=1 upload_coalesced=0 query_error=0
+HOST_NATIVE context=1 upload_barriers=35 query_error=0
+HOST_NATIVE context=1 upload_deferred=816 query_error=0
+HOST_NATIVE context=1 texture_evictions=0 query_error=0
+HOST_NATIVE context=1 submits=0 query_error=0
+HOST_NATIVE context=1 async_submits=0 query_error=0
+HOST_NATIVE context=1 fence_waits=0 query_error=0
+HOST_NATIVE context=1 fence_poll_hits=0 query_error=0
+HOST_NATIVE context=1 texture_waits=0 query_error=0
+HOST_NATIVE context=1 buffer_waits=0 query_error=0
+HOST_NATIVE context=1 drain_waits=0 query_error=0
+HOST_NATIVE context=1 execute_failures=0 query_error=0
+HOST_NATIVE context=1 wait_failures=0 query_error=0
+HOST_NATIVE context=1 query_errors=0
+HOST_LM capacity=128 records=35 dropped=0 calls=35
+HOST_LM eclock_hz=709379 last_context_hint_error=0
+HOST_LM ticks=raw_eclock_low32 output=after_cleanup overflow=drop_new scope=shared_requests phases=exclusive durations=uint32(end-start) handler_in_total=1 drain_in_handler=1 native_counters_in_native_texsub=1 native_counters_mutually_exclusive=0 native_deltas=uint32(after-before) perf_queries_outside_native_texsub=1 query_errors_checked=0
+HOST_LM_ID seq=1 context=1 name=1035 request_serial=1916
+HOST_LM_RECT seq=1 level=0 x=0 y=16
+HOST_LM_SIZE seq=1 w=128 h=13 wire_format_type=13107437
+HOST_LM_RESULT seq=1 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=1 error=0
+HOST_LM_ENTRY seq=1 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=1 start=449157358 end=449171611 ticks=14253
+HOST_LM_HANDLER seq=1 start=449157410 end=449171532 ticks=14122
+HOST_LM_PHASE seq=1 stage=envelope start=449157358 end=449157410
+HOST_LM_PHASE seq=1 stage=handler_validation start=449157410 end=449157441
+HOST_LM_PHASE seq=1 stage=source_validation start=449157441 end=449157730
+HOST_LM_PHASE seq=1 stage=fence_drain start=449157730 end=449157751
+HOST_LM_PHASE seq=1 stage=preflight_prep start=449157751 end=449157771
+HOST_LM_PHASE seq=1 stage=preflight start=449157771 end=449157831
+HOST_LM_PHASE seq=1 stage=bind_cache_unpack start=449157831 end=449157920
+HOST_LM_PHASE seq=1 stage=perf_query_before start=449157920 end=449157960
+HOST_LM_PHASE seq=1 stage=native_texsub start=449157960 end=449171363
+HOST_LM_PHASE seq=1 stage=perf_query_after start=449171363 end=449171411
+HOST_LM_PHASE seq=1 stage=restore start=449171411 end=449171456
+HOST_LM_PHASE seq=1 stage=bridge_query start=449171456 end=449171515
+HOST_LM_PHASE seq=1 stage=result start=449171515 end=449171532
+HOST_LM_PHASE seq=1 stage=reply start=449171532 end=449171611
+HOST_LM_NATIVE seq=1 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=1 key=residency_ticks before=2097329 after=2108951
+HOST_LM_DELTA seq=1 key=residency_ticks delta=11622
+HOST_LM_NATIVE seq=1 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=1 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=1 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=1 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=1 key=evictions before=0 after=0
+HOST_LM_DELTA seq=1 key=evictions delta=0
+HOST_LM_ID seq=2 context=1 name=1032 request_serial=1918
+HOST_LM_RECT seq=2 level=0 x=0 y=19
+HOST_LM_SIZE seq=2 w=128 h=11 wire_format_type=13107437
+HOST_LM_RESULT seq=2 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=2 error=0
+HOST_LM_ENTRY seq=2 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=2 start=449194057 end=449212451 ticks=18394
+HOST_LM_HANDLER seq=2 start=449194108 end=449212366 ticks=18258
+HOST_LM_PHASE seq=2 stage=envelope start=449194057 end=449194108
+HOST_LM_PHASE seq=2 stage=handler_validation start=449194108 end=449194141
+HOST_LM_PHASE seq=2 stage=source_validation start=449194141 end=449198966
+HOST_LM_PHASE seq=2 stage=fence_drain start=449198966 end=449198990
+HOST_LM_PHASE seq=2 stage=preflight_prep start=449198990 end=449199011
+HOST_LM_PHASE seq=2 stage=preflight start=449199011 end=449199067
+HOST_LM_PHASE seq=2 stage=bind_cache_unpack start=449199067 end=449199146
+HOST_LM_PHASE seq=2 stage=perf_query_before start=449199146 end=449199183
+HOST_LM_PHASE seq=2 stage=native_texsub start=449199183 end=449212198
+HOST_LM_PHASE seq=2 stage=perf_query_after start=449212198 end=449212247
+HOST_LM_PHASE seq=2 stage=restore start=449212247 end=449212289
+HOST_LM_PHASE seq=2 stage=bridge_query start=449212289 end=449212349
+HOST_LM_PHASE seq=2 stage=result start=449212349 end=449212366
+HOST_LM_PHASE seq=2 stage=reply start=449212366 end=449212451
+HOST_LM_NATIVE seq=2 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=2 key=residency_ticks before=2108951 after=2120366
+HOST_LM_DELTA seq=2 key=residency_ticks delta=11415
+HOST_LM_NATIVE seq=2 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=2 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=2 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=2 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=2 key=evictions before=0 after=0
+HOST_LM_DELTA seq=2 key=evictions delta=0
+HOST_LM_ID seq=3 context=1 name=1035 request_serial=1933
+HOST_LM_RECT seq=3 level=0 x=0 y=29
+HOST_LM_SIZE seq=3 w=128 h=9 wire_format_type=13107437
+HOST_LM_RESULT seq=3 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=3 error=0
+HOST_LM_ENTRY seq=3 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=3 start=449807784 end=449821257 ticks=13473
+HOST_LM_HANDLER seq=3 start=449807836 end=449821176 ticks=13340
+HOST_LM_PHASE seq=3 stage=envelope start=449807784 end=449807836
+HOST_LM_PHASE seq=3 stage=handler_validation start=449807836 end=449807866
+HOST_LM_PHASE seq=3 stage=source_validation start=449807866 end=449807899
+HOST_LM_PHASE seq=3 stage=fence_drain start=449807899 end=449807916
+HOST_LM_PHASE seq=3 stage=preflight_prep start=449807916 end=449807936
+HOST_LM_PHASE seq=3 stage=preflight start=449807936 end=449807994
+HOST_LM_PHASE seq=3 stage=bind_cache_unpack start=449807994 end=449808078
+HOST_LM_PHASE seq=3 stage=perf_query_before start=449808078 end=449808118
+HOST_LM_PHASE seq=3 stage=native_texsub start=449808118 end=449821003
+HOST_LM_PHASE seq=3 stage=perf_query_after start=449821003 end=449821052
+HOST_LM_PHASE seq=3 stage=restore start=449821052 end=449821097
+HOST_LM_PHASE seq=3 stage=bridge_query start=449821097 end=449821158
+HOST_LM_PHASE seq=3 stage=result start=449821158 end=449821176
+HOST_LM_PHASE seq=3 stage=reply start=449821176 end=449821257
+HOST_LM_NATIVE seq=3 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=3 key=residency_ticks before=2120366 after=2131785
+HOST_LM_DELTA seq=3 key=residency_ticks delta=11419
+HOST_LM_NATIVE seq=3 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=3 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=3 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=3 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=3 key=evictions before=0 after=0
+HOST_LM_DELTA seq=3 key=evictions delta=0
+HOST_LM_ID seq=4 context=1 name=1029 request_serial=1935
+HOST_LM_RECT seq=4 level=0 x=0 y=118
+HOST_LM_SIZE seq=4 w=128 h=7 wire_format_type=13107437
+HOST_LM_RESULT seq=4 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=4 error=0
+HOST_LM_ENTRY seq=4 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=4 start=449893637 end=449907939 ticks=14302
+HOST_LM_HANDLER seq=4 start=449893691 end=449907855 ticks=14164
+HOST_LM_PHASE seq=4 stage=envelope start=449893637 end=449893691
+HOST_LM_PHASE seq=4 stage=handler_validation start=449893691 end=449893720
+HOST_LM_PHASE seq=4 stage=source_validation start=449893720 end=449893756
+HOST_LM_PHASE seq=4 stage=fence_drain start=449893756 end=449893771
+HOST_LM_PHASE seq=4 stage=preflight_prep start=449893771 end=449893790
+HOST_LM_PHASE seq=4 stage=preflight start=449893790 end=449893849
+HOST_LM_PHASE seq=4 stage=bind_cache_unpack start=449893849 end=449893930
+HOST_LM_PHASE seq=4 stage=perf_query_before start=449893930 end=449893972
+HOST_LM_PHASE seq=4 stage=native_texsub start=449893972 end=449907675
+HOST_LM_PHASE seq=4 stage=perf_query_after start=449907675 end=449907722
+HOST_LM_PHASE seq=4 stage=restore start=449907722 end=449907770
+HOST_LM_PHASE seq=4 stage=bridge_query start=449907770 end=449907837
+HOST_LM_PHASE seq=4 stage=result start=449907837 end=449907855
+HOST_LM_PHASE seq=4 stage=reply start=449907855 end=449907939
+HOST_LM_NATIVE seq=4 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=4 key=residency_ticks before=2131785 after=2144178
+HOST_LM_DELTA seq=4 key=residency_ticks delta=12393
+HOST_LM_NATIVE seq=4 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=4 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=4 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=4 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=4 key=evictions before=0 after=0
+HOST_LM_DELTA seq=4 key=evictions delta=0
+HOST_LM_ID seq=5 context=1 name=1030 request_serial=1937
+HOST_LM_RECT seq=5 level=0 x=0 y=0
+HOST_LM_SIZE seq=5 w=128 h=16 wire_format_type=13107437
+HOST_LM_RESULT seq=5 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=5 error=0
+HOST_LM_ENTRY seq=5 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=5 start=449909868 end=449923999 ticks=14131
+HOST_LM_HANDLER seq=5 start=449909918 end=449923912 ticks=13994
+HOST_LM_PHASE seq=5 stage=envelope start=449909868 end=449909918
+HOST_LM_PHASE seq=5 stage=handler_validation start=449909918 end=449909948
+HOST_LM_PHASE seq=5 stage=source_validation start=449909948 end=449909981
+HOST_LM_PHASE seq=5 stage=fence_drain start=449909981 end=449909998
+HOST_LM_PHASE seq=5 stage=preflight_prep start=449909998 end=449910017
+HOST_LM_PHASE seq=5 stage=preflight start=449910017 end=449910071
+HOST_LM_PHASE seq=5 stage=bind_cache_unpack start=449910071 end=449910149
+HOST_LM_PHASE seq=5 stage=perf_query_before start=449910149 end=449910190
+HOST_LM_PHASE seq=5 stage=native_texsub start=449910190 end=449923747
+HOST_LM_PHASE seq=5 stage=perf_query_after start=449923747 end=449923793
+HOST_LM_PHASE seq=5 stage=restore start=449923793 end=449923835
+HOST_LM_PHASE seq=5 stage=bridge_query start=449923835 end=449923895
+HOST_LM_PHASE seq=5 stage=result start=449923895 end=449923912
+HOST_LM_PHASE seq=5 stage=reply start=449923912 end=449923999
+HOST_LM_NATIVE seq=5 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=5 key=residency_ticks before=2144178 after=2155708
+HOST_LM_DELTA seq=5 key=residency_ticks delta=11530
+HOST_LM_NATIVE seq=5 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=5 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=5 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=5 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=5 key=evictions before=0 after=0
+HOST_LM_DELTA seq=5 key=evictions delta=0
+HOST_LM_ID seq=6 context=1 name=1032 request_serial=1939
+HOST_LM_RECT seq=6 level=0 x=0 y=19
+HOST_LM_SIZE seq=6 w=128 h=70 wire_format_type=13107437
+HOST_LM_RESULT seq=6 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=6 error=0
+HOST_LM_ENTRY seq=6 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=6 start=449929873 end=449953333 ticks=23460
+HOST_LM_HANDLER seq=6 start=449929924 end=449953251 ticks=23327
+HOST_LM_PHASE seq=6 stage=envelope start=449929873 end=449929924
+HOST_LM_PHASE seq=6 stage=handler_validation start=449929924 end=449929955
+HOST_LM_PHASE seq=6 stage=source_validation start=449929955 end=449929990
+HOST_LM_PHASE seq=6 stage=fence_drain start=449929990 end=449930006
+HOST_LM_PHASE seq=6 stage=preflight_prep start=449930006 end=449930024
+HOST_LM_PHASE seq=6 stage=preflight start=449930024 end=449930075
+HOST_LM_PHASE seq=6 stage=bind_cache_unpack start=449930075 end=449930154
+HOST_LM_PHASE seq=6 stage=perf_query_before start=449930154 end=449930192
+HOST_LM_PHASE seq=6 stage=native_texsub start=449930192 end=449953081
+HOST_LM_PHASE seq=6 stage=perf_query_after start=449953081 end=449953127
+HOST_LM_PHASE seq=6 stage=restore start=449953127 end=449953173
+HOST_LM_PHASE seq=6 stage=bridge_query start=449953173 end=449953234
+HOST_LM_PHASE seq=6 stage=result start=449953234 end=449953251
+HOST_LM_PHASE seq=6 stage=reply start=449953251 end=449953333
+HOST_LM_NATIVE seq=6 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=6 key=residency_ticks before=2155708 after=2167104
+HOST_LM_DELTA seq=6 key=residency_ticks delta=11396
+HOST_LM_NATIVE seq=6 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=6 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=6 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=6 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=6 key=evictions before=0 after=0
+HOST_LM_DELTA seq=6 key=evictions delta=0
+HOST_LM_ID seq=7 context=1 name=1027 request_serial=1942
+HOST_LM_RECT seq=7 level=0 x=0 y=53
+HOST_LM_SIZE seq=7 w=128 h=22 wire_format_type=13107437
+HOST_LM_RESULT seq=7 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=7 error=0
+HOST_LM_ENTRY seq=7 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=7 start=450091801 end=450106463 ticks=14662
+HOST_LM_HANDLER seq=7 start=450091852 end=450106383 ticks=14531
+HOST_LM_PHASE seq=7 stage=envelope start=450091801 end=450091852
+HOST_LM_PHASE seq=7 stage=handler_validation start=450091852 end=450091883
+HOST_LM_PHASE seq=7 stage=source_validation start=450091883 end=450091918
+HOST_LM_PHASE seq=7 stage=fence_drain start=450091918 end=450091934
+HOST_LM_PHASE seq=7 stage=preflight_prep start=450091934 end=450091952
+HOST_LM_PHASE seq=7 stage=preflight start=450091952 end=450092010
+HOST_LM_PHASE seq=7 stage=bind_cache_unpack start=450092010 end=450092086
+HOST_LM_PHASE seq=7 stage=perf_query_before start=450092086 end=450092127
+HOST_LM_PHASE seq=7 stage=native_texsub start=450092127 end=450106213
+HOST_LM_PHASE seq=7 stage=perf_query_after start=450106213 end=450106260
+HOST_LM_PHASE seq=7 stage=restore start=450106260 end=450106304
+HOST_LM_PHASE seq=7 stage=bridge_query start=450106304 end=450106366
+HOST_LM_PHASE seq=7 stage=result start=450106366 end=450106383
+HOST_LM_PHASE seq=7 stage=reply start=450106383 end=450106463
+HOST_LM_NATIVE seq=7 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=7 key=residency_ticks before=2167104 after=2178671
+HOST_LM_DELTA seq=7 key=residency_ticks delta=11567
+HOST_LM_NATIVE seq=7 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=7 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=7 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=7 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=7 key=evictions before=0 after=0
+HOST_LM_DELTA seq=7 key=evictions delta=0
+HOST_LM_ID seq=8 context=1 name=1032 request_serial=1944
+HOST_LM_RECT seq=8 level=0 x=0 y=100
+HOST_LM_SIZE seq=8 w=128 h=24 wire_format_type=13107437
+HOST_LM_RESULT seq=8 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=8 error=0
+HOST_LM_ENTRY seq=8 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=8 start=450126922 end=450141576 ticks=14654
+HOST_LM_HANDLER seq=8 start=450126974 end=450141490 ticks=14516
+HOST_LM_PHASE seq=8 stage=envelope start=450126922 end=450126974
+HOST_LM_PHASE seq=8 stage=handler_validation start=450126974 end=450127004
+HOST_LM_PHASE seq=8 stage=source_validation start=450127004 end=450127038
+HOST_LM_PHASE seq=8 stage=fence_drain start=450127038 end=450127054
+HOST_LM_PHASE seq=8 stage=preflight_prep start=450127054 end=450127073
+HOST_LM_PHASE seq=8 stage=preflight start=450127073 end=450127127
+HOST_LM_PHASE seq=8 stage=bind_cache_unpack start=450127127 end=450127206
+HOST_LM_PHASE seq=8 stage=perf_query_before start=450127206 end=450127246
+HOST_LM_PHASE seq=8 stage=native_texsub start=450127246 end=450141325
+HOST_LM_PHASE seq=8 stage=perf_query_after start=450141325 end=450141371
+HOST_LM_PHASE seq=8 stage=restore start=450141371 end=450141413
+HOST_LM_PHASE seq=8 stage=bridge_query start=450141413 end=450141472
+HOST_LM_PHASE seq=8 stage=result start=450141472 end=450141490
+HOST_LM_PHASE seq=8 stage=reply start=450141490 end=450141576
+HOST_LM_NATIVE seq=8 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=8 key=residency_ticks before=2178671 after=2190083
+HOST_LM_DELTA seq=8 key=residency_ticks delta=11412
+HOST_LM_NATIVE seq=8 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=8 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=8 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=8 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=8 key=evictions before=0 after=0
+HOST_LM_DELTA seq=8 key=evictions delta=0
+HOST_LM_ID seq=9 context=1 name=1032 request_serial=1946
+HOST_LM_RECT seq=9 level=0 x=0 y=106
+HOST_LM_SIZE seq=9 w=128 h=15 wire_format_type=13107437
+HOST_LM_RESULT seq=9 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=9 error=0
+HOST_LM_ENTRY seq=9 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=9 start=450370611 end=450384582 ticks=13971
+HOST_LM_HANDLER seq=9 start=450370670 end=450384500 ticks=13830
+HOST_LM_PHASE seq=9 stage=envelope start=450370611 end=450370670
+HOST_LM_PHASE seq=9 stage=handler_validation start=450370670 end=450370702
+HOST_LM_PHASE seq=9 stage=source_validation start=450370702 end=450370737
+HOST_LM_PHASE seq=9 stage=fence_drain start=450370737 end=450370755
+HOST_LM_PHASE seq=9 stage=preflight_prep start=450370755 end=450370775
+HOST_LM_PHASE seq=9 stage=preflight start=450370775 end=450370834
+HOST_LM_PHASE seq=9 stage=bind_cache_unpack start=450370834 end=450370916
+HOST_LM_PHASE seq=9 stage=perf_query_before start=450370916 end=450370954
+HOST_LM_PHASE seq=9 stage=native_texsub start=450370954 end=450384335
+HOST_LM_PHASE seq=9 stage=perf_query_after start=450384335 end=450384380
+HOST_LM_PHASE seq=9 stage=restore start=450384380 end=450384422
+HOST_LM_PHASE seq=9 stage=bridge_query start=450384422 end=450384483
+HOST_LM_PHASE seq=9 stage=result start=450384483 end=450384500
+HOST_LM_PHASE seq=9 stage=reply start=450384500 end=450384582
+HOST_LM_NATIVE seq=9 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=9 key=residency_ticks before=2190083 after=2201513
+HOST_LM_DELTA seq=9 key=residency_ticks delta=11430
+HOST_LM_NATIVE seq=9 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=9 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=9 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=9 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=9 key=evictions before=0 after=0
+HOST_LM_DELTA seq=9 key=evictions delta=0
+HOST_LM_ID seq=10 context=1 name=1035 request_serial=1960
+HOST_LM_RECT seq=10 level=0 x=0 y=112
+HOST_LM_SIZE seq=10 w=128 h=15 wire_format_type=13107437
+HOST_LM_RESULT seq=10 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=10 error=0
+HOST_LM_ENTRY seq=10 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=10 start=451947917 end=451966756 ticks=18839
+HOST_LM_HANDLER seq=10 start=451947969 end=451966679 ticks=18710
+HOST_LM_PHASE seq=10 stage=envelope start=451947917 end=451947969
+HOST_LM_PHASE seq=10 stage=handler_validation start=451947969 end=451947998
+HOST_LM_PHASE seq=10 stage=source_validation start=451947998 end=451948034
+HOST_LM_PHASE seq=10 stage=fence_drain start=451948034 end=451948049
+HOST_LM_PHASE seq=10 stage=preflight_prep start=451948049 end=451948068
+HOST_LM_PHASE seq=10 stage=preflight start=451948068 end=451948122
+HOST_LM_PHASE seq=10 stage=bind_cache_unpack start=451948122 end=451948200
+HOST_LM_PHASE seq=10 stage=perf_query_before start=451948200 end=451948238
+HOST_LM_PHASE seq=10 stage=native_texsub start=451948238 end=451966501
+HOST_LM_PHASE seq=10 stage=perf_query_after start=451966501 end=451966548
+HOST_LM_PHASE seq=10 stage=restore start=451966548 end=451966597
+HOST_LM_PHASE seq=10 stage=bridge_query start=451966597 end=451966661
+HOST_LM_PHASE seq=10 stage=result start=451966661 end=451966679
+HOST_LM_PHASE seq=10 stage=reply start=451966679 end=451966756
+HOST_LM_NATIVE seq=10 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=10 key=residency_ticks before=2201513 after=2217795
+HOST_LM_DELTA seq=10 key=residency_ticks delta=16282
+HOST_LM_NATIVE seq=10 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=10 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=10 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=10 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=10 key=evictions before=0 after=0
+HOST_LM_DELTA seq=10 key=evictions delta=0
+HOST_LM_ID seq=11 context=1 name=1036 request_serial=1962
+HOST_LM_RECT seq=11 level=0 x=0 y=0
+HOST_LM_SIZE seq=11 w=128 h=15 wire_format_type=13107437
+HOST_LM_RESULT seq=11 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=11 error=0
+HOST_LM_ENTRY seq=11 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=11 start=451968766 end=451982720 ticks=13954
+HOST_LM_HANDLER seq=11 start=451968819 end=451982635 ticks=13816
+HOST_LM_PHASE seq=11 stage=envelope start=451968766 end=451968819
+HOST_LM_PHASE seq=11 stage=handler_validation start=451968819 end=451968850
+HOST_LM_PHASE seq=11 stage=source_validation start=451968850 end=451968882
+HOST_LM_PHASE seq=11 stage=fence_drain start=451968882 end=451968898
+HOST_LM_PHASE seq=11 stage=preflight_prep start=451968898 end=451968917
+HOST_LM_PHASE seq=11 stage=preflight start=451968917 end=451968969
+HOST_LM_PHASE seq=11 stage=bind_cache_unpack start=451968969 end=451969046
+HOST_LM_PHASE seq=11 stage=perf_query_before start=451969046 end=451969085
+HOST_LM_PHASE seq=11 stage=native_texsub start=451969085 end=451982467
+HOST_LM_PHASE seq=11 stage=perf_query_after start=451982467 end=451982512
+HOST_LM_PHASE seq=11 stage=restore start=451982512 end=451982555
+HOST_LM_PHASE seq=11 stage=bridge_query start=451982555 end=451982616
+HOST_LM_PHASE seq=11 stage=result start=451982616 end=451982635
+HOST_LM_PHASE seq=11 stage=reply start=451982635 end=451982720
+HOST_LM_NATIVE seq=11 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=11 key=residency_ticks before=2217795 after=2229233
+HOST_LM_DELTA seq=11 key=residency_ticks delta=11438
+HOST_LM_NATIVE seq=11 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=11 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=11 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=11 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=11 key=evictions before=0 after=0
+HOST_LM_DELTA seq=11 key=evictions delta=0
+HOST_LM_ID seq=12 context=1 name=1032 request_serial=1965
+HOST_LM_RECT seq=12 level=0 x=0 y=19
+HOST_LM_SIZE seq=12 w=128 h=72 wire_format_type=13107437
+HOST_LM_RESULT seq=12 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=12 error=0
+HOST_LM_ENTRY seq=12 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=12 start=452005567 end=452031475 ticks=25908
+HOST_LM_HANDLER seq=12 start=452005618 end=452031395 ticks=25777
+HOST_LM_PHASE seq=12 stage=envelope start=452005567 end=452005618
+HOST_LM_PHASE seq=12 stage=handler_validation start=452005618 end=452005647
+HOST_LM_PHASE seq=12 stage=source_validation start=452005647 end=452005685
+HOST_LM_PHASE seq=12 stage=fence_drain start=452005685 end=452005700
+HOST_LM_PHASE seq=12 stage=preflight_prep start=452005700 end=452005720
+HOST_LM_PHASE seq=12 stage=preflight start=452005720 end=452005779
+HOST_LM_PHASE seq=12 stage=bind_cache_unpack start=452005779 end=452005858
+HOST_LM_PHASE seq=12 stage=perf_query_before start=452005858 end=452005897
+HOST_LM_PHASE seq=12 stage=native_texsub start=452005897 end=452031221
+HOST_LM_PHASE seq=12 stage=perf_query_after start=452031221 end=452031270
+HOST_LM_PHASE seq=12 stage=restore start=452031270 end=452031316
+HOST_LM_PHASE seq=12 stage=bridge_query start=452031316 end=452031377
+HOST_LM_PHASE seq=12 stage=result start=452031377 end=452031395
+HOST_LM_PHASE seq=12 stage=reply start=452031395 end=452031475
+HOST_LM_NATIVE seq=12 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=12 key=residency_ticks before=2229233 after=2247986
+HOST_LM_DELTA seq=12 key=residency_ticks delta=18753
+HOST_LM_NATIVE seq=12 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=12 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=12 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=12 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=12 key=evictions before=0 after=0
+HOST_LM_DELTA seq=12 key=evictions delta=0
+HOST_LM_ID seq=13 context=1 name=1029 request_serial=1974
+HOST_LM_RECT seq=13 level=0 x=0 y=119
+HOST_LM_SIZE seq=13 w=128 h=9 wire_format_type=13107437
+HOST_LM_RESULT seq=13 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=13 error=0
+HOST_LM_ENTRY seq=13 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=13 start=454554977 end=454568602 ticks=13625
+HOST_LM_HANDLER seq=13 start=454555029 end=454568520 ticks=13491
+HOST_LM_PHASE seq=13 stage=envelope start=454554977 end=454555029
+HOST_LM_PHASE seq=13 stage=handler_validation start=454555029 end=454555060
+HOST_LM_PHASE seq=13 stage=source_validation start=454555060 end=454555096
+HOST_LM_PHASE seq=13 stage=fence_drain start=454555096 end=454555112
+HOST_LM_PHASE seq=13 stage=preflight_prep start=454555112 end=454555132
+HOST_LM_PHASE seq=13 stage=preflight start=454555132 end=454555192
+HOST_LM_PHASE seq=13 stage=bind_cache_unpack start=454555192 end=454555271
+HOST_LM_PHASE seq=13 stage=perf_query_before start=454555271 end=454555313
+HOST_LM_PHASE seq=13 stage=native_texsub start=454555313 end=454568337
+HOST_LM_PHASE seq=13 stage=perf_query_after start=454568337 end=454568382
+HOST_LM_PHASE seq=13 stage=restore start=454568382 end=454568430
+HOST_LM_PHASE seq=13 stage=bridge_query start=454568430 end=454568499
+HOST_LM_PHASE seq=13 stage=result start=454568499 end=454568520
+HOST_LM_PHASE seq=13 stage=reply start=454568520 end=454568602
+HOST_LM_NATIVE seq=13 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=13 key=residency_ticks before=2247986 after=2259533
+HOST_LM_DELTA seq=13 key=residency_ticks delta=11547
+HOST_LM_NATIVE seq=13 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=13 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=13 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=13 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=13 key=evictions before=0 after=0
+HOST_LM_DELTA seq=13 key=evictions delta=0
+HOST_LM_ID seq=14 context=1 name=1030 request_serial=1976
+HOST_LM_RECT seq=14 level=0 x=0 y=0
+HOST_LM_SIZE seq=14 w=128 h=16 wire_format_type=13107437
+HOST_LM_RESULT seq=14 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=14 error=0
+HOST_LM_ENTRY seq=14 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=14 start=454570463 end=454584666 ticks=14203
+HOST_LM_HANDLER seq=14 start=454570513 end=454584584 ticks=14071
+HOST_LM_PHASE seq=14 stage=envelope start=454570463 end=454570513
+HOST_LM_PHASE seq=14 stage=handler_validation start=454570513 end=454570544
+HOST_LM_PHASE seq=14 stage=source_validation start=454570544 end=454570579
+HOST_LM_PHASE seq=14 stage=fence_drain start=454570579 end=454570595
+HOST_LM_PHASE seq=14 stage=preflight_prep start=454570595 end=454570613
+HOST_LM_PHASE seq=14 stage=preflight start=454570613 end=454570665
+HOST_LM_PHASE seq=14 stage=bind_cache_unpack start=454570665 end=454570742
+HOST_LM_PHASE seq=14 stage=perf_query_before start=454570742 end=454570780
+HOST_LM_PHASE seq=14 stage=native_texsub start=454570780 end=454584417
+HOST_LM_PHASE seq=14 stage=perf_query_after start=454584417 end=454584462
+HOST_LM_PHASE seq=14 stage=restore start=454584462 end=454584504
+HOST_LM_PHASE seq=14 stage=bridge_query start=454584504 end=454584566
+HOST_LM_PHASE seq=14 stage=result start=454584566 end=454584584
+HOST_LM_PHASE seq=14 stage=reply start=454584584 end=454584666
+HOST_LM_NATIVE seq=14 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=14 key=residency_ticks before=2259533 after=2271149
+HOST_LM_DELTA seq=14 key=residency_ticks delta=11616
+HOST_LM_NATIVE seq=14 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=14 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=14 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=14 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=14 key=evictions before=0 after=0
+HOST_LM_DELTA seq=14 key=evictions delta=0
+HOST_LM_ID seq=15 context=1 name=1032 request_serial=1978
+HOST_LM_RECT seq=15 level=0 x=0 y=24
+HOST_LM_SIZE seq=15 w=128 h=16 wire_format_type=13107437
+HOST_LM_RESULT seq=15 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=15 error=0
+HOST_LM_ENTRY seq=15 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=15 start=454604599 end=454618619 ticks=14020
+HOST_LM_HANDLER seq=15 start=454604650 end=454618534 ticks=13884
+HOST_LM_PHASE seq=15 stage=envelope start=454604599 end=454604650
+HOST_LM_PHASE seq=15 stage=handler_validation start=454604650 end=454604678
+HOST_LM_PHASE seq=15 stage=source_validation start=454604678 end=454604716
+HOST_LM_PHASE seq=15 stage=fence_drain start=454604716 end=454604732
+HOST_LM_PHASE seq=15 stage=preflight_prep start=454604732 end=454604752
+HOST_LM_PHASE seq=15 stage=preflight start=454604752 end=454604811
+HOST_LM_PHASE seq=15 stage=bind_cache_unpack start=454604811 end=454604889
+HOST_LM_PHASE seq=15 stage=perf_query_before start=454604889 end=454604928
+HOST_LM_PHASE seq=15 stage=native_texsub start=454604928 end=454618368
+HOST_LM_PHASE seq=15 stage=perf_query_after start=454618368 end=454618415
+HOST_LM_PHASE seq=15 stage=restore start=454618415 end=454618457
+HOST_LM_PHASE seq=15 stage=bridge_query start=454618457 end=454618516
+HOST_LM_PHASE seq=15 stage=result start=454618516 end=454618534
+HOST_LM_PHASE seq=15 stage=reply start=454618534 end=454618619
+HOST_LM_NATIVE seq=15 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=15 key=residency_ticks before=2271149 after=2282561
+HOST_LM_DELTA seq=15 key=residency_ticks delta=11412
+HOST_LM_NATIVE seq=15 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=15 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=15 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=15 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=15 key=evictions before=0 after=0
+HOST_LM_DELTA seq=15 key=evictions delta=0
+HOST_LM_ID seq=16 context=1 name=1035 request_serial=1980
+HOST_LM_RECT seq=16 level=0 x=0 y=124
+HOST_LM_SIZE seq=16 w=128 h=2 wire_format_type=13107437
+HOST_LM_RESULT seq=16 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=16 error=0
+HOST_LM_ENTRY seq=16 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=16 start=454686521 end=454699507 ticks=12986
+HOST_LM_HANDLER seq=16 start=454686575 end=454699424 ticks=12849
+HOST_LM_PHASE seq=16 stage=envelope start=454686521 end=454686575
+HOST_LM_PHASE seq=16 stage=handler_validation start=454686575 end=454686605
+HOST_LM_PHASE seq=16 stage=source_validation start=454686605 end=454686640
+HOST_LM_PHASE seq=16 stage=fence_drain start=454686640 end=454686656
+HOST_LM_PHASE seq=16 stage=preflight_prep start=454686656 end=454686675
+HOST_LM_PHASE seq=16 stage=preflight start=454686675 end=454686730
+HOST_LM_PHASE seq=16 stage=bind_cache_unpack start=454686730 end=454686806
+HOST_LM_PHASE seq=16 stage=perf_query_before start=454686806 end=454686846
+HOST_LM_PHASE seq=16 stage=native_texsub start=454686846 end=454699259
+HOST_LM_PHASE seq=16 stage=perf_query_after start=454699259 end=454699304
+HOST_LM_PHASE seq=16 stage=restore start=454699304 end=454699347
+HOST_LM_PHASE seq=16 stage=bridge_query start=454699347 end=454699405
+HOST_LM_PHASE seq=16 stage=result start=454699405 end=454699424
+HOST_LM_PHASE seq=16 stage=reply start=454699424 end=454699507
+HOST_LM_NATIVE seq=16 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=16 key=residency_ticks before=2282561 after=2294090
+HOST_LM_DELTA seq=16 key=residency_ticks delta=11529
+HOST_LM_NATIVE seq=16 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=16 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=16 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=16 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=16 key=evictions before=0 after=0
+HOST_LM_DELTA seq=16 key=evictions delta=0
+HOST_LM_ID seq=17 context=1 name=1030 request_serial=1982
+HOST_LM_RECT seq=17 level=0 x=0 y=0
+HOST_LM_SIZE seq=17 w=128 h=16 wire_format_type=13107437
+HOST_LM_RESULT seq=17 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=17 error=0
+HOST_LM_ENTRY seq=17 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=17 start=455189365 end=455204240 ticks=14875
+HOST_LM_HANDLER seq=17 start=455189417 end=455204155 ticks=14738
+HOST_LM_PHASE seq=17 stage=envelope start=455189365 end=455189417
+HOST_LM_PHASE seq=17 stage=handler_validation start=455189417 end=455189447
+HOST_LM_PHASE seq=17 stage=source_validation start=455189447 end=455189484
+HOST_LM_PHASE seq=17 stage=fence_drain start=455189484 end=455189499
+HOST_LM_PHASE seq=17 stage=preflight_prep start=455189499 end=455189519
+HOST_LM_PHASE seq=17 stage=preflight start=455189519 end=455189577
+HOST_LM_PHASE seq=17 stage=bind_cache_unpack start=455189577 end=455189653
+HOST_LM_PHASE seq=17 stage=perf_query_before start=455189653 end=455189690
+HOST_LM_PHASE seq=17 stage=native_texsub start=455189690 end=455203978
+HOST_LM_PHASE seq=17 stage=perf_query_after start=455203978 end=455204025
+HOST_LM_PHASE seq=17 stage=restore start=455204025 end=455204070
+HOST_LM_PHASE seq=17 stage=bridge_query start=455204070 end=455204135
+HOST_LM_PHASE seq=17 stage=result start=455204135 end=455204155
+HOST_LM_PHASE seq=17 stage=reply start=455204155 end=455204240
+HOST_LM_NATIVE seq=17 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=17 key=residency_ticks before=2294090 after=2306321
+HOST_LM_DELTA seq=17 key=residency_ticks delta=12231
+HOST_LM_NATIVE seq=17 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=17 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=17 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=17 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=17 key=evictions before=0 after=0
+HOST_LM_DELTA seq=17 key=evictions delta=0
+HOST_LM_ID seq=18 context=1 name=1035 request_serial=1984
+HOST_LM_RECT seq=18 level=0 x=0 y=120
+HOST_LM_SIZE seq=18 w=128 h=2 wire_format_type=13107437
+HOST_LM_RESULT seq=18 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=18 error=0
+HOST_LM_ENTRY seq=18 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=18 start=455276676 end=455289791 ticks=13115
+HOST_LM_HANDLER seq=18 start=455276727 end=455289705 ticks=12978
+HOST_LM_PHASE seq=18 stage=envelope start=455276676 end=455276727
+HOST_LM_PHASE seq=18 stage=handler_validation start=455276727 end=455276758
+HOST_LM_PHASE seq=18 stage=source_validation start=455276758 end=455276791
+HOST_LM_PHASE seq=18 stage=fence_drain start=455276791 end=455276807
+HOST_LM_PHASE seq=18 stage=preflight_prep start=455276807 end=455276826
+HOST_LM_PHASE seq=18 stage=preflight start=455276826 end=455276881
+HOST_LM_PHASE seq=18 stage=bind_cache_unpack start=455276881 end=455276961
+HOST_LM_PHASE seq=18 stage=perf_query_before start=455276961 end=455276998
+HOST_LM_PHASE seq=18 stage=native_texsub start=455276998 end=455289535
+HOST_LM_PHASE seq=18 stage=perf_query_after start=455289535 end=455289581
+HOST_LM_PHASE seq=18 stage=restore start=455289581 end=455289627
+HOST_LM_PHASE seq=18 stage=bridge_query start=455289627 end=455289687
+HOST_LM_PHASE seq=18 stage=result start=455289687 end=455289705
+HOST_LM_PHASE seq=18 stage=reply start=455289705 end=455289791
+HOST_LM_NATIVE seq=18 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=18 key=residency_ticks before=2306321 after=2317958
+HOST_LM_DELTA seq=18 key=residency_ticks delta=11637
+HOST_LM_NATIVE seq=18 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=18 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=18 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=18 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=18 key=evictions before=0 after=0
+HOST_LM_DELTA seq=18 key=evictions delta=0
+HOST_LM_ID seq=19 context=1 name=1029 request_serial=1986
+HOST_LM_RECT seq=19 level=0 x=0 y=120
+HOST_LM_SIZE seq=19 w=128 h=7 wire_format_type=13107437
+HOST_LM_RESULT seq=19 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=19 error=0
+HOST_LM_ENTRY seq=19 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=19 start=455368695 end=455382278 ticks=13583
+HOST_LM_HANDLER seq=19 start=455368748 end=455382201 ticks=13453
+HOST_LM_PHASE seq=19 stage=envelope start=455368695 end=455368748
+HOST_LM_PHASE seq=19 stage=handler_validation start=455368748 end=455368779
+HOST_LM_PHASE seq=19 stage=source_validation start=455368779 end=455368813
+HOST_LM_PHASE seq=19 stage=fence_drain start=455368813 end=455368830
+HOST_LM_PHASE seq=19 stage=preflight_prep start=455368830 end=455368850
+HOST_LM_PHASE seq=19 stage=preflight start=455368850 end=455368907
+HOST_LM_PHASE seq=19 stage=bind_cache_unpack start=455368907 end=455368988
+HOST_LM_PHASE seq=19 stage=perf_query_before start=455368988 end=455369028
+HOST_LM_PHASE seq=19 stage=native_texsub start=455369028 end=455382029
+HOST_LM_PHASE seq=19 stage=perf_query_after start=455382029 end=455382079
+HOST_LM_PHASE seq=19 stage=restore start=455382079 end=455382124
+HOST_LM_PHASE seq=19 stage=bridge_query start=455382124 end=455382183
+HOST_LM_PHASE seq=19 stage=result start=455382183 end=455382201
+HOST_LM_PHASE seq=19 stage=reply start=455382201 end=455382278
+HOST_LM_NATIVE seq=19 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=19 key=residency_ticks before=2317958 after=2329654
+HOST_LM_DELTA seq=19 key=residency_ticks delta=11696
+HOST_LM_NATIVE seq=19 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=19 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=19 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=19 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=19 key=evictions before=0 after=0
+HOST_LM_DELTA seq=19 key=evictions delta=0
+HOST_LM_ID seq=20 context=1 name=1029 request_serial=1988
+HOST_LM_RECT seq=20 level=0 x=0 y=119
+HOST_LM_SIZE seq=20 w=128 h=4 wire_format_type=13107437
+HOST_LM_RESULT seq=20 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=20 error=0
+HOST_LM_ENTRY seq=20 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=20 start=455468440 end=455481560 ticks=13120
+HOST_LM_HANDLER seq=20 start=455468493 end=455481482 ticks=12989
+HOST_LM_PHASE seq=20 stage=envelope start=455468440 end=455468493
+HOST_LM_PHASE seq=20 stage=handler_validation start=455468493 end=455468522
+HOST_LM_PHASE seq=20 stage=source_validation start=455468522 end=455468559
+HOST_LM_PHASE seq=20 stage=fence_drain start=455468559 end=455468574
+HOST_LM_PHASE seq=20 stage=preflight_prep start=455468574 end=455468593
+HOST_LM_PHASE seq=20 stage=preflight start=455468593 end=455468653
+HOST_LM_PHASE seq=20 stage=bind_cache_unpack start=455468653 end=455468736
+HOST_LM_PHASE seq=20 stage=perf_query_before start=455468736 end=455468773
+HOST_LM_PHASE seq=20 stage=native_texsub start=455468773 end=455481302
+HOST_LM_PHASE seq=20 stage=perf_query_after start=455481302 end=455481353
+HOST_LM_PHASE seq=20 stage=restore start=455481353 end=455481399
+HOST_LM_PHASE seq=20 stage=bridge_query start=455481399 end=455481464
+HOST_LM_PHASE seq=20 stage=result start=455481464 end=455481482
+HOST_LM_PHASE seq=20 stage=reply start=455481482 end=455481560
+HOST_LM_NATIVE seq=20 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=20 key=residency_ticks before=2329654 after=2341110
+HOST_LM_DELTA seq=20 key=residency_ticks delta=11456
+HOST_LM_NATIVE seq=20 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=20 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=20 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=20 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=20 key=evictions before=0 after=0
+HOST_LM_DELTA seq=20 key=evictions delta=0
+HOST_LM_ID seq=21 context=1 name=1030 request_serial=1990
+HOST_LM_RECT seq=21 level=0 x=0 y=0
+HOST_LM_SIZE seq=21 w=128 h=14 wire_format_type=13107437
+HOST_LM_RESULT seq=21 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=21 error=0
+HOST_LM_ENTRY seq=21 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=21 start=455483418 end=455498129 ticks=14711
+HOST_LM_HANDLER seq=21 start=455483468 end=455498047 ticks=14579
+HOST_LM_PHASE seq=21 stage=envelope start=455483418 end=455483468
+HOST_LM_PHASE seq=21 stage=handler_validation start=455483468 end=455483497
+HOST_LM_PHASE seq=21 stage=source_validation start=455483497 end=455483529
+HOST_LM_PHASE seq=21 stage=fence_drain start=455483529 end=455483545
+HOST_LM_PHASE seq=21 stage=preflight_prep start=455483545 end=455483563
+HOST_LM_PHASE seq=21 stage=preflight start=455483563 end=455483615
+HOST_LM_PHASE seq=21 stage=bind_cache_unpack start=455483615 end=455483694
+HOST_LM_PHASE seq=21 stage=perf_query_before start=455483694 end=455483735
+HOST_LM_PHASE seq=21 stage=native_texsub start=455483735 end=455497873
+HOST_LM_PHASE seq=21 stage=perf_query_after start=455497873 end=455497918
+HOST_LM_PHASE seq=21 stage=restore start=455497918 end=455497964
+HOST_LM_PHASE seq=21 stage=bridge_query start=455497964 end=455498029
+HOST_LM_PHASE seq=21 stage=result start=455498029 end=455498047
+HOST_LM_PHASE seq=21 stage=reply start=455498047 end=455498129
+HOST_LM_NATIVE seq=21 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=21 key=residency_ticks before=2341110 after=2353229
+HOST_LM_DELTA seq=21 key=residency_ticks delta=12119
+HOST_LM_NATIVE seq=21 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=21 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=21 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=21 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=21 key=evictions before=0 after=0
+HOST_LM_DELTA seq=21 key=evictions delta=0
+HOST_LM_ID seq=22 context=1 name=1027 request_serial=1995
+HOST_LM_RECT seq=22 level=0 x=0 y=53
+HOST_LM_SIZE seq=22 w=128 h=22 wire_format_type=13107437
+HOST_LM_RESULT seq=22 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=22 error=0
+HOST_LM_ENTRY seq=22 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=22 start=455754670 end=455769208 ticks=14538
+HOST_LM_HANDLER seq=22 start=455754726 end=455769127 ticks=14401
+HOST_LM_PHASE seq=22 stage=envelope start=455754670 end=455754726
+HOST_LM_PHASE seq=22 stage=handler_validation start=455754726 end=455754758
+HOST_LM_PHASE seq=22 stage=source_validation start=455754758 end=455754793
+HOST_LM_PHASE seq=22 stage=fence_drain start=455754793 end=455754811
+HOST_LM_PHASE seq=22 stage=preflight_prep start=455754811 end=455754830
+HOST_LM_PHASE seq=22 stage=preflight start=455754830 end=455754889
+HOST_LM_PHASE seq=22 stage=bind_cache_unpack start=455754889 end=455754971
+HOST_LM_PHASE seq=22 stage=perf_query_before start=455754971 end=455755013
+HOST_LM_PHASE seq=22 stage=native_texsub start=455755013 end=455768955
+HOST_LM_PHASE seq=22 stage=perf_query_after start=455768955 end=455769001
+HOST_LM_PHASE seq=22 stage=restore start=455769001 end=455769045
+HOST_LM_PHASE seq=22 stage=bridge_query start=455769045 end=455769109
+HOST_LM_PHASE seq=22 stage=result start=455769109 end=455769127
+HOST_LM_PHASE seq=22 stage=reply start=455769127 end=455769208
+HOST_LM_NATIVE seq=22 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=22 key=residency_ticks before=2353229 after=2364643
+HOST_LM_DELTA seq=22 key=residency_ticks delta=11414
+HOST_LM_NATIVE seq=22 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=22 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=22 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=22 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=22 key=evictions before=0 after=0
+HOST_LM_DELTA seq=22 key=evictions delta=0
+HOST_LM_ID seq=23 context=1 name=1029 request_serial=1997
+HOST_LM_RECT seq=23 level=0 x=0 y=118
+HOST_LM_SIZE seq=23 w=128 h=10 wire_format_type=13107437
+HOST_LM_RESULT seq=23 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=23 error=0
+HOST_LM_ENTRY seq=23 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=23 start=455770928 end=455784563 ticks=13635
+HOST_LM_HANDLER seq=23 start=455770981 end=455784485 ticks=13504
+HOST_LM_PHASE seq=23 stage=envelope start=455770928 end=455770981
+HOST_LM_PHASE seq=23 stage=handler_validation start=455770981 end=455771012
+HOST_LM_PHASE seq=23 stage=source_validation start=455771012 end=455771046
+HOST_LM_PHASE seq=23 stage=fence_drain start=455771046 end=455771062
+HOST_LM_PHASE seq=23 stage=preflight_prep start=455771062 end=455771080
+HOST_LM_PHASE seq=23 stage=preflight start=455771080 end=455771136
+HOST_LM_PHASE seq=23 stage=bind_cache_unpack start=455771136 end=455771212
+HOST_LM_PHASE seq=23 stage=perf_query_before start=455771212 end=455771249
+HOST_LM_PHASE seq=23 stage=native_texsub start=455771249 end=455784311
+HOST_LM_PHASE seq=23 stage=perf_query_after start=455784311 end=455784358
+HOST_LM_PHASE seq=23 stage=restore start=455784358 end=455784401
+HOST_LM_PHASE seq=23 stage=bridge_query start=455784401 end=455784466
+HOST_LM_PHASE seq=23 stage=result start=455784466 end=455784485
+HOST_LM_PHASE seq=23 stage=reply start=455784485 end=455784563
+HOST_LM_NATIVE seq=23 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=23 key=residency_ticks before=2364643 after=2376172
+HOST_LM_DELTA seq=23 key=residency_ticks delta=11529
+HOST_LM_NATIVE seq=23 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=23 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=23 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=23 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=23 key=evictions before=0 after=0
+HOST_LM_DELTA seq=23 key=evictions delta=0
+HOST_LM_ID seq=24 context=1 name=1030 request_serial=1999
+HOST_LM_RECT seq=24 level=0 x=0 y=0
+HOST_LM_SIZE seq=24 w=128 h=16 wire_format_type=13107437
+HOST_LM_RESULT seq=24 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=24 error=0
+HOST_LM_ENTRY seq=24 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=24 start=455786924 end=455801822 ticks=14898
+HOST_LM_HANDLER seq=24 start=455786975 end=455801742 ticks=14767
+HOST_LM_PHASE seq=24 stage=envelope start=455786924 end=455786975
+HOST_LM_PHASE seq=24 stage=handler_validation start=455786975 end=455787005
+HOST_LM_PHASE seq=24 stage=source_validation start=455787005 end=455787039
+HOST_LM_PHASE seq=24 stage=fence_drain start=455787039 end=455787056
+HOST_LM_PHASE seq=24 stage=preflight_prep start=455787056 end=455787074
+HOST_LM_PHASE seq=24 stage=preflight start=455787074 end=455787130
+HOST_LM_PHASE seq=24 stage=bind_cache_unpack start=455787130 end=455787205
+HOST_LM_PHASE seq=24 stage=perf_query_before start=455787205 end=455787241
+HOST_LM_PHASE seq=24 stage=native_texsub start=455787241 end=455801564
+HOST_LM_PHASE seq=24 stage=perf_query_after start=455801564 end=455801615
+HOST_LM_PHASE seq=24 stage=restore start=455801615 end=455801660
+HOST_LM_PHASE seq=24 stage=bridge_query start=455801660 end=455801724
+HOST_LM_PHASE seq=24 stage=result start=455801724 end=455801742
+HOST_LM_PHASE seq=24 stage=reply start=455801742 end=455801822
+HOST_LM_NATIVE seq=24 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=24 key=residency_ticks before=2376172 after=2388459
+HOST_LM_DELTA seq=24 key=residency_ticks delta=12287
+HOST_LM_NATIVE seq=24 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=24 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=24 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=24 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=24 key=evictions before=0 after=0
+HOST_LM_DELTA seq=24 key=evictions delta=0
+HOST_LM_ID seq=25 context=1 name=1032 request_serial=2001
+HOST_LM_RECT seq=25 level=0 x=0 y=71
+HOST_LM_SIZE seq=25 w=128 h=53 wire_format_type=13107437
+HOST_LM_RESULT seq=25 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=25 error=0
+HOST_LM_ENTRY seq=25 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=25 start=455803981 end=455821149 ticks=17168
+HOST_LM_HANDLER seq=25 start=455804031 end=455821072 ticks=17041
+HOST_LM_PHASE seq=25 stage=envelope start=455803981 end=455804031
+HOST_LM_PHASE seq=25 stage=handler_validation start=455804031 end=455804061
+HOST_LM_PHASE seq=25 stage=source_validation start=455804061 end=455804096
+HOST_LM_PHASE seq=25 stage=fence_drain start=455804096 end=455804111
+HOST_LM_PHASE seq=25 stage=preflight_prep start=455804111 end=455804129
+HOST_LM_PHASE seq=25 stage=preflight start=455804129 end=455804179
+HOST_LM_PHASE seq=25 stage=bind_cache_unpack start=455804179 end=455804257
+HOST_LM_PHASE seq=25 stage=perf_query_before start=455804257 end=455804293
+HOST_LM_PHASE seq=25 stage=native_texsub start=455804293 end=455820746
+HOST_LM_PHASE seq=25 stage=perf_query_after start=455820746 end=455820943
+HOST_LM_PHASE seq=25 stage=restore start=455820943 end=455820990
+HOST_LM_PHASE seq=25 stage=bridge_query start=455820990 end=455821054
+HOST_LM_PHASE seq=25 stage=result start=455821054 end=455821072
+HOST_LM_PHASE seq=25 stage=reply start=455821072 end=455821149
+HOST_LM_NATIVE seq=25 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=25 key=residency_ticks before=2388459 after=2399885
+HOST_LM_DELTA seq=25 key=residency_ticks delta=11426
+HOST_LM_NATIVE seq=25 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=25 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=25 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=25 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=25 key=evictions before=0 after=0
+HOST_LM_DELTA seq=25 key=evictions delta=0
+HOST_LM_ID seq=26 context=1 name=1035 request_serial=2006
+HOST_LM_RECT seq=26 level=0 x=0 y=112
+HOST_LM_SIZE seq=26 w=128 h=15 wire_format_type=13107437
+HOST_LM_RESULT seq=26 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=26 error=0
+HOST_LM_ENTRY seq=26 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=26 start=456526774 end=456540860 ticks=14086
+HOST_LM_HANDLER seq=26 start=456526980 end=456540776 ticks=13796
+HOST_LM_PHASE seq=26 stage=envelope start=456526774 end=456526980
+HOST_LM_PHASE seq=26 stage=handler_validation start=456526980 end=456527012
+HOST_LM_PHASE seq=26 stage=source_validation start=456527012 end=456527046
+HOST_LM_PHASE seq=26 stage=fence_drain start=456527046 end=456527062
+HOST_LM_PHASE seq=26 stage=preflight_prep start=456527062 end=456527081
+HOST_LM_PHASE seq=26 stage=preflight start=456527081 end=456527138
+HOST_LM_PHASE seq=26 stage=bind_cache_unpack start=456527138 end=456527216
+HOST_LM_PHASE seq=26 stage=perf_query_before start=456527216 end=456527252
+HOST_LM_PHASE seq=26 stage=native_texsub start=456527252 end=456540609
+HOST_LM_PHASE seq=26 stage=perf_query_after start=456540609 end=456540655
+HOST_LM_PHASE seq=26 stage=restore start=456540655 end=456540702
+HOST_LM_PHASE seq=26 stage=bridge_query start=456540702 end=456540759
+HOST_LM_PHASE seq=26 stage=result start=456540759 end=456540776
+HOST_LM_PHASE seq=26 stage=reply start=456540776 end=456540860
+HOST_LM_NATIVE seq=26 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=26 key=residency_ticks before=2399885 after=2411289
+HOST_LM_DELTA seq=26 key=residency_ticks delta=11404
+HOST_LM_NATIVE seq=26 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=26 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=26 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=26 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=26 key=evictions before=0 after=0
+HOST_LM_DELTA seq=26 key=evictions delta=0
+HOST_LM_ID seq=27 context=1 name=1036 request_serial=2008
+HOST_LM_RECT seq=27 level=0 x=0 y=0
+HOST_LM_SIZE seq=27 w=128 h=15 wire_format_type=13107437
+HOST_LM_RESULT seq=27 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=27 error=0
+HOST_LM_ENTRY seq=27 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=27 start=456542667 end=456556775 ticks=14108
+HOST_LM_HANDLER seq=27 start=456542716 end=456556689 ticks=13973
+HOST_LM_PHASE seq=27 stage=envelope start=456542667 end=456542716
+HOST_LM_PHASE seq=27 stage=handler_validation start=456542716 end=456542748
+HOST_LM_PHASE seq=27 stage=source_validation start=456542748 end=456542782
+HOST_LM_PHASE seq=27 stage=fence_drain start=456542782 end=456542797
+HOST_LM_PHASE seq=27 stage=preflight_prep start=456542797 end=456542815
+HOST_LM_PHASE seq=27 stage=preflight start=456542815 end=456542870
+HOST_LM_PHASE seq=27 stage=bind_cache_unpack start=456542870 end=456542946
+HOST_LM_PHASE seq=27 stage=perf_query_before start=456542946 end=456542985
+HOST_LM_PHASE seq=27 stage=native_texsub start=456542985 end=456556522
+HOST_LM_PHASE seq=27 stage=perf_query_after start=456556522 end=456556569
+HOST_LM_PHASE seq=27 stage=restore start=456556569 end=456556612
+HOST_LM_PHASE seq=27 stage=bridge_query start=456556612 end=456556670
+HOST_LM_PHASE seq=27 stage=result start=456556670 end=456556689
+HOST_LM_PHASE seq=27 stage=reply start=456556689 end=456556775
+HOST_LM_NATIVE seq=27 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=27 key=residency_ticks before=2411289 after=2422895
+HOST_LM_DELTA seq=27 key=residency_ticks delta=11606
+HOST_LM_NATIVE seq=27 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=27 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=27 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=27 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=27 key=evictions before=0 after=0
+HOST_LM_DELTA seq=27 key=evictions delta=0
+HOST_LM_ID seq=28 context=1 name=1029 request_serial=2010
+HOST_LM_RECT seq=28 level=0 x=0 y=119
+HOST_LM_SIZE seq=28 w=128 h=4 wire_format_type=13107437
+HOST_LM_RESULT seq=28 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=28 error=0
+HOST_LM_ENTRY seq=28 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=28 start=456655729 end=456669475 ticks=13746
+HOST_LM_HANDLER seq=28 start=456655781 end=456669394 ticks=13613
+HOST_LM_PHASE seq=28 stage=envelope start=456655729 end=456655781
+HOST_LM_PHASE seq=28 stage=handler_validation start=456655781 end=456655811
+HOST_LM_PHASE seq=28 stage=source_validation start=456655811 end=456655846
+HOST_LM_PHASE seq=28 stage=fence_drain start=456655846 end=456655861
+HOST_LM_PHASE seq=28 stage=preflight_prep start=456655861 end=456655880
+HOST_LM_PHASE seq=28 stage=preflight start=456655880 end=456655936
+HOST_LM_PHASE seq=28 stage=bind_cache_unpack start=456655936 end=456656019
+HOST_LM_PHASE seq=28 stage=perf_query_before start=456656019 end=456656059
+HOST_LM_PHASE seq=28 stage=native_texsub start=456656059 end=456669222
+HOST_LM_PHASE seq=28 stage=perf_query_after start=456669222 end=456669269
+HOST_LM_PHASE seq=28 stage=restore start=456669269 end=456669314
+HOST_LM_PHASE seq=28 stage=bridge_query start=456669314 end=456669377
+HOST_LM_PHASE seq=28 stage=result start=456669377 end=456669394
+HOST_LM_PHASE seq=28 stage=reply start=456669394 end=456669475
+HOST_LM_NATIVE seq=28 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=28 key=residency_ticks before=2422895 after=2434966
+HOST_LM_DELTA seq=28 key=residency_ticks delta=12071
+HOST_LM_NATIVE seq=28 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=28 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=28 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=28 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=28 key=evictions before=0 after=0
+HOST_LM_DELTA seq=28 key=evictions delta=0
+HOST_LM_ID seq=29 context=1 name=1030 request_serial=2012
+HOST_LM_RECT seq=29 level=0 x=0 y=0
+HOST_LM_SIZE seq=29 w=128 h=14 wire_format_type=13107437
+HOST_LM_RESULT seq=29 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=29 error=0
+HOST_LM_ENTRY seq=29 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=29 start=456671422 end=456685294 ticks=13872
+HOST_LM_HANDLER seq=29 start=456671476 end=456685209 ticks=13733
+HOST_LM_PHASE seq=29 stage=envelope start=456671422 end=456671476
+HOST_LM_PHASE seq=29 stage=handler_validation start=456671476 end=456671506
+HOST_LM_PHASE seq=29 stage=source_validation start=456671506 end=456671540
+HOST_LM_PHASE seq=29 stage=fence_drain start=456671540 end=456671556
+HOST_LM_PHASE seq=29 stage=preflight_prep start=456671556 end=456671575
+HOST_LM_PHASE seq=29 stage=preflight start=456671575 end=456671625
+HOST_LM_PHASE seq=29 stage=bind_cache_unpack start=456671625 end=456671703
+HOST_LM_PHASE seq=29 stage=perf_query_before start=456671703 end=456671742
+HOST_LM_PHASE seq=29 stage=native_texsub start=456671742 end=456685036
+HOST_LM_PHASE seq=29 stage=perf_query_after start=456685036 end=456685082
+HOST_LM_PHASE seq=29 stage=restore start=456685082 end=456685126
+HOST_LM_PHASE seq=29 stage=bridge_query start=456685126 end=456685190
+HOST_LM_PHASE seq=29 stage=result start=456685190 end=456685209
+HOST_LM_PHASE seq=29 stage=reply start=456685209 end=456685294
+HOST_LM_NATIVE seq=29 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=29 key=residency_ticks before=2434966 after=2446402
+HOST_LM_DELTA seq=29 key=residency_ticks delta=11436
+HOST_LM_NATIVE seq=29 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=29 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=29 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=29 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=29 key=evictions before=0 after=0
+HOST_LM_DELTA seq=29 key=evictions delta=0
+HOST_LM_ID seq=30 context=1 name=1032 request_serial=2014
+HOST_LM_RECT seq=30 level=0 x=0 y=23
+HOST_LM_SIZE seq=30 w=128 h=17 wire_format_type=13107437
+HOST_LM_RESULT seq=30 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=30 error=0
+HOST_LM_ENTRY seq=30 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=30 start=456687747 end=456701851 ticks=14104
+HOST_LM_HANDLER seq=30 start=456687798 end=456701766 ticks=13968
+HOST_LM_PHASE seq=30 stage=envelope start=456687747 end=456687798
+HOST_LM_PHASE seq=30 stage=handler_validation start=456687798 end=456687828
+HOST_LM_PHASE seq=30 stage=source_validation start=456687828 end=456687861
+HOST_LM_PHASE seq=30 stage=fence_drain start=456687861 end=456687876
+HOST_LM_PHASE seq=30 stage=preflight_prep start=456687876 end=456687894
+HOST_LM_PHASE seq=30 stage=preflight start=456687894 end=456687947
+HOST_LM_PHASE seq=30 stage=bind_cache_unpack start=456687947 end=456688024
+HOST_LM_PHASE seq=30 stage=perf_query_before start=456688024 end=456688062
+HOST_LM_PHASE seq=30 stage=native_texsub start=456688062 end=456701599
+HOST_LM_PHASE seq=30 stage=perf_query_after start=456701599 end=456701641
+HOST_LM_PHASE seq=30 stage=restore start=456701641 end=456701685
+HOST_LM_PHASE seq=30 stage=bridge_query start=456701685 end=456701749
+HOST_LM_PHASE seq=30 stage=result start=456701749 end=456701766
+HOST_LM_PHASE seq=30 stage=reply start=456701766 end=456701851
+HOST_LM_NATIVE seq=30 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=30 key=residency_ticks before=2446402 after=2457824
+HOST_LM_DELTA seq=30 key=residency_ticks delta=11422
+HOST_LM_NATIVE seq=30 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=30 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=30 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=30 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=30 key=evictions before=0 after=0
+HOST_LM_DELTA seq=30 key=evictions delta=0
+HOST_LM_ID seq=31 context=1 name=1032 request_serial=2016
+HOST_LM_RECT seq=31 level=0 x=0 y=19
+HOST_LM_SIZE seq=31 w=128 h=11 wire_format_type=13107437
+HOST_LM_RESULT seq=31 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=31 error=0
+HOST_LM_ENTRY seq=31 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=31 start=456993145 end=457006898 ticks=13753
+HOST_LM_HANDLER seq=31 start=456993198 end=457006813 ticks=13615
+HOST_LM_PHASE seq=31 stage=envelope start=456993145 end=456993198
+HOST_LM_PHASE seq=31 stage=handler_validation start=456993198 end=456993228
+HOST_LM_PHASE seq=31 stage=source_validation start=456993228 end=456993265
+HOST_LM_PHASE seq=31 stage=fence_drain start=456993265 end=456993280
+HOST_LM_PHASE seq=31 stage=preflight_prep start=456993280 end=456993297
+HOST_LM_PHASE seq=31 stage=preflight start=456993297 end=456993350
+HOST_LM_PHASE seq=31 stage=bind_cache_unpack start=456993350 end=456993428
+HOST_LM_PHASE seq=31 stage=perf_query_before start=456993428 end=456993466
+HOST_LM_PHASE seq=31 stage=native_texsub start=456993466 end=457006639
+HOST_LM_PHASE seq=31 stage=perf_query_after start=457006639 end=457006688
+HOST_LM_PHASE seq=31 stage=restore start=457006688 end=457006732
+HOST_LM_PHASE seq=31 stage=bridge_query start=457006732 end=457006796
+HOST_LM_PHASE seq=31 stage=result start=457006796 end=457006813
+HOST_LM_PHASE seq=31 stage=reply start=457006813 end=457006898
+HOST_LM_NATIVE seq=31 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=31 key=residency_ticks before=2457824 after=2469240
+HOST_LM_DELTA seq=31 key=residency_ticks delta=11416
+HOST_LM_NATIVE seq=31 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=31 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=31 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=31 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=31 key=evictions before=0 after=0
+HOST_LM_DELTA seq=31 key=evictions delta=0
+HOST_LM_ID seq=32 context=1 name=1032 request_serial=2018
+HOST_LM_RECT seq=32 level=0 x=0 y=19
+HOST_LM_SIZE seq=32 w=128 h=11 wire_format_type=13107437
+HOST_LM_RESULT seq=32 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=32 error=0
+HOST_LM_ENTRY seq=32 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=32 start=457177571 end=457192102 ticks=14531
+HOST_LM_HANDLER seq=32 start=457177625 end=457192019 ticks=14394
+HOST_LM_PHASE seq=32 stage=envelope start=457177571 end=457177625
+HOST_LM_PHASE seq=32 stage=handler_validation start=457177625 end=457177656
+HOST_LM_PHASE seq=32 stage=source_validation start=457177656 end=457177691
+HOST_LM_PHASE seq=32 stage=fence_drain start=457177691 end=457177707
+HOST_LM_PHASE seq=32 stage=preflight_prep start=457177707 end=457177726
+HOST_LM_PHASE seq=32 stage=preflight start=457177726 end=457177778
+HOST_LM_PHASE seq=32 stage=bind_cache_unpack start=457177778 end=457177857
+HOST_LM_PHASE seq=32 stage=perf_query_before start=457177857 end=457177894
+HOST_LM_PHASE seq=32 stage=native_texsub start=457177894 end=457191842
+HOST_LM_PHASE seq=32 stage=perf_query_after start=457191842 end=457191892
+HOST_LM_PHASE seq=32 stage=restore start=457191892 end=457191939
+HOST_LM_PHASE seq=32 stage=bridge_query start=457191939 end=457192002
+HOST_LM_PHASE seq=32 stage=result start=457192002 end=457192019
+HOST_LM_PHASE seq=32 stage=reply start=457192019 end=457192102
+HOST_LM_NATIVE seq=32 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=32 key=residency_ticks before=2469240 after=2481550
+HOST_LM_DELTA seq=32 key=residency_ticks delta=12310
+HOST_LM_NATIVE seq=32 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=32 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=32 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=32 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=32 key=evictions before=0 after=0
+HOST_LM_DELTA seq=32 key=evictions delta=0
+HOST_LM_ID seq=33 context=1 name=1035 request_serial=2020
+HOST_LM_RECT seq=33 level=0 x=0 y=16
+HOST_LM_SIZE seq=33 w=128 h=13 wire_format_type=13107437
+HOST_LM_RESULT seq=33 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=33 error=0
+HOST_LM_ENTRY seq=33 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=33 start=457271480 end=457285362 ticks=13882
+HOST_LM_HANDLER seq=33 start=457271531 end=457285281 ticks=13750
+HOST_LM_PHASE seq=33 stage=envelope start=457271480 end=457271531
+HOST_LM_PHASE seq=33 stage=handler_validation start=457271531 end=457271562
+HOST_LM_PHASE seq=33 stage=source_validation start=457271562 end=457271598
+HOST_LM_PHASE seq=33 stage=fence_drain start=457271598 end=457271613
+HOST_LM_PHASE seq=33 stage=preflight_prep start=457271613 end=457271632
+HOST_LM_PHASE seq=33 stage=preflight start=457271632 end=457271687
+HOST_LM_PHASE seq=33 stage=bind_cache_unpack start=457271687 end=457271768
+HOST_LM_PHASE seq=33 stage=perf_query_before start=457271768 end=457271806
+HOST_LM_PHASE seq=33 stage=native_texsub start=457271806 end=457285110
+HOST_LM_PHASE seq=33 stage=perf_query_after start=457285110 end=457285158
+HOST_LM_PHASE seq=33 stage=restore start=457285158 end=457285203
+HOST_LM_PHASE seq=33 stage=bridge_query start=457285203 end=457285263
+HOST_LM_PHASE seq=33 stage=result start=457285263 end=457285281
+HOST_LM_PHASE seq=33 stage=reply start=457285281 end=457285362
+HOST_LM_NATIVE seq=33 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=33 key=residency_ticks before=2481550 after=2492966
+HOST_LM_DELTA seq=33 key=residency_ticks delta=11416
+HOST_LM_NATIVE seq=33 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=33 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=33 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=33 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=33 key=evictions before=0 after=0
+HOST_LM_DELTA seq=33 key=evictions delta=0
+HOST_LM_ID seq=34 context=1 name=1036 request_serial=2025
+HOST_LM_RECT seq=34 level=0 x=0 y=31
+HOST_LM_SIZE seq=34 w=128 h=4 wire_format_type=13107437
+HOST_LM_RESULT seq=34 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=34 error=0
+HOST_LM_ENTRY seq=34 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=34 start=458253336 end=458271447 ticks=18111
+HOST_LM_HANDLER seq=34 start=458253388 end=458271369 ticks=17981
+HOST_LM_PHASE seq=34 stage=envelope start=458253336 end=458253388
+HOST_LM_PHASE seq=34 stage=handler_validation start=458253388 end=458253418
+HOST_LM_PHASE seq=34 stage=source_validation start=458253418 end=458258222
+HOST_LM_PHASE seq=34 stage=fence_drain start=458258222 end=458258252
+HOST_LM_PHASE seq=34 stage=preflight_prep start=458258252 end=458258273
+HOST_LM_PHASE seq=34 stage=preflight start=458258273 end=458258334
+HOST_LM_PHASE seq=34 stage=bind_cache_unpack start=458258334 end=458258440
+HOST_LM_PHASE seq=34 stage=perf_query_before start=458258440 end=458258477
+HOST_LM_PHASE seq=34 stage=native_texsub start=458258477 end=458271202
+HOST_LM_PHASE seq=34 stage=perf_query_after start=458271202 end=458271247
+HOST_LM_PHASE seq=34 stage=restore start=458271247 end=458271293
+HOST_LM_PHASE seq=34 stage=bridge_query start=458271293 end=458271351
+HOST_LM_PHASE seq=34 stage=result start=458271351 end=458271369
+HOST_LM_PHASE seq=34 stage=reply start=458271369 end=458271447
+HOST_LM_NATIVE seq=34 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=34 key=residency_ticks before=2492966 after=2504627
+HOST_LM_DELTA seq=34 key=residency_ticks delta=11661
+HOST_LM_NATIVE seq=34 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=34 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=34 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=34 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=34 key=evictions before=0 after=0
+HOST_LM_DELTA seq=34 key=evictions delta=0
+HOST_LM_ID seq=35 context=1 name=1032 request_serial=2027
+HOST_LM_RECT seq=35 level=0 x=0 y=76
+HOST_LM_SIZE seq=35 w=128 h=4 wire_format_type=13107437
+HOST_LM_RESULT seq=35 status=0 error=0 native_samples=3
+HOST_LM_HINT seq=35 error=0
+HOST_LM_ENTRY seq=35 mailbox=1 handler_entered=1 fences_at_drain=0
+HOST_LM_TOTAL seq=35 start=458291883 end=458305280 ticks=13397
+HOST_LM_HANDLER seq=35 start=458291934 end=458305199 ticks=13265
+HOST_LM_PHASE seq=35 stage=envelope start=458291883 end=458291934
+HOST_LM_PHASE seq=35 stage=handler_validation start=458291934 end=458291962
+HOST_LM_PHASE seq=35 stage=source_validation start=458291962 end=458291998
+HOST_LM_PHASE seq=35 stage=fence_drain start=458291998 end=458292012
+HOST_LM_PHASE seq=35 stage=preflight_prep start=458292012 end=458292031
+HOST_LM_PHASE seq=35 stage=preflight start=458292031 end=458292087
+HOST_LM_PHASE seq=35 stage=bind_cache_unpack start=458292087 end=458292165
+HOST_LM_PHASE seq=35 stage=perf_query_before start=458292165 end=458292206
+HOST_LM_PHASE seq=35 stage=native_texsub start=458292206 end=458305032
+HOST_LM_PHASE seq=35 stage=perf_query_after start=458305032 end=458305075
+HOST_LM_PHASE seq=35 stage=restore start=458305075 end=458305121
+HOST_LM_PHASE seq=35 stage=bridge_query start=458305121 end=458305182
+HOST_LM_PHASE seq=35 stage=result start=458305182 end=458305199
+HOST_LM_PHASE seq=35 stage=reply start=458305199 end=458305280
+HOST_LM_NATIVE seq=35 key=clock_hz before=709379 after=709379
+HOST_LM_NATIVE seq=35 key=residency_ticks before=2504627 after=2516403
+HOST_LM_DELTA seq=35 key=residency_ticks delta=11776
+HOST_LM_NATIVE seq=35 key=upload_ticks before=401273 after=401273
+HOST_LM_DELTA seq=35 key=upload_ticks delta=0
+HOST_LM_NATIVE seq=35 key=upload_bytes before=2854524 after=2854524
+HOST_LM_DELTA seq=35 key=upload_bytes delta=0
+HOST_LM_NATIVE seq=35 key=evictions before=0 after=0
+HOST_LM_DELTA seq=35 key=evictions delta=0
+MiniGLPPC host: attribution scope=host_session_including_setup_idle_context_teardown inclusive=1 mutually_exclusive=0 counter_bits=32 busy=control+barrier+total+ring+mailbox idle=max(wall-busy,0) idle_is_cpu_idle=0
+MiniGLPPC host: session_ticks wall=58537757 busy=19931656 idle=38606101
+MiniGLPPC host: session wall_us=82519720 idle_us=54422390 msgs control=6 control_us=485795 barrier=0 barrier_us=0 execute_msgs=0 ring_us=18828076
+MiniGLPPC host: mailbox=2038 mailbox_us=8783458
+MiniGLPPC host: direct_begin=267 direct_begin_us=65516 direct_commit=0 direct_commit_us=0
+MiniGLPPC host: direct_begin2=0 direct_begin2_us=0 direct_commit2=0 direct_commit2_us=0
+MiniGLPPC host: uploads=267 upload_fails=267
+HOST_SUBIMAGE count=35 handler_us=735193 preflight_us=2335 native_texsub_us=701483 bridge_query_us=2182
+HOST_BRIDGE_CACHE enabled=1 scope=ring_poll_burst v2_queries_including_registration=16034 hits=0
+HOST_POLL scope=host_session polls=top_level_only sample_period_loops=16 ticks=sampled_unscaled calls=sampled_including_zero_tick loops=3139142 eclock_hz=709379
+HOST_POLL mailbox_ticks=2921713 mailbox_calls=196196 fence_ticks=2165462 fence_calls=196196 event_ticks=3082865 event_calls=196196
+MiniGLPPC host: executes=15055 presents=978 eclock_hz=709379
+MiniGLPPC host: stage_ticks wait=0 clear=0 crc=0 query=0 submit=0 presentwait=3916307 present=1876000 total=0 inclusive=1 mutually_exclusive=0 total_scope=execute_slot_only
+MiniGLPPC host: stopped

@@ -1,0 +1,116 @@
+MiniGLPPC host: step=backend_open
+MiniGLPPC host: step=timer
+MiniGLPPC host: ready, MiniGL 12.0
+MiniGLPPC host: step=port_added
+MiniGLPPC host: priority=-1 previous=0
+MiniGLPPC host: step=service_enter
+[mgl] ctx fullscreen=1 depth=16 mode=0
+[mgl] fs=begin
+[mgl] fs=ok buffers=3
+MiniGLPPC host: create windowed=0 w=640 h=480 depth=16
+MiniGLPPC host: ring caps=1ffff7ff ordered=1 gen=2
+MiniGLPPC host: msg=ring_reg
+MiniGLPPC host: ring_seg=ok addr=43b40000 bytes=65536
+MiniGLPPC host: ring_init_done vertex_segments=4
+host: upload_shared bytes=65536 fmt=ed type=c8
+MiniGLPPC host: ring_first_entry
+host: dbeg n=1 tex=1024 wh=128x128 ok=1 ticks=1005 hz=709379 addr=415c96c0 pitch=512 flags=0
+host: dcom n=1 tex=1024 ok=1 ticks=53 hz=709379 token=0bc64288 v7=00000001
+host: dbeg n=2 tex=1025 wh=128x128 ok=1 ticks=986 hz=709379 addr=415d96c0 pitch=512 flags=0
+host: dcom n=2 tex=1025 ok=1 ticks=48 hz=709379 token=0bc74350 v7=00000001
+host: dbeg n=3 tex=1026 wh=128x128 ok=1 ticks=1008 hz=709379 addr=415e96c0 pitch=512 flags=0
+host: dcom n=3 tex=1026 ok=1 ticks=54 hz=709379 token=0bc84418 v7=00000001
+host: dbeg n=4 tex=1027 wh=128x128 ok=1 ticks=1161 hz=709379 addr=415f96c0 pitch=512 flags=0
+host: dcom n=4 tex=1027 ok=1 ticks=47 hz=709379 token=0bc944e0 v7=00000001
+host: dbeg n=5 tex=1028 wh=128x128 ok=1 ticks=999 hz=709379 addr=416096c0 pitch=512 flags=0
+host: dcom n=5 tex=1028 ok=1 ticks=53 hz=709379 token=0bca45a8 v7=00000001
+host: dbeg n=6 tex=1029 wh=128x128 ok=1 ticks=1088 hz=709379 addr=416196c0 pitch=512 flags=0
+host: dcom n=6 tex=1029 ok=1 ticks=47 hz=709379 token=0bcb4a98 v7=00000001
+host: dbeg n=7 tex=1030 wh=128x128 ok=1 ticks=1004 hz=709379 addr=416296c0 pitch=512 flags=0
+host: dcom n=7 tex=1030 ok=1 ticks=54 hz=709379 token=0bcc4b60 v7=00000001
+host: dbeg n=8 tex=1031 wh=128x128 ok=1 ticks=1196 hz=709379 addr=416396c0 pitch=512 flags=0
+host: dcom n=8 tex=1031 ok=1 ticks=60 hz=709379 token=0bcd4c28 v7=00000001
+host: dbeg n=9 tex=1032 wh=128x128 ok=1 ticks=1021 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=9 tex=1032 ok=1 ticks=48 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=10 tex=1033 wh=128x128 ok=1 ticks=1026 hz=709379 addr=416596c0 pitch=512 flags=0
+host: dcom n=10 tex=1033 ok=1 ticks=48 hz=709379 token=0bcf4db8 v7=00000001
+host: dbeg n=11 tex=1034 wh=128x128 ok=1 ticks=1002 hz=709379 addr=416696c0 pitch=512 flags=0
+host: dcom n=11 tex=1034 ok=1 ticks=51 hz=709379 token=0bd04e80 v7=00000001
+host: dbeg n=12 tex=1035 wh=128x128 ok=1 ticks=1163 hz=709379 addr=416796c0 pitch=512 flags=0
+host: dcom n=12 tex=1035 ok=1 ticks=50 hz=709379 token=0bd14f48 v7=00000001
+host: dbeg n=13 tex=1036 wh=128x128 ok=1 ticks=1009 hz=709379 addr=416896c0 pitch=512 flags=0
+host: dcom n=13 tex=1036 ok=1 ticks=51 hz=709379 token=0bd25010 v7=00000001
+host: dbeg n=14 tex=1035 wh=128x128 ok=1 ticks=1413 hz=709379 addr=416796c0 pitch=512 flags=0
+host: dcom n=14 tex=1035 ok=1 ticks=47 hz=709379 token=0bd14f48 v7=00000001
+host: dbeg n=15 tex=1032 wh=128x128 ok=1 ticks=2133 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=15 tex=1032 ok=1 ticks=53 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=16 tex=1035 wh=128x128 ok=1 ticks=6190 hz=709379 addr=416796c0 pitch=512 flags=0
+host: dcom n=16 tex=1035 ok=1 ticks=49 hz=709379 token=0bd14f48 v7=00000001
+host: dbeg n=17 tex=1029 wh=128x128 ok=1 ticks=1549 hz=709379 addr=416196c0 pitch=512 flags=0
+host: dcom n=17 tex=1029 ok=1 ticks=48 hz=709379 token=0bcb4a98 v7=00000001
+host: dbeg n=18 tex=1030 wh=128x128 ok=1 ticks=1416 hz=709379 addr=416296c0 pitch=512 flags=0
+host: dcom n=18 tex=1030 ok=1 ticks=51 hz=709379 token=0bcc4b60 v7=00000001
+host: dbeg n=19 tex=1032 wh=128x128 ok=1 ticks=1419 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=19 tex=1032 ok=1 ticks=50 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=20 tex=1027 wh=128x128 ok=1 ticks=1434 hz=709379 addr=415f96c0 pitch=512 flags=0
+host: dcom n=20 tex=1027 ok=1 ticks=47 hz=709379 token=0bc944e0 v7=00000001
+host: dbeg n=21 tex=1032 wh=128x128 ok=1 ticks=1411 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=21 tex=1032 ok=1 ticks=49 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=22 tex=1032 wh=128x128 ok=1 ticks=1424 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=22 tex=1032 ok=1 ticks=51 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=23 tex=1035 wh=128x128 ok=1 ticks=1418 hz=709379 addr=416796c0 pitch=512 flags=0
+host: dcom n=23 tex=1035 ok=1 ticks=48 hz=709379 token=0bd14f48 v7=00000001
+host: dbeg n=24 tex=1036 wh=128x128 ok=1 ticks=1409 hz=709379 addr=416896c0 pitch=512 flags=0
+host: dcom n=24 tex=1036 ok=1 ticks=52 hz=709379 token=0bd25010 v7=00000001
+host: dbeg n=25 tex=1032 wh=128x128 ok=1 ticks=1414 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=25 tex=1032 ok=1 ticks=48 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=26 tex=1029 wh=128x128 ok=1 ticks=1398 hz=709379 addr=416196c0 pitch=512 flags=0
+host: dcom n=26 tex=1029 ok=1 ticks=54 hz=709379 token=0bcb4a98 v7=00000001
+host: dbeg n=27 tex=1030 wh=128x128 ok=1 ticks=1389 hz=709379 addr=416296c0 pitch=512 flags=0
+host: dcom n=27 tex=1030 ok=1 ticks=51 hz=709379 token=0bcc4b60 v7=00000001
+host: dbeg n=28 tex=1032 wh=128x128 ok=1 ticks=1401 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=28 tex=1032 ok=1 ticks=53 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=29 tex=1035 wh=128x128 ok=1 ticks=1600 hz=709379 addr=416796c0 pitch=512 flags=0
+host: dcom n=29 tex=1035 ok=1 ticks=48 hz=709379 token=0bd14f48 v7=00000001
+host: dbeg n=30 tex=1030 wh=128x128 ok=1 ticks=1376 hz=709379 addr=416296c0 pitch=512 flags=0
+host: dcom n=30 tex=1030 ok=1 ticks=50 hz=709379 token=0bcc4b60 v7=00000001
+host: dbeg n=31 tex=1035 wh=128x128 ok=1 ticks=1401 hz=709379 addr=416796c0 pitch=512 flags=0
+host: dcom n=31 tex=1035 ok=1 ticks=50 hz=709379 token=0bd14f48 v7=00000001
+host: dbeg n=32 tex=1029 wh=128x128 ok=1 ticks=1543 hz=709379 addr=416196c0 pitch=512 flags=0
+host: dcom n=32 tex=1029 ok=1 ticks=52 hz=709379 token=0bcb4a98 v7=00000001
+host: dbeg n=33 tex=1029 wh=128x128 ok=1 ticks=1401 hz=709379 addr=416196c0 pitch=512 flags=0
+host: dcom n=33 tex=1029 ok=1 ticks=50 hz=709379 token=0bcb4a98 v7=00000001
+host: dbeg n=34 tex=1030 wh=128x128 ok=1 ticks=1406 hz=709379 addr=416296c0 pitch=512 flags=0
+host: dcom n=34 tex=1030 ok=1 ticks=51 hz=709379 token=0bcc4b60 v7=00000001
+host: dbeg n=35 tex=1027 wh=128x128 ok=1 ticks=1475 hz=709379 addr=415f96c0 pitch=512 flags=0
+host: dcom n=35 tex=1027 ok=1 ticks=48 hz=709379 token=0bc944e0 v7=00000001
+host: dbeg n=36 tex=1029 wh=128x128 ok=1 ticks=1419 hz=709379 addr=416196c0 pitch=512 flags=0
+host: dcom n=36 tex=1029 ok=1 ticks=50 hz=709379 token=0bcb4a98 v7=00000001
+host: dbeg n=37 tex=1030 wh=128x128 ok=1 ticks=1389 hz=709379 addr=416296c0 pitch=512 flags=0
+host: dcom n=37 tex=1030 ok=1 ticks=50 hz=709379 token=0bcc4b60 v7=00000001
+host: dbeg n=38 tex=1032 wh=128x128 ok=1 ticks=1429 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=38 tex=1032 ok=1 ticks=53 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=39 tex=1035 wh=128x128 ok=1 ticks=1407 hz=709379 addr=416796c0 pitch=512 flags=0
+host: dcom n=39 tex=1035 ok=1 ticks=52 hz=709379 token=0bd14f48 v7=00000001
+host: dbeg n=40 tex=1036 wh=128x128 ok=1 ticks=2271 hz=709379 addr=416896c0 pitch=512 flags=0
+host: dcom n=40 tex=1036 ok=1 ticks=50 hz=709379 token=0bd25010 v7=00000001
+host: dbeg n=41 tex=1029 wh=128x128 ok=1 ticks=1391 hz=709379 addr=416196c0 pitch=512 flags=0
+host: dcom n=41 tex=1029 ok=1 ticks=51 hz=709379 token=0bcb4a98 v7=00000001
+host: dbeg n=42 tex=1030 wh=128x128 ok=1 ticks=1391 hz=709379 addr=416296c0 pitch=512 flags=0
+host: dcom n=42 tex=1030 ok=1 ticks=51 hz=709379 token=0bcc4b60 v7=00000001
+host: dbeg n=43 tex=1032 wh=128x128 ok=1 ticks=1391 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=43 tex=1032 ok=1 ticks=49 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=44 tex=1032 wh=128x128 ok=1 ticks=1415 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=44 tex=1032 ok=1 ticks=48 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=45 tex=1032 wh=128x128 ok=1 ticks=1407 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=45 tex=1032 ok=1 ticks=49 hz=709379 token=0bce4cf0 v7=00000001
+host: dbeg n=46 tex=1035 wh=128x128 ok=1 ticks=1414 hz=709379 addr=416796c0 pitch=512 flags=0
+host: dcom n=46 tex=1035 ok=1 ticks=51 hz=709379 token=0bd14f48 v7=00000001
+host: dbeg n=47 tex=1036 wh=128x128 ok=1 ticks=1389 hz=709379 addr=416896c0 pitch=512 flags=0
+host: dcom n=47 tex=1036 ok=1 ticks=50 hz=709379 token=0bd25010 v7=00000001
+host: dbeg n=48 tex=1032 wh=128x128 ok=1 ticks=1432 hz=709379 addr=416496c0 pitch=512 flags=0
+host: dcom n=48 tex=1032 ok=1 ticks=51 hz=709379 token=0bce4cf0 v7=00000001
+[minigl.library] LibClose count=0
+CP_RUN dispatches=15144 dwords=9405940 failed=0
+MiniGLPPC host: executes=15144 presents=978
+MiniGLPPC host: stopped

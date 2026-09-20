@@ -240,4 +240,265 @@ dwords=7846942 failed=0`, `executes=15032 presents=978`, clean stop.
 
 16-bit gives +23% over 32-bit at the same resolution and stack.
 
+---
+
+## 8. Cleanup verdict (added 2026-09-20 ~00:40 CEST)
+
+Measured under the current best path (CP emit on, 800x600x16):
+fast 1 px particles **15.009**, old 3 px quads **15.150** — within noise.
+The particle mode is now a visual preference, not a performance item,
+because CP emission removed the record-volume bottleneck.
+
+### Keep — required for correctness
+
+| Change | Why |
+|---|---|
+| Radeon serial-mask fix (`39C2F8AF`) | lightmaps rejected (stage 84) without it |
+| Screen-clip ULP snap + clamp | console/loading freeze without it |
+| WarpOS timer cleanup removal | "PPC memory corruption" on exit without it |
+| Ring packet-capacity guards | prevents heap overwrite (`recordCount+draws+2 > 8192`) |
+| `-benchmarkquit` / `-benchmarklog` | measurement infrastructure |
+
+### Keep — worthwhile performance
+
+| Change | Evidence |
+|---|---|
+| **CP emit** (`MGLPPC_CPEMIT=1`) | Quake 5.1 → 12.2/15.0 FPS; gears +39% (187 vs 134) |
+| Flash guards (fade-tail + scissor) | +2.8..4% pre-CP; free |
+| Texture-cache retention | free, avoids duplicate binds |
+| Batch budget/cost model + texgen/serial charges | keeps budgets correct; small |
+| `r_particle_size` + quad-per-point path | **neutral under CP** (15.009 vs 15.150); keep as visual options |
+
+### Drop / neutral — cleaned up
+
+| Item | Action |
+|---|---|
+| `MGLPPC_ALTIVEC=1` env | **removed**; forced vector vs auto vs scalar: 12.158 / 12.046 / n.a. — no effect under CP, auto-probe already enables it on the 7410 |
+| Our release host `F0343E03` | not significant vs validated `FB712873` (126.475 vs 126.903); validated host restored, ours archived at `DH2:wosbuild/host.qrel` |
+| Redundant `Work:ibdraw/dll.pre-part` | deleted (was a copy of the active `FCEF7CE9`) |
+| `MGLPPC_BATCH` (two-tile upload) | never enabled; previously measured regression |
+| Diagnostics (`-stalltrace`, `MGLPPC_ERROR_ORIGIN`, reject dump) | compile-time off / opt-in only; not in release binaries |
+
+### Current configuration after cleanup
+
+- Client `Work:games/quake/glquakeWOS` = `6B7B0938` (particle default 1 px).
+- DLL `Work:games/quake/minigl_ppc.dll` = `F0089138`.
+- Gears/validated DLL `Work:ibdraw/minigl_ppc.dll` = `FCEF7CE9`,
+  host `DH2:ibdraw/mglhost` = `FB712873`.
+- `LIBS:Picasso96/Radeon9200.chip` = `39C2F8AF`, `LIBS:minigl.library` = `62343673`.
+- `ENV:MGLPPC_CPEMIT=1` (volatile — set before a game session; keep unset for
+  the reference gears benchmark), `ENVARC:MGLPPC_HOSTPRI=-1`, no
+  `MGLPPC_ALTIVEC`/`MGLPPC_NOALTIVEC`.
+
+### Still open
+
+1. Persist CP emit (`SetEnv MGLPPC_CPEMIT 1 ENVARC:`) only after a longer
+   gameplay validation; it changes reference benchmark conditions.
+2. Re-validate 1 px vs 3 px particles in gameplay (explosions), not demo1.
+
+---
+
+## 9. 640x480x16 timedemo; CP emit persisted (added 2026-09-20 ~00:55 CEST)
+
+Actions: `MGLPPC_CPEMIT=1` saved to `ENVARC:` (persistent, verified in both
+`ENV:` and `ENVARC:`); particles left at the default (`r_particle_size 1`).
+Fresh bridge reboot, `InitPPC` once, fresh host `FB712873`.
+
+| Mode (CP emit on) | FPS | Time (s) |
+|---|---|---|
+| 800x600x16 | 15.009 | 64.560 |
+| **640x480x16** | **15.870** | **61.060** |
+
+Host counters: `CP_RUN dispatches=14991 dwords=7746014 failed=0`,
+`executes=14991 presents=978`, clean stop.
+
+Reducing resolution from 800x600 to 640x480 gains only ~5.7%, confirming
+the post-CP-emit profile is CPU/frame-bound rather than fill-bound.
+
+---
+
+## 10. Fastest DLL promotion + build-from-tree state (2026-09-20)
+
+The parallel session's descriptor-cache work (W-01..W-12) is the real
+speed-up; the earlier 15 FPS game runs used the older game-dir DLL
+(`F0089138`). Measured on hardware, same 969-frame `demo1`, CP emit on:
+
+| Stack at 640x480x16 | FPS |
+|---|---:|
+| old game DLL `F0089138` | 15.870 |
+| W-10 quiet `083A9E15` | 55.182 |
+| W-11 quiet `8A5D32EA` | 54.195 |
+
+Interleaved same-boot A/B at the 800x600x32 reference (two samples each):
+
+| Run | W-10 `083A9E15` | W-11 `8A5D32EA` |
+|---|---:|---:|
+| 1 | 24.189 | 24.057 |
+| 2 | 24.045 | 24.081 |
+| **Mean** | **24.117** | **24.069** |
+
+W-10 and W-11 are a statistical tie (0.2%). **W-10 was chosen and deployed**
+because it is the plan's most hardware-validated artifact (W-01a/b/c, W-10,
+recovery DLL, gears 192.3 FPS); W-11 was validated only in profiled form.
+
+### Build provenance (important)
+
+| Source state | Warpelf CRC32 | Converted target |
+|---|---|---|
+| git HEAD `48aee81` | `16C5361A` | (17.2 FPS checkpoint) |
+| W-10 quiet | `14F2A439` | `083A9E15` |
+| session-3 working tree (W-11/W-12/W-22) | `BB3F46E6` | `8A5D32EA` |
+| **git HEAD `f2976f6`** (W-10 source restored) | `14F2A439` | `083A9E15` — **reproducible from git** |
+| session-4 tree (CP_WAIT/reset/reporter fix, see perf plan §9) | `CFD151CA` | diagnostic only, `DH2:wosbuild/qwait/` |
+
+- UPDATE 2026-09-20 (session 4): the "W-10 source is not in git" note below
+  is RESOLVED — commit `f2976f6` restored it; `make -f
+  Makefile.dll.r200.gcc warpelf` at that commit reproduces `14F2A439`
+  byte-for-byte, and the host rebuilds `F0343E03` identically. The working
+  tree has since moved on (CP_WAIT attribution counters, glHint-boundary
+  reset, CP_PHASE reporter fix, client FP_LMUPLOAD) and builds `CFD151CA`
+  — a diagnostic build for the next hardware session, not deployed.
+
+- ~~The working tree rebuilds **W-11** exactly~~ (superseded: `f2976f6`
+  restored the W-10 source; the session-4 tree builds `CFD151CA`, see the
+  provenance table above).
+- ~~W-10's exact source is not in git~~ — RESOLVED by `f2976f6`.
+- W-10 and W-11 measured equal within 0.2%; **W-10 (`083A9E15`) remains the
+  deployed and reproducible reference**.
+
+### Deployed (verified)
+
+| Artifact | CRC32 | Location |
+|---|---|---|
+| MiniGL DLL (W-10) | **083A9E15** | `Work:games/quake/minigl_ppc.dll` |
+| MiniGL DLL (copy) | **083A9E15** | `DH2:ibdraw/minigl_ppc.dll` |
+| 68k host (matched) | **F0343E03** | `DH2:ibdraw/mglhost` (bits 00020000) |
+| Client | 6B7B0938 | `Work:games/quake/glquakeWOS` |
+
+### Build from the working tree
+
+```text
+cd /home/mirek/MiniGL_WOS_V19_mglQ3
+; at git HEAD f2976f6 (deployed W-10 reference):
+make -f Makefile.dll.r200.gcc warpelf              # -> bin/minigl_ppc_r200.warpelf  = 14F2A439
+make -f Makefile.dll.r200.gcc bin/minigl_ppc_host  # -> bin/minigl_ppc_host        = F0343E03
+; at the session-4 tree (diagnostic, perf plan section 9):
+make -f Makefile.dll.r200.gcc warpelf              # -> CFD151CA (quiet)
+make -f Makefile.dll.r200.gcc MGLPPC_PROFILE=1 \
+  OBJDIR=obj/dll-r200-waitp WARPELF=bin/minigl_ppc_r200_waitp.warpelf warpelf
+                                                   # -> 54EADCD1 (profiled)
+```
+
+Target conversion:
+
+```text
+Stack 100000
+DH2:wosbuild/Elf2Exe2 bin/minigl_ppc_r200.warpelf minigl_ppc.dll
+```
+
+This produces the W-11 DLL (`8A5D32EA`), equal to the deployed W-10 within
+0.2%. The trees are dirty (W-xx descriptor work, clip fix, particle-quad
+path, batch-cost model are uncommitted); the working tree is the
+authoritative source.
+
+### Quarantined — do not deploy
+
+- `bin/minigl_ppc_r200_w12e2.warpelf` (A3AE5A71, `MGLPPC_EXPAND_MIN=2`) and
+  any expansion-threshold experiment below 4: `MGLPPC_EXPAND_MIN=1` caused a
+  grey-screen hard hang requiring a cold power cycle.
+
+### Rollbacks
+
+| Item | Path | CRC32 |
+|---|---|---|
+| old game DLL | `DH2:wosbuild/dll.pre-fast` | F0089138 |
+| W-10 (previous deploy, same as active) | `DH2:wosbuild/dll.w10q` | 083A9E15 |
+| W-11 quiet (tree-buildable) | `DH2:wosbuild/qw01/w11q.dll` | 8A5D32EA |
+| user-validated DLL | `DH2:wosbuild/dll.fcef7ce9` | FCEF7CE9 |
+| validated host | `DH2:wosbuild/hpreclean` | FB712873 |
+
+### Cleanup performed
+
+- Deleted the stale scratch dir `DH2:qbatchtest` (contained an old test DLL
+  and probe); `Work:games/quake` now holds exactly one DLL.
+- Evidence dirs `DH2:wosbuild/qw01` and `qprof` retained.
+
+---
+
+## 11. Session-4 hardware session: two-target matrix + first CP_WAIT
+attribution (2026-09-20 ~13:00-15:30 CEST)
+
+Targets: 800x600x32 and 640x480x16. Clean boots with soft reboot between
+critical comparisons, fresh host per run, serialized bridge ops, CRC
+checks everywhere. Production stack untouched; test dir
+`DH2:wosbuild/qwait`. Full process detail in PERFORMANCE_PLAN
+section 10.
+
+### 11.1 Client matrix (quiet, demo1, CP emit on)
+
+| client | DLL | 800x600x32 | 640x480x16 |
+|---|---|---:|---:|
+| glquakeWOS `6B7B0938` | 083A9E15 | 23.611 | 52.097 |
+| glqprof `E2A06D9A` (session-2) | 083A9E15 | — | 52.209 / 52.835 |
+| session-4 tree client, clean boot | BA0A8531 profiled | **23.844** | **51.270** |
+
+**CORRECTION (same session, ~17:30 CEST):** the earlier "rebuilds are 2.5x
+slower at 16-bit" alarm was NOT a tree regression. Two artifacts stacked:
+
+1. A stale `minigl_ppc_open.o` silently baked an OLD test-DLL path
+   (`DH2:wosbuild/qprofdir/minigl_ppc.dll`, a 16-slot pre-W-01 build) into
+   every rebuild — the 17-21 fps runs were running THAT DLL (its recorded
+   17.5 fps @ 32-bit and CP_SURF `miss≈36k reset≈36k` no-`drop=` signature
+   match exactly).
+2. One boot produced degraded loads (~2x slowdown for freshly replaced
+   DLL files) after a chained `InitPPC`+launch command; a fresh boot with
+   strict one-command sequencing cleared it.
+
+`gl_rsurf.c` session-4 profiler edits were reverted and re-tested: no
+effect (as predicted — the pristine build without them was equally
+"slow" under the same artifacts). The tree is healthy; validation numbers
+above. Full analysis in PERFORMANCE_PLAN section 10.1 (W-81 closed).
+
+### 11.2 Session-4 DLL validated
+
+`glqprof` + session-4 quiet DLL C6FD771F: 52.835 fps @ 640x480x16 —
+identical to production DLL. CP_SURF: descriptor cache healthy at 128
+slots. DLL line kept; promotion still gated on W-70/W-71.
+
+### 11.3 First CP_WAIT attribution (profiled DLL BA0A8531 + profiled host
+03DC3364, boundary-reset counters)
+
+| | 800x600x32 (23.762 fps profiled) | 640x480x16 (50.839 fps profiled) |
+|---|---:|---:|
+| CP publishes | 15,025 | 15,079 |
+| CP wait total | 639.7M ticks | 106.1M ticks |
+| wait = `fence=` (GPU retirement) | 298.9M (~95% of attributed) | 69.9M |
+| wait = `host=` (68k consumption) | 16.5M (~2.6%) | 4.0M |
+| emit / copy / resolve | 39.3M / 10.5M / 11.9M | 41.3M / 11.6M / 10.0M |
+| host drain total | 249 ms of 40.8 s | — |
+| host dispatch total | 6,087 ms | — |
+
+**Conclusion:** the 32-bit frame is bounded by GPU-retirement fencing:
+every dispatch carries a full-idle fence tail
+(`WAIT_2D/3D_IDLECLEAN|DMA_GUI_IDLE`), serializing the GPU ~15.5x per
+frame; the wait scales with fill (6x drop at 16-bit, same dispatch
+count) — that IS the depth ratio. The 68k host is exonerated with data
+(2.6% stall share; 249 ms total drain). Next lever: **W-80** — split the
+fence into a consumption-side reuse fence (HOST/DMA idle only) and a
+completion fence (full idle, present/readback/texture paths only);
+driver change, matched-pair deploy, cold-boot protocol.
+
+### 11.4 Session state after
+
+Production pair verified in place (6B7B0938 / 083A9E15 / F0343E03);
+`qprof` restored to 083A9E15 with `dll_prod.dll` archive; `DH2:wosbuild/
+qwait/` holds all test artifacts and logs (deletable). Two no-host
+client wedges and one degraded warm boot occurred; all recovered via
+soft reboot — runbook now requires verifying the host port is gone and
+starting a fresh host before every client launch (PERFORMANCE_PLAN
+section 10.5).
+
+
+
+
 

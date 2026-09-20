@@ -1,0 +1,554 @@
+MiniGLPPC host: step=backend_open
+MiniGLPPC host: step=timer
+MiniGLPPC host: ready, MiniGL 12.0
+MiniGLPPC host: step=port_added
+MiniGLPPC host: priority=-1 previous=0
+MiniGLPPC host: step=service_enter
+[mgl] ctx fullscreen=1 depth=32 mode=0
+[mgl] fs=begin
+[mgl] fs=ok buffers=3
+MiniGLPPC host: create windowed=0 w=800 h=600 depth=32
+MiniGLPPC host: ring caps=1ffff7ff ordered=1 gen=2
+MiniGLPPC host: msg=ring_reg
+MiniGLPPC host: ring_seg=ok addr=43b40000 bytes=65536
+MiniGLPPC host: ring_init_done vertex_segments=4
+host: dbeg n=1 tex=1 wh=128x128 ok=1 ticks=47418 hz=709379 addr=40d715c0 pitch=512 flags=0
+host: dcom n=1 tex=1 ok=1 ticks=53 hz=709379 token=0a7e9fb8 v7=00000001
+host: dbeg n=2 tex=2 wh=256x256 ok=1 ticks=686 hz=709379 addr=40d815c0 pitch=1024 flags=0
+host: dcom n=2 tex=2 ok=1 ticks=46 hz=709379 token=0a82a080 v7=00000001
+host: dbeg n=3 tex=4 wh=32x32 ok=1 ticks=590 hz=709379 addr=40dc15c0 pitch=128 flags=0
+host: dcom n=3 tex=4 ok=1 ticks=45 hz=709379 token=0a82b148 v7=00000001
+host: dbeg n=4 tex=5 wh=64x64 ok=1 ticks=595 hz=709379 addr=40dc25c0 pitch=256 flags=0
+host: dcom n=4 tex=5 ok=1 ticks=45 hz=709379 token=0a82f210 v7=00000001
+host: dbeg n=5 tex=6 wh=1x1 ok=1 ticks=603 hz=709379 addr=40dc6600 pitch=64 flags=0
+host: dcom n=5 tex=6 ok=1 ticks=56 hz=709379 token=0a82f318 v7=00000001
+host: dbeg n=6 tex=7 wh=1x1 ok=1 ticks=584 hz=709379 addr=40dc6680 pitch=64 flags=0
+host: dcom n=6 tex=7 ok=1 ticks=52 hz=709379 token=0a82f420 v7=00000001
+host: dbeg n=7 tex=8 wh=1x1 ok=1 ticks=645 hz=709379 addr=40dc6700 pitch=64 flags=0
+host: dcom n=7 tex=8 ok=1 ticks=54 hz=709379 token=0a82f950 v7=00000001
+host: dbeg n=8 tex=9 wh=1x1 ok=1 ticks=594 hz=709379 addr=40dc6780 pitch=64 flags=0
+host: dcom n=8 tex=9 ok=1 ticks=45 hz=709379 token=0a82fa58 v7=00000001
+host: dbeg n=9 tex=10 wh=1x1 ok=1 ticks=590 hz=709379 addr=40dc6800 pitch=64 flags=0
+host: dcom n=9 tex=10 ok=1 ticks=48 hz=709379 token=0a82fb60 v7=00000001
+host: dbeg n=10 tex=11 wh=1x1 ok=1 ticks=5783 hz=709379 addr=40dc6880 pitch=64 flags=0
+host: dcom n=10 tex=11 ok=1 ticks=51 hz=709379 token=0a82fc68 v7=00000001
+host: dbeg n=11 tex=12 wh=1x1 ok=1 ticks=577 hz=709379 addr=40dc6900 pitch=64 flags=0
+host: dcom n=11 tex=12 ok=1 ticks=47 hz=709379 token=0a82fd70 v7=00000001
+host: dbeg n=12 tex=13 wh=1x1 ok=1 ticks=822 hz=709379 addr=40dc6980 pitch=64 flags=0
+host: dcom n=12 tex=13 ok=1 ticks=49 hz=709379 token=0a82fe78 v7=00000001
+host: dbeg n=13 tex=14 wh=1x1 ok=1 ticks=593 hz=709379 addr=40dc6a00 pitch=64 flags=0
+host: dcom n=13 tex=14 ok=1 ticks=47 hz=709379 token=0a82ff80 v7=00000001
+host: dbeg n=14 tex=15 wh=1x1 ok=1 ticks=604 hz=709379 addr=40dc6a80 pitch=64 flags=0
+host: dcom n=14 tex=15 ok=1 ticks=43 hz=709379 token=0a830088 v7=00000001
+host: dbeg n=15 tex=16 wh=1x1 ok=1 ticks=593 hz=709379 addr=40dc6b00 pitch=64 flags=0
+host: dcom n=15 tex=16 ok=1 ticks=44 hz=709379 token=0a830190 v7=00000001
+host: dbeg n=16 tex=17 wh=1x1 ok=1 ticks=583 hz=709379 addr=40dc6b80 pitch=64 flags=0
+host: dcom n=16 tex=17 ok=1 ticks=46 hz=709379 token=0a830298 v7=00000001
+host: dbeg n=17 tex=18 wh=1x1 ok=1 ticks=592 hz=709379 addr=40dc6c00 pitch=64 flags=0
+host: dcom n=17 tex=18 ok=1 ticks=45 hz=709379 token=0a8303a0 v7=00000001
+host: dbeg n=18 tex=19 wh=1x1 ok=1 ticks=597 hz=709379 addr=40dc6c80 pitch=64 flags=0
+host: dcom n=18 tex=19 ok=1 ticks=49 hz=709379 token=0a8304a8 v7=00000001
+host: dbeg n=19 tex=20 wh=1x1 ok=1 ticks=603 hz=709379 addr=40dc6d00 pitch=64 flags=0
+host: dcom n=19 tex=20 ok=1 ticks=43 hz=709379 token=0a8305b0 v7=00000001
+host: dbeg n=20 tex=21 wh=32x32 ok=1 ticks=601 hz=709379 addr=40dc6d40 pitch=128 flags=0
+host: dcom n=20 tex=21 ok=1 ticks=44 hz=709379 token=0a831678 v7=00000001
+host: dbeg n=21 tex=22 wh=32x32 ok=1 ticks=664 hz=709379 addr=40dc7d40 pitch=128 flags=0
+host: dcom n=21 tex=22 ok=1 ticks=49 hz=709379 token=0a832b68 v7=00000001
+host: dbeg n=22 tex=23 wh=32x32 ok=1 ticks=593 hz=709379 addr=40dc8d40 pitch=128 flags=0
+host: dcom n=22 tex=23 ok=1 ticks=45 hz=709379 token=0a833c30 v7=00000001
+host: dbeg n=23 tex=24 wh=8x8 ok=1 ticks=593 hz=709379 addr=40dc9d80 pitch=64 flags=0
+host: dcom n=23 tex=24 ok=1 ticks=54 hz=709379 token=0a833ef8 v7=00000001
+host: dbeg n=24 tex=41 wh=32x32 ok=1 ticks=614 hz=709379 addr=40dc9f80 pitch=128 flags=0
+host: dcom n=24 tex=41 ok=1 ticks=46 hz=709379 token=0a834fc0 v7=00000001
+host: dbeg n=25 tex=42 wh=32x32 ok=1 ticks=606 hz=709379 addr=40dcaf80 pitch=128 flags=0
+host: dcom n=25 tex=42 ok=1 ticks=48 hz=709379 token=0a836088 v7=00000001
+host: dbeg n=26 tex=43 wh=32x32 ok=1 ticks=609 hz=709379 addr=40dcbf80 pitch=128 flags=0
+host: dcom n=26 tex=43 ok=1 ticks=45 hz=709379 token=0a837150 v7=00000001
+host: dbeg n=27 tex=44 wh=32x32 ok=1 ticks=610 hz=709379 addr=40dccf80 pitch=128 flags=0
+host: dcom n=27 tex=44 ok=1 ticks=44 hz=709379 token=0a838218 v7=00000001
+host: dbeg n=28 tex=45 wh=32x32 ok=1 ticks=613 hz=709379 addr=40dcdf80 pitch=128 flags=0
+host: dcom n=28 tex=45 ok=1 ticks=47 hz=709379 token=0a8392e0 v7=00000001
+host: dbeg n=29 tex=46 wh=32x32 ok=1 ticks=602 hz=709379 addr=40dcef80 pitch=128 flags=0
+host: dcom n=29 tex=46 ok=1 ticks=46 hz=709379 token=0a83a3a8 v7=00000001
+host: dbeg n=30 tex=47 wh=32x32 ok=1 ticks=617 hz=709379 addr=40dcff80 pitch=128 flags=0
+host: dcom n=30 tex=47 ok=1 ticks=45 hz=709379 token=0a83b470 v7=00000001
+host: dbeg n=31 tex=48 wh=32x32 ok=1 ticks=624 hz=709379 addr=40dd0f80 pitch=128 flags=0
+host: dcom n=31 tex=48 ok=1 ticks=47 hz=709379 token=0a83c538 v7=00000001
+host: dbeg n=32 tex=49 wh=32x32 ok=1 ticks=594 hz=709379 addr=40dd1f80 pitch=128 flags=0
+host: dcom n=32 tex=49 ok=1 ticks=45 hz=709379 token=0a83d600 v7=00000001
+host: dbeg n=33 tex=50 wh=32x32 ok=1 ticks=618 hz=709379 addr=40dd2f80 pitch=128 flags=0
+host: dcom n=33 tex=50 ok=1 ticks=46 hz=709379 token=0a83e6c8 v7=00000001
+host: dbeg n=34 tex=51 wh=32x32 ok=1 ticks=609 hz=709379 addr=40dd3f80 pitch=128 flags=0
+host: dcom n=34 tex=51 ok=1 ticks=44 hz=709379 token=0a83f790 v7=00000001
+host: dbeg n=35 tex=52 wh=32x32 ok=1 ticks=667 hz=709379 addr=40dd4f80 pitch=128 flags=0
+host: dcom n=35 tex=52 ok=1 ticks=46 hz=709379 token=0a840c80 v7=00000001
+host: dbeg n=36 tex=53 wh=32x32 ok=1 ticks=636 hz=709379 addr=40dd5f80 pitch=128 flags=0
+host: dcom n=36 tex=53 ok=1 ticks=48 hz=709379 token=0a841d48 v7=00000001
+host: dbeg n=37 tex=54 wh=32x32 ok=1 ticks=602 hz=709379 addr=40dd6f80 pitch=128 flags=0
+host: dcom n=37 tex=54 ok=1 ticks=46 hz=709379 token=0a842e10 v7=00000001
+host: dbeg n=38 tex=55 wh=32x32 ok=1 ticks=610 hz=709379 addr=40dd7f80 pitch=128 flags=0
+host: dcom n=38 tex=55 ok=1 ticks=44 hz=709379 token=0a843ed8 v7=00000001
+host: dbeg n=39 tex=56 wh=32x32 ok=1 ticks=613 hz=709379 addr=40dd8f80 pitch=128 flags=0
+host: dcom n=39 tex=56 ok=1 ticks=54 hz=709379 token=0a844fa0 v7=00000001
+host: dbeg n=40 tex=57 wh=32x32 ok=1 ticks=617 hz=709379 addr=40dd9f80 pitch=128 flags=0
+host: dcom n=40 tex=57 ok=1 ticks=45 hz=709379 token=0a846068 v7=00000001
+host: dbeg n=41 tex=58 wh=32x32 ok=1 ticks=617 hz=709379 addr=40ddaf80 pitch=128 flags=0
+host: dcom n=41 tex=58 ok=1 ticks=47 hz=709379 token=0a847130 v7=00000001
+host: dbeg n=42 tex=59 wh=32x32 ok=1 ticks=619 hz=709379 addr=40ddbf80 pitch=128 flags=0
+host: dcom n=42 tex=59 ok=1 ticks=50 hz=709379 token=0a8481f8 v7=00000001
+host: dbeg n=43 tex=60 wh=32x32 ok=1 ticks=632 hz=709379 addr=40ddcf80 pitch=128 flags=0
+host: dcom n=43 tex=60 ok=1 ticks=45 hz=709379 token=0a8492c0 v7=00000001
+host: dbeg n=44 tex=61 wh=32x32 ok=1 ticks=627 hz=709379 addr=40dddf80 pitch=128 flags=0
+host: dcom n=44 tex=61 ok=1 ticks=47 hz=709379 token=0a84a388 v7=00000001
+host: dbeg n=45 tex=62 wh=32x32 ok=1 ticks=633 hz=709379 addr=40ddef80 pitch=128 flags=0
+host: dcom n=45 tex=62 ok=1 ticks=50 hz=709379 token=0a84b450 v7=00000001
+host: dbeg n=46 tex=63 wh=16x32 ok=1 ticks=637 hz=709379 addr=40ddff80 pitch=64 flags=0
+host: dcom n=46 tex=63 ok=1 ticks=46 hz=709379 token=0a84bd18 v7=00000001
+host: dbeg n=47 tex=64 wh=16x32 ok=1 ticks=628 hz=709379 addr=40de0780 pitch=64 flags=0
+host: dcom n=47 tex=64 ok=1 ticks=55 hz=709379 token=0a84c5e0 v7=00000001
+host: dbeg n=48 tex=65 wh=32x16 ok=1 ticks=622 hz=709379 addr=40de0f80 pitch=128 flags=0
+host: dcom n=48 tex=65 ok=1 ticks=47 hz=709379 token=0a84cea8 v7=00000001
+host: dbeg n=49 tex=66 wh=32x16 ok=1 ticks=677 hz=709379 addr=40de1780 pitch=128 flags=0
+host: dcom n=49 tex=66 ok=1 ticks=44 hz=709379 token=0a84db98 v7=00000001
+host: dbeg n=50 tex=67 wh=32x16 ok=1 ticks=796 hz=709379 addr=40de1f80 pitch=128 flags=0
+host: dcom n=50 tex=67 ok=1 ticks=47 hz=709379 token=0a84e460 v7=00000001
+host: dbeg n=51 tex=68 wh=32x16 ok=1 ticks=634 hz=709379 addr=40de2780 pitch=128 flags=0
+host: dcom n=51 tex=68 ok=1 ticks=45 hz=709379 token=0a84ed28 v7=00000001
+host: dbeg n=52 tex=69 wh=32x16 ok=1 ticks=628 hz=709379 addr=40de2f80 pitch=128 flags=0
+host: dcom n=52 tex=69 ok=1 ticks=51 hz=709379 token=0a84f5f0 v7=00000001
+host: dbeg n=53 tex=70 wh=32x16 ok=1 ticks=619 hz=709379 addr=40de3780 pitch=128 flags=0
+host: dcom n=53 tex=70 ok=1 ticks=49 hz=709379 token=0a84feb8 v7=00000001
+host: dbeg n=54 tex=71 wh=64x16 ok=1 ticks=633 hz=709379 addr=40de3f80 pitch=256 flags=0
+host: dcom n=54 tex=71 ok=1 ticks=46 hz=709379 token=0a850f80 v7=00000001
+host: dbeg n=55 tex=72 wh=32x16 ok=1 ticks=624 hz=709379 addr=40de4f80 pitch=128 flags=0
+host: dcom n=55 tex=72 ok=1 ticks=55 hz=709379 token=0a851848 v7=00000001
+host: dbeg n=56 tex=73 wh=32x16 ok=1 ticks=625 hz=709379 addr=40de5780 pitch=128 flags=0
+host: dcom n=56 tex=73 ok=1 ticks=45 hz=709379 token=0a852110 v7=00000001
+host: dbeg n=57 tex=74 wh=32x16 ok=1 ticks=625 hz=709379 addr=40de5f80 pitch=128 flags=0
+host: dcom n=57 tex=74 ok=1 ticks=46 hz=709379 token=0a8529d8 v7=00000001
+host: dbeg n=58 tex=75 wh=32x16 ok=1 ticks=656 hz=709379 addr=40de6780 pitch=128 flags=0
+host: dcom n=58 tex=75 ok=1 ticks=54 hz=709379 token=0a8532a0 v7=00000001
+host: dbeg n=59 tex=76 wh=32x16 ok=1 ticks=626 hz=709379 addr=40de6f80 pitch=128 flags=0
+host: dcom n=59 tex=76 ok=1 ticks=53 hz=709379 token=0a853b68 v7=00000001
+host: dbeg n=60 tex=77 wh=32x16 ok=1 ticks=641 hz=709379 addr=40de7780 pitch=128 flags=0
+host: dcom n=60 tex=77 ok=1 ticks=52 hz=709379 token=0a854430 v7=00000001
+host: dbeg n=61 tex=78 wh=64x16 ok=1 ticks=629 hz=709379 addr=40de7f80 pitch=256 flags=0
+host: dcom n=61 tex=78 ok=1 ticks=52 hz=709379 token=0a8554f8 v7=00000001
+host: dbeg n=62 tex=79 wh=32x16 ok=1 ticks=629 hz=709379 addr=40de8f80 pitch=128 flags=0
+host: dcom n=62 tex=79 ok=1 ticks=47 hz=709379 token=0a855dc0 v7=00000001
+host: dbeg n=63 tex=80 wh=32x16 ok=1 ticks=703 hz=709379 addr=40de9780 pitch=128 flags=0
+host: dcom n=63 tex=80 ok=1 ticks=47 hz=709379 token=0a856ab0 v7=00000001
+host: dbeg n=64 tex=81 wh=32x16 ok=1 ticks=667 hz=709379 addr=40de9f80 pitch=128 flags=0
+host: dcom n=64 tex=81 ok=1 ticks=45 hz=709379 token=0a857378 v7=00000001
+host: dbeg n=65 tex=82 wh=32x16 ok=1 ticks=645 hz=709379 addr=40dea780 pitch=128 flags=0
+host: dcom n=65 tex=82 ok=1 ticks=50 hz=709379 token=0a857c40 v7=00000001
+host: dbeg n=66 tex=83 wh=32x16 ok=1 ticks=639 hz=709379 addr=40deaf80 pitch=128 flags=0
+host: dcom n=66 tex=83 ok=1 ticks=54 hz=709379 token=0a858508 v7=00000001
+host: dbeg n=67 tex=84 wh=32x16 ok=1 ticks=660 hz=709379 addr=40deb780 pitch=128 flags=0
+host: dcom n=67 tex=84 ok=1 ticks=43 hz=709379 token=0a858dd0 v7=00000001
+host: dbeg n=68 tex=85 wh=64x16 ok=1 ticks=649 hz=709379 addr=40debf80 pitch=256 flags=0
+host: dcom n=68 tex=85 ok=1 ticks=46 hz=709379 token=0a859e98 v7=00000001
+host: dbeg n=69 tex=86 wh=32x16 ok=1 ticks=770 hz=709379 addr=40decf80 pitch=128 flags=0
+host: dcom n=69 tex=86 ok=1 ticks=46 hz=709379 token=0a85a760 v7=00000001
+host: dbeg n=70 tex=87 wh=32x16 ok=1 ticks=663 hz=709379 addr=40ded780 pitch=128 flags=0
+host: dcom n=70 tex=87 ok=1 ticks=46 hz=709379 token=0a85b028 v7=00000001
+host: dbeg n=71 tex=88 wh=32x16 ok=1 ticks=642 hz=709379 addr=40dedf80 pitch=128 flags=0
+host: dcom n=71 tex=88 ok=1 ticks=51 hz=709379 token=0a85b8f0 v7=00000001
+host: dbeg n=72 tex=89 wh=32x16 ok=1 ticks=656 hz=709379 addr=40dee780 pitch=128 flags=0
+host: dcom n=72 tex=89 ok=1 ticks=51 hz=709379 token=0a85c1b8 v7=00000001
+host: dbeg n=73 tex=90 wh=32x16 ok=1 ticks=641 hz=709379 addr=40deef80 pitch=128 flags=0
+host: dcom n=73 tex=90 ok=1 ticks=52 hz=709379 token=0a85ca80 v7=00000001
+host: dbeg n=74 tex=91 wh=32x16 ok=1 ticks=650 hz=709379 addr=40def780 pitch=128 flags=0
+host: dcom n=74 tex=91 ok=1 ticks=46 hz=709379 token=0a85d348 v7=00000001
+host: dbeg n=75 tex=92 wh=64x16 ok=1 ticks=655 hz=709379 addr=40deff80 pitch=256 flags=0
+host: dcom n=75 tex=92 ok=1 ticks=47 hz=709379 token=0a85e410 v7=00000001
+host: dbeg n=76 tex=93 wh=32x16 ok=1 ticks=652 hz=709379 addr=40df0f80 pitch=128 flags=0
+host: dcom n=76 tex=93 ok=1 ticks=50 hz=709379 token=0a85ecd8 v7=00000001
+host: dbeg n=77 tex=94 wh=32x16 ok=1 ticks=730 hz=709379 addr=40df1780 pitch=128 flags=0
+host: dcom n=77 tex=94 ok=1 ticks=53 hz=709379 token=0a85f9c8 v7=00000001
+host: dbeg n=78 tex=95 wh=32x16 ok=1 ticks=641 hz=709379 addr=40df1f80 pitch=128 flags=0
+host: dcom n=78 tex=95 ok=1 ticks=44 hz=709379 token=0a860290 v7=00000001
+host: dbeg n=79 tex=96 wh=32x16 ok=1 ticks=658 hz=709379 addr=40df2780 pitch=128 flags=0
+host: dcom n=79 tex=96 ok=1 ticks=46 hz=709379 token=0a860b58 v7=00000001
+host: dbeg n=80 tex=97 wh=32x16 ok=1 ticks=666 hz=709379 addr=40df2f80 pitch=128 flags=0
+host: dcom n=80 tex=97 ok=1 ticks=46 hz=709379 token=0a861420 v7=00000001
+host: dbeg n=81 tex=98 wh=32x16 ok=1 ticks=652 hz=709379 addr=40df3780 pitch=128 flags=0
+host: dcom n=81 tex=98 ok=1 ticks=48 hz=709379 token=0a861ce8 v7=00000001
+host: dbeg n=82 tex=99 wh=64x16 ok=1 ticks=664 hz=709379 addr=40df3f80 pitch=256 flags=0
+host: dcom n=82 tex=99 ok=1 ticks=46 hz=709379 token=0a862db0 v7=00000001
+host: dbeg n=83 tex=100 wh=32x16 ok=1 ticks=655 hz=709379 addr=40df4f80 pitch=128 flags=0
+host: dcom n=83 tex=100 ok=1 ticks=47 hz=709379 token=0a863678 v7=00000001
+host: dbeg n=84 tex=101 wh=32x16 ok=1 ticks=662 hz=709379 addr=40df5780 pitch=128 flags=0
+host: dcom n=84 tex=101 ok=1 ticks=47 hz=709379 token=0a863f40 v7=00000001
+host: dbeg n=85 tex=102 wh=32x16 ok=1 ticks=783 hz=709379 addr=40df5f80 pitch=128 flags=0
+host: dcom n=85 tex=102 ok=1 ticks=48 hz=709379 token=0a864808 v7=00000001
+host: dbeg n=86 tex=103 wh=32x16 ok=1 ticks=657 hz=709379 addr=40df6780 pitch=128 flags=0
+host: dcom n=86 tex=103 ok=1 ticks=45 hz=709379 token=0a8650d0 v7=00000001
+host: dbeg n=87 tex=104 wh=32x16 ok=1 ticks=6169 hz=709379 addr=40df6f80 pitch=128 flags=0
+host: dcom n=87 tex=104 ok=1 ticks=48 hz=709379 token=0a865998 v7=00000001
+host: dbeg n=88 tex=105 wh=32x16 ok=1 ticks=686 hz=709379 addr=40df7780 pitch=128 flags=0
+host: dcom n=88 tex=105 ok=1 ticks=45 hz=709379 token=0a866260 v7=00000001
+host: dbeg n=89 tex=106 wh=64x16 ok=1 ticks=834 hz=709379 addr=40df7f80 pitch=256 flags=0
+host: dcom n=89 tex=106 ok=1 ticks=48 hz=709379 token=0a867328 v7=00000001
+host: dbeg n=90 tex=107 wh=32x16 ok=1 ticks=653 hz=709379 addr=40df8f80 pitch=128 flags=0
+host: dcom n=90 tex=107 ok=1 ticks=47 hz=709379 token=0a867bf0 v7=00000001
+host: dbeg n=91 tex=108 wh=32x16 ok=1 ticks=731 hz=709379 addr=40df9780 pitch=128 flags=0
+host: dcom n=91 tex=108 ok=1 ticks=56 hz=709379 token=0a8688e0 v7=00000001
+host: dbeg n=92 tex=109 wh=32x16 ok=1 ticks=667 hz=709379 addr=40df9f80 pitch=128 flags=0
+host: dcom n=92 tex=109 ok=1 ticks=51 hz=709379 token=0a8691a8 v7=00000001
+host: dbeg n=93 tex=110 wh=32x16 ok=1 ticks=668 hz=709379 addr=40dfa780 pitch=128 flags=0
+host: dcom n=93 tex=110 ok=1 ticks=45 hz=709379 token=0a869a70 v7=00000001
+host: dbeg n=94 tex=111 wh=32x16 ok=1 ticks=657 hz=709379 addr=40dfaf80 pitch=128 flags=0
+host: dcom n=94 tex=111 ok=1 ticks=45 hz=709379 token=0a86a338 v7=00000001
+host: dbeg n=95 tex=112 wh=32x16 ok=1 ticks=666 hz=709379 addr=40dfb780 pitch=128 flags=0
+host: dcom n=95 tex=112 ok=1 ticks=46 hz=709379 token=0a86ac00 v7=00000001
+host: dbeg n=96 tex=113 wh=64x16 ok=1 ticks=680 hz=709379 addr=40dfbf80 pitch=256 flags=0
+host: dcom n=96 tex=113 ok=1 ticks=45 hz=709379 token=0a86bcc8 v7=00000001
+host: dbeg n=97 tex=114 wh=32x32 ok=1 ticks=660 hz=709379 addr=40dfcf80 pitch=128 flags=0
+host: dcom n=97 tex=114 ok=1 ticks=47 hz=709379 token=0a86cd90 v7=00000001
+host: dbeg n=98 tex=115 wh=32x32 ok=1 ticks=670 hz=709379 addr=40dfdf80 pitch=128 flags=0
+host: dcom n=98 tex=115 ok=1 ticks=47 hz=709379 token=0a86de58 v7=00000001
+host: dbeg n=99 tex=116 wh=32x32 ok=1 ticks=661 hz=709379 addr=40dfef80 pitch=128 flags=0
+host: dcom n=99 tex=116 ok=1 ticks=46 hz=709379 token=0a86ef20 v7=00000001
+host: dbeg n=100 tex=117 wh=32x32 ok=1 ticks=837 hz=709379 addr=40dfff80 pitch=128 flags=0
+host: dcom n=100 tex=117 ok=1 ticks=45 hz=709379 token=0a86ffe8 v7=00000001
+host: dbeg n=101 tex=118 wh=32x32 ok=1 ticks=666 hz=709379 addr=40e00f80 pitch=128 flags=0
+host: dcom n=101 tex=118 ok=1 ticks=50 hz=709379 token=0a8710b0 v7=00000001
+host: dbeg n=102 tex=119 wh=32x32 ok=1 ticks=664 hz=709379 addr=40e01f80 pitch=128 flags=0
+host: dcom n=102 tex=119 ok=1 ticks=48 hz=709379 token=0a872178 v7=00000001
+host: dbeg n=103 tex=120 wh=32x32 ok=1 ticks=661 hz=709379 addr=40e02f80 pitch=128 flags=0
+host: dcom n=103 tex=120 ok=1 ticks=47 hz=709379 token=0a873240 v7=00000001
+host: dbeg n=104 tex=121 wh=16x16 ok=1 ticks=674 hz=709379 addr=40e03f80 pitch=64 flags=0
+host: dcom n=104 tex=121 ok=1 ticks=50 hz=709379 token=0a873708 v7=00000001
+host: dbeg n=105 tex=122 wh=16x16 ok=1 ticks=755 hz=709379 addr=40e04380 pitch=64 flags=0
+host: dcom n=105 tex=122 ok=1 ticks=44 hz=709379 token=0a873ff8 v7=00000001
+host: dbeg n=106 tex=123 wh=16x16 ok=1 ticks=679 hz=709379 addr=40e04780 pitch=64 flags=0
+host: dcom n=106 tex=123 ok=1 ticks=48 hz=709379 token=0a8744c0 v7=00000001
+host: dbeg n=107 tex=124 wh=16x16 ok=1 ticks=670 hz=709379 addr=40e04b80 pitch=64 flags=0
+host: dcom n=107 tex=124 ok=1 ticks=42 hz=709379 token=0a874988 v7=00000001
+host: dbeg n=108 tex=125 wh=16x16 ok=1 ticks=671 hz=709379 addr=40e04f80 pitch=64 flags=0
+host: dcom n=108 tex=125 ok=1 ticks=49 hz=709379 token=0a874e50 v7=00000001
+host: dbeg n=109 tex=126 wh=16x16 ok=1 ticks=688 hz=709379 addr=40e05380 pitch=64 flags=0
+host: dcom n=109 tex=126 ok=1 ticks=47 hz=709379 token=0a875318 v7=00000001
+host: dbeg n=110 tex=127 wh=8x16 ok=1 ticks=679 hz=709379 addr=40e057c0 pitch=64 flags=0
+host: dcom n=110 tex=127 ok=1 ticks=47 hz=709379 token=0a8757e0 v7=00000001
+host: dbeg n=111 tex=128 wh=8x16 ok=1 ticks=681 hz=709379 addr=40e05c00 pitch=64 flags=0
+host: dcom n=111 tex=128 ok=1 ticks=50 hz=709379 token=0a875ca8 v7=00000001
+host: dbeg n=112 tex=129 wh=8x16 ok=1 ticks=694 hz=709379 addr=40e06040 pitch=64 flags=0
+host: dcom n=112 tex=129 ok=1 ticks=46 hz=709379 token=0a876170 v7=00000001
+host: dbeg n=113 tex=130 wh=8x16 ok=1 ticks=687 hz=709379 addr=40e06480 pitch=64 flags=0
+host: dcom n=113 tex=130 ok=1 ticks=45 hz=709379 token=0a876638 v7=00000001
+host: dbeg n=114 tex=131 wh=32x32 ok=1 ticks=684 hz=709379 addr=40e06880 pitch=128 flags=0
+host: dcom n=114 tex=131 ok=1 ticks=51 hz=709379 token=0a877700 v7=00000001
+host: dbeg n=115 tex=132 wh=32x32 ok=1 ticks=679 hz=709379 addr=40e07880 pitch=128 flags=0
+host: dcom n=115 tex=132 ok=1 ticks=46 hz=709379 token=0a8787c8 v7=00000001
+host: dbeg n=116 tex=133 wh=32x32 ok=1 ticks=678 hz=709379 addr=40e08880 pitch=128 flags=0
+host: dcom n=116 tex=133 ok=1 ticks=46 hz=709379 token=0a879890 v7=00000001
+host: dbeg n=117 tex=134 wh=32x32 ok=1 ticks=694 hz=709379 addr=40e09880 pitch=128 flags=0
+host: dcom n=117 tex=134 ok=1 ticks=54 hz=709379 token=0a87a958 v7=00000001
+host: dbeg n=118 tex=135 wh=32x32 ok=1 ticks=706 hz=709379 addr=40e0a880 pitch=128 flags=0
+host: dcom n=118 tex=135 ok=1 ticks=47 hz=709379 token=0a87ba20 v7=00000001
+host: dbeg n=119 tex=136 wh=32x32 ok=1 ticks=760 hz=709379 addr=40e0b880 pitch=128 flags=0
+host: dcom n=119 tex=136 ok=1 ticks=46 hz=709379 token=0a87cf10 v7=00000001
+host: dbeg n=120 tex=137 wh=32x32 ok=1 ticks=689 hz=709379 addr=40e0c880 pitch=128 flags=0
+host: dcom n=120 tex=137 ok=1 ticks=44 hz=709379 token=0a87dfd8 v7=00000001
+host: dbeg n=121 tex=138 wh=32x32 ok=1 ticks=680 hz=709379 addr=40e0d880 pitch=128 flags=0
+host: dcom n=121 tex=138 ok=1 ticks=49 hz=709379 token=0a87f0a0 v7=00000001
+host: dbeg n=122 tex=139 wh=32x32 ok=1 ticks=8394 hz=709379 addr=40e0e880 pitch=128 flags=0
+host: dcom n=122 tex=139 ok=1 ticks=46 hz=709379 token=0a880168 v7=00000001
+host: dbeg n=123 tex=140 wh=32x32 ok=1 ticks=710 hz=709379 addr=40e0f880 pitch=128 flags=0
+host: dcom n=123 tex=140 ok=1 ticks=48 hz=709379 token=0a881230 v7=00000001
+host: dbeg n=124 tex=141 wh=32x32 ok=1 ticks=706 hz=709379 addr=40e10880 pitch=128 flags=0
+host: dcom n=124 tex=141 ok=1 ticks=49 hz=709379 token=0a8822f8 v7=00000001
+host: dbeg n=125 tex=142 wh=32x32 ok=1 ticks=701 hz=709379 addr=40e11880 pitch=128 flags=0
+host: dcom n=125 tex=142 ok=1 ticks=49 hz=709379 token=0a8833c0 v7=00000001
+host: dbeg n=126 tex=143 wh=32x32 ok=1 ticks=702 hz=709379 addr=40e12880 pitch=128 flags=0
+host: dcom n=126 tex=143 ok=1 ticks=58 hz=709379 token=0a884488 v7=00000001
+host: dbeg n=127 tex=144 wh=32x32 ok=1 ticks=694 hz=709379 addr=40e13880 pitch=128 flags=0
+host: dcom n=127 tex=144 ok=1 ticks=54 hz=709379 token=0a885550 v7=00000001
+host: dbeg n=128 tex=145 wh=256x32 ok=1 ticks=715 hz=709379 addr=40e14880 pitch=1024 flags=0
+host: dcom n=128 tex=145 ok=1 ticks=46 hz=709379 token=0a88d618 v7=00000001
+host: dbeg n=129 tex=146 wh=256x32 ok=1 ticks=708 hz=709379 addr=40e1c880 pitch=1024 flags=0
+host: dcom n=129 tex=146 ok=1 ticks=48 hz=709379 token=0a8956e0 v7=00000001
+host: dbeg n=130 tex=147 wh=256x32 ok=1 ticks=718 hz=709379 addr=40e24880 pitch=1024 flags=0
+host: dcom n=130 tex=147 ok=1 ticks=60 hz=709379 token=0a89d7a8 v7=00000001
+MiniGLPPC host: ring_first_entry
+host: dbeg n=131 tex=148 wh=64x64 ok=1 ticks=737 hz=709379 addr=40e2c880 pitch=256 flags=0
+host: dcom n=131 tex=148 ok=1 ticks=50 hz=709379 token=0a8a1870 v7=00000001
+host: upload_shared bytes=4096 fmt=ed type=c8
+host: dbeg n=132 tex=149 wh=64x64 ok=1 ticks=736 hz=709379 addr=40e30880 pitch=256 flags=0
+host: dcom n=132 tex=149 ok=1 ticks=48 hz=709379 token=0a8a5938 v7=00000001
+host: dbeg n=133 tex=150 wh=64x64 ok=1 ticks=774 hz=709379 addr=40e34880 pitch=256 flags=0
+host: dcom n=133 tex=150 ok=1 ticks=45 hz=709379 token=0a8a9e28 v7=00000001
+host: dbeg n=134 tex=151 wh=64x64 ok=1 ticks=702 hz=709379 addr=40e38880 pitch=256 flags=0
+host: dcom n=134 tex=151 ok=1 ticks=45 hz=709379 token=0a8adef0 v7=00000001
+host: dbeg n=135 tex=152 wh=64x64 ok=1 ticks=703 hz=709379 addr=40e3c880 pitch=256 flags=0
+host: dcom n=135 tex=152 ok=1 ticks=47 hz=709379 token=0a8b1fb8 v7=00000001
+host: dbeg n=136 tex=153 wh=64x64 ok=1 ticks=713 hz=709379 addr=40e40880 pitch=256 flags=0
+host: dcom n=136 tex=153 ok=1 ticks=45 hz=709379 token=0a8b6080 v7=00000001
+host: dbeg n=137 tex=154 wh=128x128 ok=1 ticks=751 hz=709379 addr=40e44880 pitch=512 flags=0
+host: dcom n=137 tex=154 ok=1 ticks=46 hz=709379 token=0a8c6148 v7=00000001
+host: dbeg n=138 tex=155 wh=64x64 ok=1 ticks=741 hz=709379 addr=40e54880 pitch=256 flags=0
+host: dcom n=138 tex=155 ok=1 ticks=46 hz=709379 token=0a8ca210 v7=00000001
+host: dbeg n=139 tex=156 wh=64x64 ok=1 ticks=915 hz=709379 addr=40e58880 pitch=256 flags=0
+host: dcom n=139 tex=156 ok=1 ticks=54 hz=709379 token=0a8ce2d8 v7=00000001
+host: dbeg n=140 tex=157 wh=64x64 ok=1 ticks=728 hz=709379 addr=40e5c880 pitch=256 flags=0
+host: dcom n=140 tex=157 ok=1 ticks=49 hz=709379 token=0a8d23a0 v7=00000001
+host: dbeg n=141 tex=158 wh=64x64 ok=1 ticks=727 hz=709379 addr=40e60880 pitch=256 flags=0
+host: dcom n=141 tex=158 ok=1 ticks=47 hz=709379 token=0a8d6468 v7=00000001
+host: dbeg n=142 tex=159 wh=64x64 ok=1 ticks=727 hz=709379 addr=40e64880 pitch=256 flags=0
+host: dcom n=142 tex=159 ok=1 ticks=46 hz=709379 token=0a8da530 v7=00000001
+host: dbeg n=143 tex=160 wh=64x64 ok=1 ticks=724 hz=709379 addr=40e68880 pitch=256 flags=0
+host: dcom n=143 tex=160 ok=1 ticks=48 hz=709379 token=0a8de5f8 v7=00000001
+host: dbeg n=144 tex=161 wh=64x64 ok=1 ticks=744 hz=709379 addr=40e6c880 pitch=256 flags=0
+host: dcom n=144 tex=161 ok=1 ticks=48 hz=709379 token=0a8e26c0 v7=00000001
+host: dbeg n=145 tex=162 wh=64x64 ok=1 ticks=727 hz=709379 addr=40e70880 pitch=256 flags=0
+host: dcom n=145 tex=162 ok=1 ticks=54 hz=709379 token=0a8e6788 v7=00000001
+host: dbeg n=146 tex=163 wh=64x128 ok=1 ticks=730 hz=709379 addr=40e74880 pitch=256 flags=0
+host: dcom n=146 tex=163 ok=1 ticks=45 hz=709379 token=0a8ee850 v7=00000001
+host: dbeg n=147 tex=164 wh=64x64 ok=1 ticks=799 hz=709379 addr=40e7c880 pitch=256 flags=0
+host: dcom n=147 tex=164 ok=1 ticks=54 hz=709379 token=0a8f2d40 v7=00000001
+host: dbeg n=148 tex=165 wh=64x64 ok=1 ticks=732 hz=709379 addr=40e80880 pitch=256 flags=0
+host: dcom n=148 tex=165 ok=1 ticks=47 hz=709379 token=0a8f6e08 v7=00000001
+host: dbeg n=149 tex=166 wh=64x64 ok=1 ticks=722 hz=709379 addr=40e84880 pitch=256 flags=0
+host: dcom n=149 tex=166 ok=1 ticks=47 hz=709379 token=0a8faed0 v7=00000001
+host: dbeg n=150 tex=167 wh=128x128 ok=1 ticks=758 hz=709379 addr=40e88880 pitch=512 flags=0
+host: dcom n=150 tex=167 ok=1 ticks=56 hz=709379 token=0a8faf90 v7=00000001
+host: dbeg n=151 tex=168 wh=128x128 ok=1 ticks=798 hz=709379 addr=40e9d9c0 pitch=512 flags=0
+host: dcom n=151 tex=168 ok=1 ticks=49 hz=709379 token=0a8fb050 v7=00000001
+host: dbeg n=152 tex=169 wh=256x256 ok=1 ticks=1046 hz=709379 addr=40ead9c0 pitch=1024 flags=0
+host: dcom n=152 tex=169 ok=1 ticks=45 hz=709379 token=0a8fb110 v7=00000001
+host: dbeg n=153 tex=170 wh=64x64 ok=1 ticks=731 hz=709379 addr=40e98880 pitch=256 flags=0
+host: dcom n=153 tex=170 ok=1 ticks=49 hz=709379 token=0a8ff1d8 v7=00000001
+host: dbeg n=154 tex=171 wh=16x16 ok=1 ticks=735 hz=709379 addr=40e9c880 pitch=64 flags=0
+host: dcom n=154 tex=171 ok=1 ticks=56 hz=709379 token=0a8ff6a0 v7=00000001
+host: dbeg n=155 tex=172 wh=64x64 ok=1 ticks=766 hz=709379 addr=40eed9c0 pitch=256 flags=0
+host: dcom n=155 tex=172 ok=1 ticks=47 hz=709379 token=0a903768 v7=00000001
+host: dbeg n=156 tex=173 wh=64x64 ok=1 ticks=782 hz=709379 addr=40ef19c0 pitch=256 flags=0
+host: dcom n=156 tex=173 ok=1 ticks=44 hz=709379 token=0a903828 v7=00000001
+host: dbeg n=157 tex=174 wh=64x64 ok=1 ticks=768 hz=709379 addr=40ef59c0 pitch=256 flags=0
+host: dcom n=157 tex=174 ok=1 ticks=50 hz=709379 token=0a9038e8 v7=00000001
+host: dbeg n=158 tex=175 wh=64x64 ok=1 ticks=768 hz=709379 addr=40ef99c0 pitch=256 flags=0
+host: dcom n=158 tex=175 ok=1 ticks=213 hz=709379 token=0a9039a8 v7=00000001
+host: dbeg n=159 tex=176 wh=32x32 ok=1 ticks=783 hz=709379 addr=40efd9c0 pitch=128 flags=0
+host: dcom n=159 tex=176 ok=1 ticks=46 hz=709379 token=0a904a70 v7=00000001
+host: dbeg n=160 tex=177 wh=64x64 ok=1 ticks=873 hz=709379 addr=40efe9c0 pitch=256 flags=0
+host: dcom n=160 tex=177 ok=1 ticks=48 hz=709379 token=0a904b30 v7=00000001
+host: dbeg n=161 tex=178 wh=128x256 ok=1 ticks=912 hz=709379 addr=40f029c0 pitch=512 flags=0
+host: dcom n=161 tex=178 ok=1 ticks=48 hz=709379 token=0a905018 v7=00000001
+host: dbeg n=162 tex=179 wh=16x16 ok=1 ticks=724 hz=709379 addr=40e9cc80 pitch=64 flags=0
+host: dcom n=162 tex=179 ok=1 ticks=46 hz=709379 token=0a9054e0 v7=00000001
+host: dbeg n=163 tex=180 wh=64x64 ok=1 ticks=796 hz=709379 addr=40f229c0 pitch=256 flags=0
+host: dcom n=163 tex=180 ok=1 ticks=46 hz=709379 token=0a9055a0 v7=00000001
+host: dbeg n=164 tex=181 wh=64x64 ok=1 ticks=789 hz=709379 addr=40f269c0 pitch=256 flags=0
+host: dcom n=164 tex=181 ok=1 ticks=45 hz=709379 token=0a905660 v7=00000001
+host: dbeg n=165 tex=182 wh=64x64 ok=1 ticks=781 hz=709379 addr=40f2a9c0 pitch=256 flags=0
+host: dcom n=165 tex=182 ok=1 ticks=48 hz=709379 token=0a905720 v7=00000001
+host: dbeg n=166 tex=183 wh=128x256 ok=1 ticks=845 hz=709379 addr=40f2e9c0 pitch=512 flags=0
+host: dcom n=166 tex=183 ok=1 ticks=47 hz=709379 token=0a9057e0 v7=00000001
+host: dbeg n=167 tex=184 wh=64x64 ok=1 ticks=778 hz=709379 addr=40f4e9c0 pitch=256 flags=0
+host: dcom n=167 tex=184 ok=1 ticks=47 hz=709379 token=0a9058a0 v7=00000001
+host: dbeg n=168 tex=185 wh=64x64 ok=1 ticks=777 hz=709379 addr=40f529c0 pitch=256 flags=0
+host: dcom n=168 tex=185 ok=1 ticks=45 hz=709379 token=0a905960 v7=00000001
+host: dbeg n=169 tex=186 wh=64x128 ok=1 ticks=805 hz=709379 addr=40f569c0 pitch=256 flags=0
+host: dcom n=169 tex=186 ok=1 ticks=47 hz=709379 token=0a905a20 v7=00000001
+host: dbeg n=170 tex=187 wh=64x64 ok=1 ticks=785 hz=709379 addr=40f5e9c0 pitch=256 flags=0
+host: dcom n=170 tex=187 ok=1 ticks=45 hz=709379 token=0a905ae0 v7=00000001
+host: dbeg n=171 tex=188 wh=32x32 ok=1 ticks=780 hz=709379 addr=40f629c0 pitch=128 flags=0
+host: dcom n=171 tex=188 ok=1 ticks=45 hz=709379 token=0a905ba0 v7=00000001
+host: dbeg n=172 tex=189 wh=64x64 ok=1 ticks=794 hz=709379 addr=40f639c0 pitch=256 flags=0
+host: dcom n=172 tex=189 ok=1 ticks=46 hz=709379 token=0a905c60 v7=00000001
+host: dbeg n=173 tex=190 wh=64x64 ok=1 ticks=824 hz=709379 addr=40f679c0 pitch=256 flags=0
+host: dcom n=173 tex=190 ok=1 ticks=49 hz=709379 token=0a905d20 v7=00000001
+host: dbeg n=174 tex=191 wh=64x64 ok=1 ticks=5805 hz=709379 addr=40f6b9c0 pitch=256 flags=0
+host: dcom n=174 tex=191 ok=1 ticks=45 hz=709379 token=0a905de0 v7=00000001
+host: dbeg n=175 tex=192 wh=64x64 ok=1 ticks=893 hz=709379 addr=40f6f9c0 pitch=256 flags=0
+host: dcom n=175 tex=192 ok=1 ticks=46 hz=709379 token=0a905ea0 v7=00000001
+host: dbeg n=176 tex=193 wh=64x64 ok=1 ticks=802 hz=709379 addr=40f739c0 pitch=256 flags=0
+host: dcom n=176 tex=193 ok=1 ticks=42 hz=709379 token=0a905f60 v7=00000001
+host: dbeg n=177 tex=194 wh=64x64 ok=1 ticks=804 hz=709379 addr=40f779c0 pitch=256 flags=0
+host: dcom n=177 tex=194 ok=1 ticks=47 hz=709379 token=0a905f90 v7=00000001
+host: dbeg n=178 tex=195 wh=64x64 ok=1 ticks=993 hz=709379 addr=40f7b9c0 pitch=256 flags=0
+host: dcom n=178 tex=195 ok=1 ticks=49 hz=709379 token=0a905fc0 v7=00000001
+host: dbeg n=179 tex=196 wh=64x64 ok=1 ticks=804 hz=709379 addr=40f7f9c0 pitch=256 flags=0
+host: dcom n=179 tex=196 ok=1 ticks=49 hz=709379 token=0a9069e0 v7=00000001
+host: dbeg n=180 tex=197 wh=64x64 ok=1 ticks=807 hz=709379 addr=40f839c0 pitch=256 flags=0
+host: dcom n=180 tex=197 ok=1 ticks=49 hz=709379 token=0a906aa0 v7=00000001
+host: dbeg n=181 tex=198 wh=64x64 ok=1 ticks=806 hz=709379 addr=40f879c0 pitch=256 flags=0
+host: dcom n=181 tex=198 ok=1 ticks=46 hz=709379 token=0a906b60 v7=00000001
+host: dbeg n=182 tex=199 wh=64x64 ok=1 ticks=820 hz=709379 addr=40f8b9c0 pitch=256 flags=0
+host: dcom n=182 tex=199 ok=1 ticks=47 hz=709379 token=0a906c20 v7=00000001
+host: dbeg n=183 tex=200 wh=64x64 ok=1 ticks=806 hz=709379 addr=40f8f9c0 pitch=256 flags=0
+host: dcom n=183 tex=200 ok=1 ticks=53 hz=709379 token=0a906ce0 v7=00000001
+host: dbeg n=184 tex=201 wh=256x256 ok=1 ticks=916 hz=709379 addr=40f939c0 pitch=1024 flags=0
+host: dcom n=184 tex=201 ok=1 ticks=48 hz=709379 token=0a906da0 v7=00000001
+host: dbeg n=185 tex=202 wh=256x32 ok=1 ticks=842 hz=709379 addr=40fd39c0 pitch=1024 flags=0
+host: dcom n=185 tex=202 ok=1 ticks=45 hz=709379 token=0a906e60 v7=00000001
+host: dbeg n=186 tex=203 wh=256x128 ok=1 ticks=883 hz=709379 addr=40fdb9c0 pitch=1024 flags=0
+host: dcom n=186 tex=203 ok=1 ticks=47 hz=709379 token=0a906f20 v7=00000001
+host: dbeg n=187 tex=204 wh=128x128 ok=1 ticks=861 hz=709379 addr=40ffb9c0 pitch=512 flags=0
+host: dcom n=187 tex=204 ok=1 ticks=48 hz=709379 token=0a906fe0 v7=00000001
+host: dbeg n=188 tex=205 wh=256x128 ok=1 ticks=877 hz=709379 addr=4100b9c0 pitch=1024 flags=0
+host: dcom n=188 tex=205 ok=1 ticks=51 hz=709379 token=0a9070a0 v7=00000001
+host: dbeg n=189 tex=206 wh=256x128 ok=1 ticks=975 hz=709379 addr=4102b9c0 pitch=1024 flags=0
+host: dcom n=189 tex=206 ok=1 ticks=49 hz=709379 token=0a907160 v7=00000001
+host: dbeg n=190 tex=207 wh=16x16 ok=1 ticks=783 hz=709379 addr=40e9d080 pitch=64 flags=0
+host: dcom n=190 tex=207 ok=1 ticks=44 hz=709379 token=0a907220 v7=00000001
+host: dbeg n=191 tex=208 wh=16x16 ok=1 ticks=818 hz=709379 addr=4104b9c0 pitch=64 flags=0
+host: dcom n=191 tex=208 ok=1 ticks=47 hz=709379 token=0a9072e0 v7=00000001
+host: dbeg n=192 tex=209 wh=64x64 ok=1 ticks=835 hz=709379 addr=4104bdc0 pitch=256 flags=0
+host: dcom n=192 tex=209 ok=1 ticks=47 hz=709379 token=0a907310 v7=00000001
+host: dbeg n=193 tex=210 wh=64x64 ok=1 ticks=836 hz=709379 addr=4104fdc0 pitch=256 flags=0
+host: dcom n=193 tex=210 ok=1 ticks=51 hz=709379 token=0aac9668 v7=00000001
+host: dbeg n=194 tex=211 wh=64x64 ok=1 ticks=835 hz=709379 addr=41053dc0 pitch=256 flags=0
+host: dcom n=194 tex=211 ok=1 ticks=47 hz=709379 token=0aacd730 v7=00000001
+host: dbeg n=195 tex=212 wh=64x64 ok=1 ticks=830 hz=709379 addr=41057dc0 pitch=256 flags=0
+host: dcom n=195 tex=212 ok=1 ticks=48 hz=709379 token=0aad17f8 v7=00000001
+host: dbeg n=196 tex=213 wh=64x64 ok=1 ticks=834 hz=709379 addr=4105bdc0 pitch=256 flags=0
+host: dcom n=196 tex=213 ok=1 ticks=54 hz=709379 token=0aad58c0 v7=00000001
+host: dbeg n=197 tex=214 wh=64x64 ok=1 ticks=852 hz=709379 addr=4105fdc0 pitch=256 flags=0
+host: dcom n=197 tex=214 ok=1 ticks=50 hz=709379 token=0aad9988 v7=00000001
+host: dbeg n=198 tex=215 wh=256x256 ok=1 ticks=2288 hz=709379 addr=41063dc0 pitch=1024 flags=0
+host: dcom n=198 tex=215 ok=1 ticks=47 hz=709379 token=0ab19a50 v7=00000001
+host: dbeg n=199 tex=216 wh=256x256 ok=1 ticks=948 hz=709379 addr=410a3dc0 pitch=1024 flags=0
+host: dcom n=199 tex=216 ok=1 ticks=48 hz=709379 token=0ab59b18 v7=00000001
+host: dbeg n=200 tex=217 wh=256x256 ok=1 ticks=947 hz=709379 addr=410e3dc0 pitch=1024 flags=0
+host: dcom n=200 tex=217 ok=1 ticks=46 hz=709379 token=0ab99be0 v7=00000001
+host: dbeg n=201 tex=218 wh=256x256 ok=1 ticks=957 hz=709379 addr=41123dc0 pitch=1024 flags=0
+host: dcom n=201 tex=218 ok=1 ticks=49 hz=709379 token=0abd9ca8 v7=00000001
+host: dbeg n=202 tex=219 wh=256x256 ok=1 ticks=1788 hz=709379 addr=41163dc0 pitch=1024 flags=0
+host: dcom n=202 tex=219 ok=1 ticks=52 hz=709379 token=0ac19d70 v7=00000001
+host: dbeg n=203 tex=220 wh=256x256 ok=1 ticks=1032 hz=709379 addr=411a3dc0 pitch=1024 flags=0
+host: dcom n=203 tex=220 ok=1 ticks=46 hz=709379 token=0ac5a260 v7=00000001
+host: dbeg n=204 tex=221 wh=256x256 ok=1 ticks=937 hz=709379 addr=411e3dc0 pitch=1024 flags=0
+host: dcom n=204 tex=221 ok=1 ticks=47 hz=709379 token=0ac9a328 v7=00000001
+host: dbeg n=205 tex=222 wh=256x128 ok=1 ticks=891 hz=709379 addr=41223dc0 pitch=1024 flags=0
+host: dcom n=205 tex=222 ok=1 ticks=48 hz=709379 token=0acba3f0 v7=00000001
+host: dbeg n=206 tex=223 wh=256x64 ok=1 ticks=889 hz=709379 addr=41243dc0 pitch=1024 flags=0
+host: dcom n=206 tex=223 ok=1 ticks=54 hz=709379 token=0acca4b8 v7=00000001
+host: dbeg n=207 tex=224 wh=256x64 ok=1 ticks=1323 hz=709379 addr=41253dc0 pitch=1024 flags=0
+host: dcom n=207 tex=224 ok=1 ticks=46 hz=709379 token=0acda580 v7=00000001
+host: dbeg n=208 tex=225 wh=128x128 ok=1 ticks=906 hz=709379 addr=41263dc0 pitch=512 flags=0
+host: dcom n=208 tex=225 ok=1 ticks=49 hz=709379 token=0acea648 v7=00000001
+host: dbeg n=209 tex=226 wh=256x256 ok=1 ticks=953 hz=709379 addr=41273dc0 pitch=1024 flags=0
+host: dcom n=209 tex=226 ok=1 ticks=48 hz=709379 token=0ad2a710 v7=00000001
+host: dbeg n=210 tex=227 wh=64x64 ok=1 ticks=880 hz=709379 addr=412b3dc0 pitch=256 flags=0
+host: dcom n=210 tex=227 ok=1 ticks=49 hz=709379 token=0ad2e7d8 v7=00000001
+host: dbeg n=211 tex=228 wh=128x32 ok=1 ticks=860 hz=709379 addr=412b7dc0 pitch=512 flags=0
+host: dcom n=211 tex=228 ok=1 ticks=53 hz=709379 token=0ad328a0 v7=00000001
+host: dbeg n=212 tex=229 wh=128x32 ok=1 ticks=1398 hz=709379 addr=412bbdc0 pitch=512 flags=0
+host: dcom n=212 tex=229 ok=1 ticks=47 hz=709379 token=0ad36968 v7=00000001
+host: dbeg n=213 tex=230 wh=256x128 ok=1 ticks=1104 hz=709379 addr=412bfdc0 pitch=1024 flags=0
+host: dcom n=213 tex=230 ok=1 ticks=49 hz=709379 token=0ad56a30 v7=00000001
+host: dbeg n=214 tex=231 wh=128x128 ok=1 ticks=904 hz=709379 addr=412dfdc0 pitch=512 flags=0
+host: dcom n=214 tex=231 ok=1 ticks=45 hz=709379 token=0ad66af8 v7=00000001
+host: dbeg n=215 tex=232 wh=256x256 ok=1 ticks=975 hz=709379 addr=412efdc0 pitch=1024 flags=0
+host: dcom n=215 tex=232 ok=1 ticks=47 hz=709379 token=0ada6bc0 v7=00000001
+host: dbeg n=216 tex=233 wh=256x256 ok=1 ticks=984 hz=709379 addr=4132fdc0 pitch=1024 flags=0
+host: dcom n=216 tex=233 ok=1 ticks=47 hz=709379 token=0ade6c88 v7=00000001
+host: dbeg n=217 tex=234 wh=256x256 ok=1 ticks=1075 hz=709379 addr=4136fdc0 pitch=1024 flags=0
+host: dcom n=217 tex=234 ok=1 ticks=50 hz=709379 token=0ae27178 v7=00000001
+host: dbeg n=218 tex=235 wh=256x256 ok=1 ticks=993 hz=709379 addr=413afdc0 pitch=1024 flags=0
+host: dcom n=218 tex=235 ok=1 ticks=54 hz=709379 token=0ae67240 v7=00000001
+host: dbeg n=219 tex=236 wh=128x64 ok=1 ticks=907 hz=709379 addr=413efdc0 pitch=512 flags=0
+host: dcom n=219 tex=236 ok=1 ticks=49 hz=709379 token=0ae6f308 v7=00000001
+host: dbeg n=220 tex=237 wh=128x64 ok=1 ticks=1087 hz=709379 addr=413f7dc0 pitch=512 flags=0
+host: dcom n=220 tex=237 ok=1 ticks=44 hz=709379 token=0ae773d0 v7=00000001
+host: dbeg n=221 tex=238 wh=256x256 ok=1 ticks=1156 hz=709379 addr=413ffdc0 pitch=1024 flags=0
+host: dcom n=221 tex=238 ok=1 ticks=51 hz=709379 token=0aeb7498 v7=00000001
+host: dbeg n=222 tex=239 wh=256x128 ok=1 ticks=943 hz=709379 addr=4143fdc0 pitch=1024 flags=0
+host: dcom n=222 tex=239 ok=1 ticks=817 hz=709379 token=0aed7560 v7=00000001
+host: dbeg n=223 tex=240 wh=256x256 ok=1 ticks=990 hz=709379 addr=4145fdc0 pitch=1024 flags=0
+host: dcom n=223 tex=240 ok=1 ticks=45 hz=709379 token=0af17628 v7=00000001
+host: dbeg n=224 tex=241 wh=256x128 ok=1 ticks=958 hz=709379 addr=4149fdc0 pitch=1024 flags=0
+host: dcom n=224 tex=241 ok=1 ticks=45 hz=709379 token=0af376f0 v7=00000001
+host: dbeg n=225 tex=242 wh=256x128 ok=1 ticks=944 hz=709379 addr=414bfdc0 pitch=1024 flags=0
+host: dcom n=225 tex=242 ok=1 ticks=50 hz=709379 token=0af577b8 v7=00000001
+host: dbeg n=226 tex=243 wh=256x256 ok=1 ticks=992 hz=709379 addr=414dfdc0 pitch=1024 flags=0
+host: dcom n=226 tex=243 ok=1 ticks=48 hz=709379 token=0af97880 v7=00000001
+host: dbeg n=227 tex=244 wh=256x256 ok=1 ticks=1003 hz=709379 addr=4151fdc0 pitch=1024 flags=0
+host: dcom n=227 tex=244 ok=1 ticks=49 hz=709379 token=0afd7948 v7=00000001
+host: dbeg n=228 tex=245 wh=256x128 ok=1 ticks=1102 hz=709379 addr=4155fdc0 pitch=1024 flags=0
+host: dcom n=228 tex=245 ok=1 ticks=47 hz=709379 token=0aff7a10 v7=00000001
+host: dbeg n=229 tex=246 wh=32x32 ok=1 ticks=1091 hz=709379 addr=4157fdc0 pitch=128 flags=0
+host: dcom n=229 tex=246 ok=1 ticks=49 hz=709379 token=0aff8ad8 v7=00000001
+host: dbeg n=230 tex=247 wh=32x32 ok=1 ticks=891 hz=709379 addr=41580dc0 pitch=128 flags=0
+host: dcom n=230 tex=247 ok=1 ticks=46 hz=709379 token=0aff9ba0 v7=00000001
+host: dbeg n=231 tex=248 wh=16x16 ok=1 ticks=994 hz=709379 addr=41581dc0 pitch=64 flags=0
+host: dcom n=231 tex=248 ok=1 ticks=47 hz=709379 token=0affa490 v7=00000001
+host: dbeg n=232 tex=249 wh=32x16 ok=1 ticks=917 hz=709379 addr=415821c0 pitch=128 flags=0
+host: dcom n=232 tex=249 ok=1 ticks=44 hz=709379 token=0affad58 v7=00000001
+host: dbeg n=233 tex=250 wh=32x32 ok=1 ticks=894 hz=709379 addr=415829c0 pitch=128 flags=0
+host: dcom n=233 tex=250 ok=1 ticks=54 hz=709379 token=0affbe20 v7=00000001
+host: dbeg n=234 tex=251 wh=32x16 ok=1 ticks=898 hz=709379 addr=415839c0 pitch=128 flags=0
+host: dcom n=234 tex=251 ok=1 ticks=50 hz=709379 token=0affc6e8 v7=00000001
+host: dbeg n=235 tex=252 wh=32x32 ok=1 ticks=908 hz=709379 addr=415841c0 pitch=128 flags=0
+host: dcom n=235 tex=252 ok=1 ticks=46 hz=709379 token=0affd7b0 v7=00000001
+host: dbeg n=236 tex=253 wh=32x32 ok=1 ticks=1083 hz=709379 addr=415851c0 pitch=128 flags=0
+host: dcom n=236 tex=253 ok=1 ticks=45 hz=709379 token=0affe878 v7=00000001
+host: dbeg n=237 tex=254 wh=32x32 ok=1 ticks=901 hz=709379 addr=415861c0 pitch=128 flags=0
+host: dcom n=237 tex=254 ok=1 ticks=46 hz=709379 token=0afff940 v7=00000001
+host: dbeg n=238 tex=255 wh=32x16 ok=1 ticks=942 hz=709379 addr=415871c0 pitch=128 flags=0
+host: dcom n=238 tex=255 ok=1 ticks=44 hz=709379 token=0b000208 v7=00000001
+host: dbeg n=239 tex=256 wh=32x32 ok=1 ticks=896 hz=709379 addr=415879c0 pitch=128 flags=0
+host: dcom n=239 tex=256 ok=1 ticks=45 hz=709379 token=0b0012d0 v7=00000001
+host: dbeg n=240 tex=257 wh=256x256 ok=1 ticks=1005 hz=709379 addr=415889c0 pitch=1024 flags=0
+host: dcom n=240 tex=257 ok=1 ticks=47 hz=709379 token=0b041398 v7=00000001
+host: dbeg n=241 tex=258 wh=32x32 ok=1 ticks=5780 hz=709379 addr=415c89c0 pitch=128 flags=0
+host: dcom n=241 tex=258 ok=1 ticks=46 hz=709379 token=0b042460 v7=00000001
+host: dbeg n=242 tex=259 wh=32x32 ok=1 ticks=911 hz=709379 addr=415c99c0 pitch=128 flags=0
+host: dcom n=242 tex=259 ok=1 ticks=49 hz=709379 token=0b043528 v7=00000001
+host: dbeg n=243 tex=260 wh=32x16 ok=1 ticks=940 hz=709379 addr=415ca9c0 pitch=128 flags=0
+host: dcom n=243 tex=260 ok=1 ticks=49 hz=709379 token=0b043df0 v7=00000001
+host: dbeg n=244 tex=261 wh=32x32 ok=1 ticks=923 hz=709379 addr=415cb1c0 pitch=128 flags=0
+host: dcom n=244 tex=261 ok=1 ticks=46 hz=709379 token=0b044eb8 v7=00000001
+host: dbeg n=245 tex=262 wh=32x32 ok=1 ticks=1011 hz=709379 addr=415cc1c0 pitch=128 flags=0
+host: dcom n=245 tex=262 ok=1 ticks=46 hz=709379 token=0b0463a8 v7=00000001
+host: dbeg n=246 tex=263 wh=256x128 ok=1 ticks=996 hz=709379 addr=415cd1c0 pitch=1024 flags=0
+host: dcom n=246 tex=263 ok=1 ticks=52 hz=709379 token=0b066470 v7=00000001
+host: dbeg n=247 tex=264 wh=256x128 ok=1 ticks=965 hz=709379 addr=415ed1c0 pitch=1024 flags=0
+host: dcom n=247 tex=264 ok=1 ticks=45 hz=709379 token=0b086538 v7=00000001
+host: dbeg n=248 tex=265 wh=256x128 ok=1 ticks=972 hz=709379 addr=4160d1c0 pitch=1024 flags=0
+host: dcom n=248 tex=265 ok=1 ticks=47 hz=709379 token=0b0a6600 v7=00000001
+host: dbeg n=249 tex=266 wh=32x32 ok=1 ticks=940 hz=709379 addr=4162d1c0 pitch=128 flags=0
+host: dcom n=249 tex=266 ok=1 ticks=45 hz=709379 token=0b0a76c8 v7=00000001
+host: dbeg n=250 tex=267 wh=32x32 ok=1 ticks=934 hz=709379 addr=4162e1c0 pitch=128 flags=0
+host: dcom n=250 tex=267 ok=1 ticks=44 hz=709379 token=0b0a8790 v7=00000001
+host: dbeg n=251 tex=268 wh=32x16 ok=1 ticks=948 hz=709379 addr=4162f1c0 pitch=128 flags=0
+host: dcom n=251 tex=268 ok=1 ticks=46 hz=709379 token=0b0a9058 v7=00000001
+host: dbeg n=252 tex=269 wh=256x256 ok=1 ticks=1055 hz=709379 addr=4162f9c0 pitch=1024 flags=0
+host: dcom n=252 tex=269 ok=1 ticks=45 hz=709379 token=0b0e9120 v7=00000001
+host: dbeg n=253 tex=270 wh=128x64 ok=1 ticks=963 hz=709379 addr=4166f9c0 pitch=512 flags=0
+host: dcom n=253 tex=270 ok=1 ticks=46 hz=709379 token=0b0f11e8 v7=00000001
+host: dbeg n=254 tex=1024 wh=128x128 ok=1 ticks=966 hz=709379 addr=416779c0 pitch=512 flags=0
+host: dcom n=254 tex=1024 ok=1 ticks=46 hz=709379 token=0b1012b0 v7=00000001
+host: dbeg n=255 tex=1025 wh=128x128 ok=1 ticks=2138 hz=709379 addr=416879c0 pitch=512 flags=0
+host: dcom n=255 tex=1025 ok=1 ticks=49 hz=709379 token=0b111378 v7=00000001
+host: dbeg n=256 tex=1026 wh=128x128 ok=1 ticks=960 hz=709379 addr=416979c0 pitch=512 flags=0
+host: dcom n=256 tex=1026 ok=1 ticks=46 hz=709379 token=0b121440 v7=00000001
+host: dbeg n=257 tex=1027 wh=128x128 ok=1 ticks=973 hz=709379 addr=416a79c0 pitch=512 flags=0
+host: dcom n=257 tex=1027 ok=1 ticks=46 hz=709379 token=0b131508 v7=00000001
+host: dbeg n=258 tex=1028 wh=128x128 ok=1 ticks=975 hz=709379 addr=416b79c0 pitch=512 flags=0
+host: dcom n=258 tex=1028 ok=1 ticks=55 hz=709379 token=0b1415d0 v7=00000001
+host: dbeg n=259 tex=1029 wh=128x128 ok=1 ticks=1076 hz=709379 addr=416c79c0 pitch=512 flags=0
+host: dcom n=259 tex=1029 ok=1 ticks=44 hz=709379 token=0b151ac0 v7=00000001
+host: dbeg n=260 tex=1030 wh=128x128 ok=1 ticks=972 hz=709379 addr=416d79c0 pitch=512 flags=0
+host: dcom n=260 tex=1030 ok=1 ticks=45 hz=709379 token=0b161b88 v7=00000001
+host: dbeg n=261 tex=1031 wh=128x128 ok=1 ticks=987 hz=709379 addr=416e79c0 pitch=512 flags=0
+host: dcom n=261 tex=1031 ok=1 ticks=46 hz=709379 token=0b171c50 v7=00000001
+host: dbeg n=262 tex=1032 wh=128x128 ok=1 ticks=980 hz=709379 addr=416f79c0 pitch=512 flags=0
+host: dcom n=262 tex=1032 ok=1 ticks=53 hz=709379 token=0b181d18 v7=00000001
+host: dbeg n=263 tex=1033 wh=128x128 ok=1 ticks=988 hz=709379 addr=417079c0 pitch=512 flags=0
+host: dcom n=263 tex=1033 ok=1 ticks=49 hz=709379 token=0b191de0 v7=00000001
+host: dbeg n=264 tex=1034 wh=128x128 ok=1 ticks=982 hz=709379 addr=417179c0 pitch=512 flags=0
+host: dcom n=264 tex=1034 ok=1 ticks=54 hz=709379 token=0b1a1ea8 v7=00000001
+host: dbeg n=265 tex=1035 wh=128x128 ok=1 ticks=975 hz=709379 addr=417279c0 pitch=512 flags=0
+host: dcom n=265 tex=1035 ok=1 ticks=45 hz=709379 token=0b1b1f70 v7=00000001
+host: dbeg n=266 tex=1036 wh=128x128 ok=1 ticks=5795 hz=709379 addr=417379c0 pitch=512 flags=0
+host: dcom n=266 tex=1036 ok=1 ticks=56 hz=709379 token=0b1c2038 v7=00000001
+host: dbeg n=267 tex=25 wh=256x256 ok=1 ticks=1065 hz=709379 addr=417479c0 pitch=1024 flags=0
+host: dcom n=267 tex=25 ok=1 ticks=45 hz=709379 token=0b202100 v7=00000001
+[minigl.library] LibClose count=0
+CP_RUN dispatches=15082 dwords=8403158 failed=0
+MiniGLPPC host: executes=15082 presents=978
+MiniGLPPC host: stopped

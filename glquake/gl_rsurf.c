@@ -771,9 +771,14 @@ if (! (s->flags & (SURF_DRAWSKY|SURF_DRAWTURB|(r_dowarp ? SURF_UNDERWATER : 0)) 
       {
         lightmap_modified[i] = false;
         theRect = &lightmap_rectchange[i];
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
-          BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
-          lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+        {
+          unsigned long fp_t = FP_Enter (FP_LMUPLOAD);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
+            BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
+            lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+          FP_ExitLMUpload (fp_t, i, theRect->t, theRect->h,
+                          theRect->h * BLOCK_WIDTH * lightmap_bytes, 0);
+        }
         FP_CountLMUpload (theRect->h * BLOCK_WIDTH * lightmap_bytes);
         theRect->l = BLOCK_WIDTH;
         theRect->t = BLOCK_HEIGHT;
@@ -932,9 +937,14 @@ if (! (s->flags & (SURF_DRAWSKY|SURF_DRAWTURB|(r_dowarp ? SURF_UNDERWATER : 0)) 
     {
       lightmap_modified[i] = false;
       theRect = &lightmap_rectchange[i];
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
-        BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
-        lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+      {
+        unsigned long fp_t = FP_Enter (FP_LMUPLOAD);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
+          BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
+          lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+        FP_ExitLMUpload (fp_t, i, theRect->t, theRect->h,
+                        theRect->h * BLOCK_WIDTH * lightmap_bytes, 1);
+      }
       FP_CountLMUpload (theRect->h * BLOCK_WIDTH * lightmap_bytes);
       theRect->l = BLOCK_WIDTH;
       theRect->t = BLOCK_HEIGHT;
@@ -1180,9 +1190,14 @@ void R_BlendLightmaps (void)
     {
       lightmap_modified[i] = false;
       theRect = &lightmap_rectchange[i];
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
-        BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
-        lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+      {
+        unsigned long fp_t = FP_Enter (FP_LMUPLOAD);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
+          BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
+          lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
+        FP_ExitLMUpload (fp_t, i, theRect->t, theRect->h,
+                        theRect->h * BLOCK_WIDTH * lightmap_bytes, 2);
+      }
       FP_CountLMUpload (theRect->h * BLOCK_WIDTH * lightmap_bytes);
       theRect->l = BLOCK_WIDTH;
       theRect->t = BLOCK_HEIGHT;
@@ -1445,10 +1460,18 @@ dynamic:
 
 #ifdef LITFILES
 	if(eyecandy)
-	R_BuildLightMapColor (fa, base, BLOCK_WIDTH*lightmap_bytes);
+	{
+	  unsigned long fp_t = FP_Enter (FP_LMBUILD);
+	  R_BuildLightMapColor (fa, base, BLOCK_WIDTH*lightmap_bytes);
+	  FP_Exit (FP_LMBUILD, fp_t);
+	}
 	else
 #endif
-      R_BuildLightMap (fa, base, BLOCK_WIDTH*lightmap_bytes);
+      {
+        unsigned long fp_t = FP_Enter (FP_LMBUILD);
+        R_BuildLightMap (fa, base, BLOCK_WIDTH*lightmap_bytes);
+        FP_Exit (FP_LMBUILD, fp_t);
+      }
     }
   }
 }
