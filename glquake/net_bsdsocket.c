@@ -7,12 +7,19 @@
 
 #if defined(WOS) && defined(__GNUC__) && defined(__PPC__)
 
-/* MOS2WOS: BSD-style socket API implemented by newlib/libglosswos (__P*
- * stubs mapped by the netinclude sys/socket.h macros). Do NOT include
- * proto/socket.h here: its clib/bsdsocket_protos.h declares the
- * bsdsocket.library functions with AmigaOS LONG signatures, which conflict
- * with the netinclude sys/socket.h prototypes. The few library entry
- * points without a __P wrapper are declared manually below. */
+/* MOS2WOS: use the BSD-style socket API provided by libglosswos exactly as
+ * it is meant to be used - no raw bsdsocket.library LP calls.
+ *
+ * Why: libglosswos returns fd-table indices from socket(); the Amiga-named
+ * entry points (CloseSocket/IoctlSocket/Inet_NtoA/SocketBaseTagList) expect
+ * raw bsdsocket handles, so mixing the two layers returns -1 for every call.
+ * libglosswos also opens bsdsocket.library v4 lazily and wires
+ * SBTC_ERRNOLONGPTR/SBTC_LOGTAGPTR itself, so no SocketBaseTags call is
+ * needed here.
+ *
+ * Do NOT include proto/socket.h: its clib/bsdsocket_protos.h declares the
+ * bsdsocket functions with AmigaOS LONG signatures, which conflict with the
+ * netinclude sys/socket.h prototypes. */
 #include <exec/types.h>
 #include <exec/libraries.h>
 #include <proto/exec.h>
@@ -24,33 +31,17 @@
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <amitcp/socketbasetags.h>
 
-/* Amiga-named bsdsocket.library entry points have no __P wrappers. Pull in
- * the LPn inline-call machinery and define just the four we use (the full
- * ppcinline/bsdsocket.h would clash with the POSIX __P* macros above).
- * Macro bodies copied verbatim from powerup/ppcinline/bsdsocket.h. */
-#include <powerup/ppcinline/macros.h>
-#ifndef BSDSOCKET_BASE_NAME
-#define BSDSOCKET_BASE_NAME SocketBase
-#endif
-
-#define IoctlSocket(sock, req, argp) \
-	LP3(0x72, LONG, IoctlSocket, LONG, sock, d0, ULONG, req, d1, APTR, argp, a0, \
-	, BSDSOCKET_BASE_NAME, IF_CACHEFLUSHALL, NULL, 0, IF_CACHEFLUSHALL, NULL, 0)
-
-#define CloseSocket(sock) \
-	LP1(0x78, LONG, CloseSocket, LONG, sock, d0, \
-	, BSDSOCKET_BASE_NAME, IF_CACHEFLUSHALL, NULL, 0, IF_CACHEFLUSHALL, NULL, 0)
-
-#define Inet_NtoA(ip) \
-	LP1(0xae, STRPTR, Inet_NtoA, ULONG, ip, d0, \
-	, BSDSOCKET_BASE_NAME, IF_CACHEFLUSHALL, NULL, 0, IF_CACHEFLUSHALL, NULL, 0)
-
-#define SocketBaseTagList(tags) \
-	LP1(0x126, LONG, SocketBaseTagList, struct TagItem *, tags, a0, \
-	, BSDSOCKET_BASE_NAME, IF_CACHEFLUSHALL, NULL, 0, IF_CACHEFLUSHALL, NULL, 0)
+/* The bsdsocket stack writes AmiTCP/Roadshow errno values through
+ * SBTC_ERRNOLONGPTR. newlib's <errno.h> in this SDK uses a different
+ * numbering for some codes (ECONNREFUSED 111 vs 61, ENOTSOCK 108 vs 38),
+ * so compare against the stack's values explicitly. EWOULDBLOCK matches by
+ * luck (35 in both). */
+#define NET_EWOULDBLOCK   35
+#define NET_ECONNREFUSED  61
 
 #elif defined(__GNUC__) && defined(__PPC__)
 
@@ -77,6 +68,9 @@
 #pragma default-align
 #include <errno.h>
 
+#define NET_EWOULDBLOCK   EWOULDBLOCK
+#define NET_ECONNREFUSED  ECONNREFUSED
+
 #endif
 
 #ifdef WOS
@@ -102,11 +96,13 @@ static unsigned long myAddr;
 
 //=============================================================================
 
+#if !defined(WOS)
 #ifndef inet_ntoa
 char *inet_ntoa(struct in_addr addr)
 {
   return Inet_NtoA(addr.s_addr);
 }
+#endif
 #endif
 
 //=============================================================================
@@ -123,26 +119,24 @@ int UDP_Init (void)
   if (COM_CheckParm ("-noudp"))
     return (-1);
 
+#ifdef WOS
+  /* libglosswos owns SocketBase: it opens bsdsocket.library v4 lazily on the
+     first socket call and wires SBTC_ERRNOLONGPTR/SBTC_LOGTAGPTR itself.
+     Force the open now so a missing stack fails cleanly instead of at the
+     first packet. */
+  {
+    int probe = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (probe < 0 || SocketBase == NULL) {
+      if (probe >= 0)
+        close (probe);
+      return (-1);
+    }
+    close (probe);
+  }
+#else
   /* Amiga socket initialization */
   if (!(SocketBase = OpenLibrary("bsdsocket.library",SOCKETVERSION)))
     return (-1);
-#ifdef WOS
-  /* MOS2WOS: SocketBaseTags() is only a varargs macro shim in the SDK
-   * inline headers; the library entry point is SocketBaseTagList(). */
-  {
-    struct TagItem socktags[3];
-    socktags[0].ti_Tag  = SBTM_SETVAL(SBTC_ERRNOPTR(sizeof(errno)));
-    socktags[0].ti_Data = (ULONG)&errno;
-    socktags[1].ti_Tag  = SBTM_SETVAL(SBTC_LOGTAGPTR);
-    socktags[1].ti_Data = (ULONG)"QuakeAmiga UDP";
-    socktags[2].ti_Tag  = TAG_END;
-    socktags[2].ti_Data = 0;
-    if (SocketBaseTagList(socktags)) {
-      CloseLibrary(SocketBase);
-      return (-1);
-    }
-  }
-#else
   if (SocketBaseTags(SBTM_SETVAL(SBTC_ERRNOPTR(sizeof(errno))),&errno,
                      SBTM_SETVAL(SBTC_LOGTAGPTR),"QuakeAmiga UDP",
                      TAG_END)) {
@@ -193,6 +187,13 @@ int UDP_Init (void)
   if ((net_controlsocket = UDP_OpenSocket (0)) == -1)
     Sys_Error("UDP_Init: Unable to open control socket\n");
 
+#ifdef WOS
+  /* AmiTCP-style sockaddr_in has a leading sin_len byte; zero the whole
+     thing and set it. */
+  memset (&broadcastaddr, 0, sizeof (broadcastaddr));
+  ((struct sockaddr_in *)&broadcastaddr)->sin_len =
+      (UBYTE)sizeof (struct sockaddr_in);
+#endif
   ((struct sockaddr_in *)&broadcastaddr)->sin_family = AF_INET;
   ((struct sockaddr_in *)&broadcastaddr)->sin_addr.s_addr = INADDR_BROADCAST;
   ((struct sockaddr_in *)&broadcastaddr)->sin_port = htons(net_hostport);
@@ -203,7 +204,11 @@ int UDP_Init (void)
   if (colon)
     *colon = 0;
 
+#ifdef WOS
+  Con_Printf("bsdsocket.library TCP/IP (v4+, libglosswos)\n");
+#else
   Con_Printf("bsdsocket.library V%d TCP/IP\n",SOCKETVERSION);
+#endif
   tcpipAvailable = true;
 
   return net_controlsocket;
@@ -216,7 +221,11 @@ void UDP_Shutdown (void)
   if (SocketBase) {
     UDP_Listen (false);
     UDP_CloseSocket (net_controlsocket);
+#ifndef WOS
+    /* libglosswos owns the base on WOS and closes it in its .fini
+       destructor; closing it here would double-close. */
     CloseLibrary(SocketBase);
+#endif
   }
 }
 
@@ -247,17 +256,31 @@ int UDP_OpenSocket (int port)
 {
   int newsocket;
   struct sockaddr_in address;
-  qboolean _true = true;
+  LONG one = 1;
 
   if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) != -1) {
-    if (IoctlSocket (newsocket, FIONBIO, (char *)&_true) != -1) {
+#ifdef WOS
+    /* Pure libglosswos fd layer: ioctl()/close() are the correct calls for
+       fds returned by socket() (IoctlSocket/CloseSocket take raw handles). */
+    if (ioctl (newsocket, FIONBIO, &one) != -1) {
+#else
+    if (IoctlSocket (newsocket, FIONBIO, (char *)&one) != -1) {
+#endif
+      memset (&address, 0, sizeof (address));
+#ifdef WOS
+      address.sin_len = (UBYTE)sizeof (address);
+#endif
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = INADDR_ANY;
       address.sin_port = htons(port);
       if (bind (newsocket, (void *)&address, sizeof(address)) != -1)
         return newsocket;
     }
+#ifdef WOS
+    close (newsocket);
+#else
     CloseSocket(newsocket);
+#endif
   }
   return -1;
 }
@@ -268,7 +291,11 @@ int UDP_CloseSocket (int socket)
 {
   if (socket == net_broadcastsocket)
     net_broadcastsocket = 0;
+#ifdef WOS
+  return (close (socket));
+#else
   return (CloseSocket(socket));
+#endif
 }
 
 
@@ -306,6 +333,11 @@ static int PartialIPAddress (char *in, struct qsockaddr *hostaddr)
     addr = (addr<<8) + num;
   }
   
+  memset (hostaddr, 0, sizeof (struct sockaddr_in));
+#ifdef WOS
+  ((struct sockaddr_in *)hostaddr)->sin_len =
+      (UBYTE)sizeof (struct sockaddr_in);
+#endif
   hostaddr->sa_family = AF_INET;
   ((struct sockaddr_in *)hostaddr)->sin_port = htons(net_hostport); 
   ((struct sockaddr_in *)hostaddr)->sin_addr.s_addr = (myAddr & htonl(mask)) | htonl(addr);
@@ -342,7 +374,7 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
   int ret;
 
   ret = recvfrom (socket, buf, len, 0, (struct sockaddr *)addr, &addrlen);
-  if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
+  if (ret == -1 && (errno == NET_EWOULDBLOCK || errno == NET_ECONNREFUSED))
     return 0;
   return ret;
 }
@@ -389,7 +421,7 @@ int UDP_Write (int socket, byte *buf, int len, struct qsockaddr *addr)
   int ret;
 
   ret = sendto (socket, buf, len, 0, (struct sockaddr *)addr, sizeof(struct qsockaddr));
-  if (ret == -1 && errno == EWOULDBLOCK)
+  if (ret == -1 && errno == NET_EWOULDBLOCK)
     return 0;
   return ret;
 }

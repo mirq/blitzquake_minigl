@@ -185,7 +185,7 @@ $(BUILDDIR)/minigl_ppc_open.o : $(MGL_DIR)/client/minigl_ppc_open.c | $(BUILDDIR
 $(BUILDDIR)/sys_amiga.o :           sys_amiga_std.c $(INCS) | $(BUILDDIR)
 	$(DO_CC)
 
-$(BUILDDIR)/snd_amiga.o :           snd_amiga_AHI.c $(INCS) | $(BUILDDIR)
+$(BUILDDIR)/snd_amiga.o :           snd_amiga_AHI.c wos_ahi_abi.h $(INCS) | $(BUILDDIR)
 	$(DO_CC)
 
 $(BUILDDIR)/snd_mix.o :             snd_mix_AHI.c $(INCS) | $(BUILDDIR)

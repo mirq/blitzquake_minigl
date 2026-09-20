@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma amiga-align
 
 #include <exec/exec.h>
+#include <exec/execbase.h>      /* CACRF_ClearD */
 #include <dos/dos.h>
 #include <graphics/gfxbase.h>
 #include <devices/audio.h>
@@ -53,11 +54,38 @@ extern struct GfxBase *GfxBase;
 
 #include "quakedef.h"
 
+#ifdef WOS
+/* MOS2WOS headers are OS4-style (natural PPC alignment); 68k AHI needs the
+   2-byte packed AmigaOS request layout. See wos_ahi_abi.h. */
+#include "wos_ahi_abi.h"
+typedef struct wos_AHIRequest ahi_request_t;
+#else
+typedef struct AHIRequest ahi_request_t;
+#endif
+
 /**********************************************************************/
 
 extern int desired_speed;
 extern int desired_bits;
+extern int paintedtime;         /* sample pairs, owned by snd_dma.c */
 int using_ahi = FALSE;
+
+/* Negotiated AHI sample format (S16S on this port). */
+static ULONG ahi_type = AHIST_S16S;
+
+/* On WarpOS a missing/broken AHI must not kill the game: run silent.
+   The audio.device/Paula path is never used on WarpOS (its 68k interrupt
+   handler trips "Async Run68K function not supported"). */
+#ifdef WOS
+#define USE_AHI_ALWAYS 1
+#define AHI_FAIL(msg) do { Con_Printf ("AHI: %s\n", (msg)); \
+                           SNDDMA_Shutdown (); return 0; } while (0)
+#else
+#define USE_AHI_ALWAYS 0
+#define AHI_FAIL(msg) Sys_Error (msg)
+#endif
+
+void SNDDMA_Shutdown (void);
 
 /**********************************************************************/
 
@@ -66,7 +94,7 @@ int using_ahi = FALSE;
 #define AHIBUFFERSIZE 262144
 
 struct ahi_channel_info {
-  struct AHIRequest *AHIio;
+  ahi_request_t *AHIio;
   double starttime;
   BOOL sound_in_progress;
 };
@@ -131,7 +159,7 @@ static void stop_ahi_sound (struct ahi_channel_info *c)
 
 static void start_ahi_sound (struct ahi_channel_info *c,
                              char *buffer, int length,
-                             struct AHIRequest *link)
+                             ahi_request_t *link)
 {
   if (!ahidevice_is_open)
     return;
@@ -141,11 +169,14 @@ static void start_ahi_sound (struct ahi_channel_info *c,
   c->AHIio->ahir_Std.io_Message.mn_Node.ln_Pri = -50;   /* sound effects */
   c->AHIio->ahir_Std.io_Data = buffer;
   c->AHIio->ahir_Std.io_Length = length;
-  c->AHIio->ahir_Type = AHIST_S16S;
+  c->AHIio->ahir_Type = ahi_type;
   c->AHIio->ahir_Frequency = shm->speed;
   c->AHIio->ahir_Volume = 0x10000;
   c->AHIio->ahir_Position = 0x8000;
   c->AHIio->ahir_Link = link;
+  /* The AHI driver (68k side) reads this memory; the 68060 does not snoop
+     the PPC data cache, so write dirty lines back before it does. */
+  CacheClearE (buffer, length, CACRF_ClearD);
   SendIO ((struct IORequest *)c->AHIio);
   c->sound_in_progress = TRUE;
 }
@@ -191,11 +222,191 @@ static int startsound (int cnum, char *buffer, int length)
 
 /**********************************************************************/
 
-
 static UWORD def_smp_speed;
+
+/* One short synchronous CMD_WRITE: returns the driver's io_Error for the
+   given sample format, so we can bail out before streaming garbage. */
+static ULONG ahi_type_test (ULONG type)
+{
+  ahi_request_t *r = ahi_channel_info[0].AHIio;
+  ULONG len = 4096;
+
+  if (!ahidevice_is_open || r == NULL || shm == NULL || shm->buffer == NULL)
+    return (ULONG)-1;
+  if (len > AHIBUFFERSIZE)
+    len = AHIBUFFERSIZE;
+  r->ahir_Std.io_Command = CMD_WRITE;
+  r->ahir_Std.io_Flags = 0;
+  r->ahir_Std.io_Message.mn_Node.ln_Pri = 0;
+  r->ahir_Std.io_Data = shm->buffer;
+  r->ahir_Std.io_Length = len;
+  r->ahir_Type = type;
+  r->ahir_Frequency = shm->speed;
+  r->ahir_Volume = 0x10000;
+  r->ahir_Position = 0x8000;
+  r->ahir_Link = NULL;
+  CacheClearE (shm->buffer, len, CACRF_ClearD);
+  SendIO ((struct IORequest *)r);
+  WaitIO ((struct IORequest *)r);
+  return r->ahir_Std.io_Error;
+}
+
+#ifdef WOS
+/* ================== WarpOS: Q3-style high-level AHI ==================
+ *
+ * Ported 1:1 from quake3amiga/code/amiga/amiga_snd.c (Quake 2 code by Jarmo
+ * Laakkonen and Hans-Joerg Frieden, via Cowcat's Q3 port).
+ *
+ * AHI does the playback scheduling and loops one dynamic sample; the play
+ * cursor comes from an AHIET_CHANNELINFO effect hook. AHI calls the 68k code
+ * blob below on every mix and it stores ahieci_Offset[0] into hook->h_Data,
+ * which the PPC reads directly - so there are no per-frame OS calls at all.
+ * (Each emulated Run68K LP call costs milliseconds on this stack and used to
+ * cost ~30 ms/frame with the old low-level double-buffer scheme.)
+ *
+ * Difference from Q3: the DMA buffer is malloc'd (this runtime has
+ * PowerPCBase == NULL, so AllocVecPPC is unavailable), therefore
+ * SNDDMA_Submit still flushes the painted range with exec CacheClearE -
+ * required for the 68k AHI driver to see the PPC's writes.
+ */
+
+#include <utility/tagitem.h>
+#include <utility/hooks.h>
+
+#define WOS_AHI_MINBUF (4 * 16384)
+
+static struct AHIAudioCtrl *wos_actrl = NULL;
+static ahi_request_t *wos_ahi_io = NULL;
+static ULONG wos_ahi_rc = 1;
+static UBYTE *wos_dmabuf = NULL;
+static int wos_buflen = 0;
+
+/* 68k callback blob (converted from a vbcc object by Cowcat; see the Q3
+ * source for the equivalent C):
+ *   move.l a0,-(sp) / move.l a1,a2 / move.l 12(a1),d0
+ *   move.l d0,16(a2) / moveq #0,d0 / move.l (sp)+,a2 / rts
+ * i.e. hook->h_Data = info->ahieci_Offset[0]; return 0; */
+static unsigned short wos_ahi_callback[] = {
+  0x48e7, 0x0020, 0x2448, 0x2029, 0x000c, 0x2540, 0x0010, 0x7000, 0x245f, 0x4e75
+};
+
+struct wos_ahi_channel_info {
+  struct AHIEffChannelInfo cinfo;
+  ULONG x[1];
+};
+
+static struct wos_ahi_channel_info wos_info;
+static struct Hook wos_effhook = { {NULL, NULL},
+                                   (HOOKFUNC)wos_ahi_callback, NULL, NULL };
+
+static qboolean wos_ahi_init (void)
+{
+  struct AHISampleInfo sample;
+  ULONG mixfreq = 0, playsamples = 0, mode = 0;
+  UBYTE name[256];
+  int speed;
+  int i;
+
+  /* evaluate parameters */
+  if (i = COM_CheckParm ("-audspeed"))
+    def_smp_speed = (UWORD)Q_atoi (com_argv[i + 1]);
+  else
+    def_smp_speed = (UWORD)desired_speed;
+  speed = def_smp_speed;
+
+  if ((shm = (dma_t *)malloc (sizeof (dma_t))) == NULL)
+    Sys_Error ("malloc() failed");
+  memset ((void *)shm, 0, sizeof (dma_t));
+
+  wos_info.cinfo.ahieci_Channels = 1;
+  wos_info.cinfo.ahieci_Func = &wos_effhook;
+  wos_info.cinfo.ahie_Effect = AHIET_CHANNELINFO;
+  wos_effhook.h_Data = NULL;
+
+  Con_Printf ("AHI sound initialisation\n");
+  Con_Printf ("...Frequency: %d Hz\n", speed);
+
+  if ((AHImp = CreateMsgPort ()) == NULL)
+    AHI_FAIL ("Can't create AHI message port");
+  if ((wos_ahi_io = (ahi_request_t *)CreateIORequest (AHImp,
+                                     sizeof (ahi_request_t))) == NULL)
+    AHI_FAIL ("Can't create AHI io request");
+  wos_ahi_io->ahir_Version = 4;
+  if (OpenDevice ("ahi.device", AHI_NO_UNIT,
+                  (struct IORequest *)wos_ahi_io, 0) != 0)
+    AHI_FAIL ("Can't open ahi.device version 4");
+  AHIDevice = 0;
+  AHIBase = (struct Library *)wos_ahi_io->ahir_Std.io_Device;
+
+  if ((wos_actrl = AHI_AllocAudio (AHIA_AudioID, AHI_DEFAULT_ID,
+                                   AHIA_MixFreq, speed,
+                                   AHIA_Channels, 1,
+                                   AHIA_Sounds, 1,
+                                   TAG_END)) == NULL)
+    AHI_FAIL ("Can't allocate audio");
+
+  AHI_GetAudioAttrs (AHI_INVALID_ID, wos_actrl,
+                     AHIDB_MaxPlaySamples, (ULONG)&playsamples,
+                     AHIDB_BufferLen, 256,
+                     AHIDB_Name, (ULONG)name,
+                     AHIDB_AudioID, (ULONG)&mode,
+                     TAG_END);
+  AHI_ControlAudio (wos_actrl, AHIC_MixFreq_Query, (ULONG)&mixfreq, TAG_END);
+  if (mixfreq == 0)
+    mixfreq = speed;
+
+  wos_buflen = playsamples * speed / mixfreq;
+  if (wos_buflen < WOS_AHI_MINBUF)
+    wos_buflen = WOS_AHI_MINBUF;
+
+  if ((wos_dmabuf = (UBYTE *)malloc (wos_buflen)) == NULL)
+    AHI_FAIL ("Can't allocate AHI dma buffer");
+  memset (wos_dmabuf, 0, wos_buflen);
+
+  shm->buffer = (unsigned char *)wos_dmabuf;
+  shm->channels = 2;
+  shm->speed = speed;
+  shm->samplebits = 16;
+  shm->samples = wos_buflen / (shm->samplebits / 8);
+  shm->submission_chunk = 1;
+  shm->samplepos = 0;
+
+  sample.ahisi_Type = AHIST_S16S;
+  sample.ahisi_Address = (APTR)wos_dmabuf;
+  sample.ahisi_Length = wos_buflen / AHI_SampleFrameSize (AHIST_S16S);
+
+  if ((wos_ahi_rc = AHI_LoadSound (0, AHIST_DYNAMICSAMPLE, &sample,
+                                   wos_actrl)) != 0)
+    AHI_FAIL ("Can't load sound");
+  if (AHI_ControlAudio (wos_actrl, AHIC_Play, TRUE, TAG_END) != 0)
+    AHI_FAIL ("Can't start playback");
+
+  Con_Printf ("AHI audio initialized\n");
+  Con_Printf ("AHI mode: %s (%08lx)\n", name, (unsigned long)mode);
+  Con_Printf ("Output: 16bit stereo, %d byte loop (%d Hz mix)\n",
+              wos_buflen, (int)mixfreq);
+
+  AHI_Play (wos_actrl,
+            AHIP_BeginChannel, 0,
+            AHIP_Freq, speed,
+            AHIP_Vol, 0x10000,
+            AHIP_Pan, 0x8000,
+            AHIP_Sound, 0,
+            AHIP_EndChannel, NULL,
+            TAG_END);
+
+  AHI_SetEffect (&wos_info, wos_actrl);
+
+  using_ahi = TRUE;
+  return 1;
+}
+#endif /* WOS */
 
 qboolean SNDDMA_Init (void)
 {
+#ifdef WOS
+  return wos_ahi_init ();
+#else
   int i, unit = 0;
   struct channel_info *c;
   UBYTE chans[1];
@@ -215,40 +426,55 @@ qboolean SNDDMA_Init (void)
     def_smp_speed = (UWORD)(desired_speed);
 
 
-  if (COM_CheckParm ("-ahi")) {
+  if (USE_AHI_ALWAYS || COM_CheckParm ("-ahi")) {
 		if ((unit = COM_CheckParm ("-ahiunit"))) {
 			if (unit < com_argc-1)
 				unit = Q_atoi (com_argv[unit+1]);
 			else
 				Sys_Error ("You must specify a number after -unit");
 		}
+#ifdef WOS
+    Con_Printf("Using AHI (WarpOS: audio.device path disabled).\n");
+#else
     Con_Printf("Using AHI unit %d.\n", unit);
+#endif
     using_ahi = TRUE;
 
     if ((shm->buffer = malloc (AHIBUFFERSIZE)) == NULL)
-      Sys_Error ("malloc() failed");
+      AHI_FAIL ("malloc() failed");
     memset (shm->buffer, 0, AHIBUFFERSIZE);
 
     shm->channels = 2;
-    shm->speed = desired_speed;
+    shm->speed = def_smp_speed;
     shm->samplebits = 16;
     shm->samples = AHIBUFFERSIZE / (shm->samplebits / 8);
     shm->submission_chunk = 1;
 
     if ((AHImp = CreateMsgPort ()) == NULL)
-      Sys_Error ("CreateMsgPort() failed");
+      AHI_FAIL ("CreateMsgPort() failed");
     for (i = 0; i < 2; i++)
-      if ((ahi_channel_info[i].AHIio = (struct AHIRequest *)CreateIORequest
-                                   (AHImp, sizeof(struct AHIRequest))) == NULL)
-        Sys_Error ("CreateIORequest() failed");
+      if ((ahi_channel_info[i].AHIio = (ahi_request_t *)CreateIORequest
+                                   (AHImp, sizeof(ahi_request_t))) == NULL)
+        AHI_FAIL ("CreateIORequest() failed");
     ahi_channel_info[0].AHIio->ahir_Version = 4;
     if ((AHIDevice = OpenDevice (AHINAME, unit,
                                  (struct IORequest *)ahi_channel_info[0].AHIio,
                                  0)) != 0)
-      Sys_Error ("OpenDevice() failed");
+      AHI_FAIL ("OpenDevice(ahi.device) failed - is AHI installed?");
     ahidevice_is_open = TRUE;
     AHIBase = (struct Library *)ahi_channel_info[0].AHIio->ahir_Std.io_Device;
     *ahi_channel_info[1].AHIio = *ahi_channel_info[0].AHIio;
+
+    /* Negotiate the sample format before streaming. */
+    ahi_type = AHIST_S16S;
+    if (ahi_type_test (ahi_type) != AHIE_OK) {
+      Con_Printf ("AHI: AHIST_S16S rejected (io_Error=%d), sound disabled\n",
+                  (int)ahi_channel_info[0].AHIio->ahir_Std.io_Error);
+      SNDDMA_Shutdown ();
+      return 0;
+    }
+    Con_Printf ("AHI audio initialized: unit %d, %d Hz, 16-bit stereo\n",
+                unit, (int)shm->speed);
 
     twice_real_speed = 2.0 * (double)shm->speed;
     ahi_playtime = ((double)(AHIBUFFERSIZE >> 2)) / (double)shm->speed;
@@ -325,12 +551,19 @@ qboolean SNDDMA_Init (void)
   }
 
   return 1;
+#endif /* WOS */
 }
 
 /**********************************************************************/
 
 int SNDDMA_GetDMAPos (void)
 {
+#ifdef WOS
+  if (shm == NULL)
+    return 0;
+  /* AHIET_CHANNELINFO hook value: current offset in sample frames. */
+  return (shm->samplepos = (int)(wos_effhook.h_Data) * shm->channels);
+#else
   if (shm == NULL || shm->buffer == NULL)
     return 0;
 
@@ -383,12 +616,51 @@ int SNDDMA_GetDMAPos (void)
   }
 
   return shm->samplepos;
+#endif /* WOS */
 }
 
 /**********************************************************************/
 
 void SNDDMA_Shutdown (void)
 {
+#ifdef WOS
+  /* Q3 order: cancel effect, stop playback, unload sound, free buffer,
+     free audio, close device, delete request, delete port. */
+  if (wos_actrl) {
+    wos_info.cinfo.ahie_Effect = AHIET_CHANNELINFO | AHIET_CANCEL;
+    AHI_SetEffect (&wos_info, wos_actrl);
+    AHI_ControlAudio (wos_actrl, AHIC_Play, FALSE, TAG_END);
+  }
+  if (wos_ahi_rc == 0 && wos_actrl) {
+    AHI_UnloadSound (0, wos_actrl);
+    wos_ahi_rc = 1;
+  }
+  if (wos_dmabuf) {
+    free (wos_dmabuf);
+    wos_dmabuf = NULL;
+  }
+  if (wos_actrl) {
+    AHI_FreeAudio (wos_actrl);
+    wos_actrl = NULL;
+  }
+  if (AHIDevice == 0) {
+    CloseDevice ((struct IORequest *)wos_ahi_io);
+    AHIDevice = -1;
+  }
+  if (wos_ahi_io) {
+    DeleteIORequest ((struct IORequest *)wos_ahi_io);
+    wos_ahi_io = NULL;
+  }
+  if (AHImp) {
+    DeleteMsgPort (AHImp);
+    AHImp = NULL;
+  }
+  if (shm) {
+    free (shm);
+    shm = NULL;
+  }
+  using_ahi = FALSE;
+#else
   int i;
 
 //  printf ("SNDDMA_Shutdown()\n");
@@ -452,12 +724,50 @@ void SNDDMA_Shutdown (void)
     free ((char *)shm);
     shm = NULL;
   }
+#endif /* WOS */
 }
 
 /**********************************************************************/
+
+/* Called once per S_Update_ after S_PaintChannels() has mixed new audio
+   into the ring. The AHI driver reads that memory from the 68k side; the
+   68060 does not snoop the PPC data cache, so write the freshly painted
+   range back to memory. Without this the driver can play stale samples
+   (the classic "dma/cache sound issues"). */
 void SNDDMA_Submit (void)
 {
-//  printf ("SNDDMA_Submit()\n");
+  static int flush_time;        /* paintedtime at the previous flush */
+  int t0, t1, bpf, len, start, first;
+
+  if (!using_ahi || shm == NULL || shm->buffer == NULL)
+    return;
+
+  t0 = flush_time;
+  t1 = paintedtime;
+  if (t1 == t0)
+    return;
+  if (t1 < t0) {                /* paintedtime reset (level change) */
+    flush_time = t1;
+    return;
+  }
+
+  bpf = shm->channels * (shm->samplebits >> 3);         /* bytes per frame */
+  if (bpf <= 0)
+    return;
+
+  len = (t1 - t0) * bpf;
+  if (len > AHIBUFFERSIZE)
+    len = AHIBUFFERSIZE;
+  start = (t0 * bpf) & (AHIBUFFERSIZE - 1);
+  first = AHIBUFFERSIZE - start;
+  if (first > len)
+    first = len;
+
+  CacheClearE ((UBYTE *)shm->buffer + start, first, CACRF_ClearD);
+  if (len > first)
+    CacheClearE (shm->buffer, len - first, CACRF_ClearD);
+
+  flush_time = t1;
 }
 
 /**********************************************************************/

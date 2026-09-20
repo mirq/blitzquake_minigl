@@ -1,0 +1,39 @@
+#
+# GLQuake WOS I/O probes: AHI sample playback + bsdsocket UDP.
+#
+# Sources live in warpos_gcc_v19/probe/ (same dir as the MiniGL probes).
+# Same toolchain and ET_REL link contract as the game, but no MiniGL
+# dependency, so a failure here isolates AHI/bsdsocket from the GL stack.
+#
+# Build:   make -f Makefile.GCCAmigaWOS_probe_io PROBE=wos_ahi
+#          make -f Makefile.GCCAmigaWOS_probe_io PROBE=wos_net
+# Convert on the Amiga (needs ixemul V48):
+#          Stack 100000
+#          Elf2Exe2 <name>.warpelf <name>
+#
+
+MGL_DIR ?= /home/mirek/MiniGL_WOS_V19_mglQ3
+CPU ?= 604e
+include $(MGL_DIR)/Makefile.wos.gcc.common
+
+ARCH=warpos_gcc_v19/probe
+
+PROBE ?= wos_ahi
+
+CFLAGS = -std=gnu89 $(WOS_ARCH_CFLAGS) -O2 -fomit-frame-pointer -w \
+	-DWOS -DAMIGA -DNDEBUG $(WOS_CPPFLAGS)
+
+.PHONY: all clean
+
+all: $(ARCH)/$(PROBE).warpelf
+
+$(ARCH)/$(PROBE).o : $(ARCH)/$(PROBE).c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(ARCH)/$(PROBE).warpelf : $(ARCH)/$(PROBE).o $(WOS_ETREL_LDSCRIPT)
+	$(LD) $(WOS_LINK_FLAGS) $(WOS_LIBRARY_DIRS) -o $@ \
+		$(WOS_STARTFILE) $< $(WOS_RUNTIME_LIBS) $(WOS_ENDFILE)
+	$(call WOS_VALIDATE_ETREL,$@)
+
+clean:
+	rm -f $(ARCH)/$(PROBE).o $(ARCH)/$(PROBE).warpelf

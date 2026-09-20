@@ -65,7 +65,9 @@ ppc-amigaos-ld -r -EB -d -x -T warpos-etrel.ld \
    `GetSysTimePPC`/`GetSysTime`/`SubTimePPC` (PowerUp LVOs -684/-66...).
 3. **timer.device `ReadEClock`/`GetSysTime` LP calls crash from a PPC task**
    on this stack. The validated MiniGL gears client replaced PPC timing with
-   `DateStamp()` (dos.library, 1/50 s). Use DateStamp.
+   `DateStamp()` (dos.library, 1/50 s). Use DateStamp. (Most likely the same
+   packed-struct ABI trap as in "68k struct ABI" below — the timerequest
+   layout is wrong too; not re-tested because DateStamp is sufficient.)
 4. **`usleep()` crashes when PowerPCBase is NULL** (libglosswos sleep path).
    Use dos `Delay()`.
 5. **exec/dos inline calls work** via `proto/*.h` → `powerup/ppcinline/*.h`
@@ -80,16 +82,173 @@ ppc-amigaos-ld -r -EB -d -x -T warpos-etrel.ld \
      its `__init_bsdsocket` constructor; do NOT define `SocketBase` yourself).
    - fd values from `socket()` are libglosswos fd-table indices, NOT raw
      bsdsocket handles: raw `CloseSocket`/`IoctlSocket` on them return -1.
-   - Amiga-named entry points (`CloseSocket`, `IoctlSocket`, `Inet_NtoA`,
-     `SocketBaseTagList`) need LP inline macros copied verbatim from
-     `powerup/ppcinline/bsdsocket.h` (including `#include
-     <powerup/ppcinline/macros.h>` + `#define BSDSOCKET_BASE_NAME SocketBase`).
-   - **TODO for networking**: pick ONE layer consistently. Either all-raw
-     (open bsdsocket.library yourself into your own base + all LP macros) or
-     all-`__P*` (and find libglosswos's close/ioctl spellings). Until then
-     run clients with `-noudp`; Quake works fine loopback/single-player.
-7. **`#pragma amiga-align` is ignored by GCC** — that's correct for MOS2WOS
-   headers (natural PPC alignment is what they expect). Ignore the warnings.
+   - If you ever go all-raw instead, the Amiga-named entry points
+     (`CloseSocket`, `IoctlSocket`, `Inet_NtoA`, `SocketBaseTagList`) need LP
+     inline macros copied verbatim from `powerup/ppcinline/bsdsocket.h`
+     (including `#include <powerup/ppcinline/macros.h>` + `#define
+     BSDSOCKET_BASE_NAME SocketBase`) — but then never mix them with the
+     `__P*` layer (see RESOLVED below).
+   - **RESOLVED (2026-09-20): use all-`__P*`.** libglosswos provides
+     `ioctl()` (`FIONBIO` via `<sys/filio.h>`) and `close()` (→
+     `__close_socket`), opens `bsdsocket.library` v4 lazily and sets
+     `SBTC_ERRNOLONGPTR`/`SBTC_LOGTAGPTR` itself. `net_bsdsocket.c` now uses
+     only the `__P*` layer — no raw `CloseSocket`/`IoctlSocket`/`Inet_NtoA`/
+     `SocketBaseTagList`. Do not `CloseLibrary(SocketBase)` at shutdown:
+     libglosswos owns it and closes it in its `.fini` destructor.
+   - **errno numbering**: the stack writes AmiTCP/Roadshow errno values
+     through `SBTC_ERRNOLONGPTR`, but newlib's `<errno.h>` in this SDK uses a
+     different numbering for some codes (`ECONNREFUSED` 61 on the stack vs
+     111 in newlib; `EWOULDBLOCK` happens to be 35 in both). Use explicit
+     constants (`NET_EWOULDBLOCK`/`NET_ECONNREFUSED` in `net_bsdsocket.c`).
+   - Verified on hardware with the `wos_net` probe: socket/bind/
+     ioctl(FIONBIO)/sendto/recvfrom/close, gethostname/gethostbyname and the
+     `LittleLong`/`LittleShort` wire conversions all work; non-blocking recv
+     on an empty socket returns `errno=35`.
+   - This Roadshow install has **no loopback interface** (`ShowNetStatus`
+     shows only the RTL8139 at 192.168.1.21), so 127.0.0.1 tests never
+     receive. Test against the machine's own interface address or a real
+     peer.
+7. **`#pragma amiga-align` is ignored by GCC** — do not rely on it. The
+   MOS2WOS `os-includeppc` headers therefore use natural PPC alignment,
+   which does **not** match the 68k ABI; see the next section before
+   passing any struct to 68k code.
+
+## 68k struct ABI: the packed-layout trap (the real AHI hang)
+
+The MOS2WOS `os-includeppc` headers are OS4-style: `struct Message`,
+`IORequest`, `IOStdReq`, `Library`, ... get **natural PPC alignment**. Every
+68k library and device expects the **packed AmigaOS layout** (2-byte
+alignment). `#pragma amiga-align` is a no-op with this GCC, so the mismatch
+is silent. Calls that pass only scalars or opaque pointers work
+(`CreateMsgPort`, `OpenLibrary`, `DateStamp`, `AllocMem`, sockets,
+`Open/Write/Close`), but anything that passes a struct **by pointer** to 68k
+code is broken: the 68k side reads `io_Message.mn_ReplyPort`, `io_Length`,
+`ahir_Type`, ... at the wrong offsets.
+
+Measured with both compilers (recipe below):
+
+| struct | 68k (correct) | PPC MOS2WOS (natural) |
+|---|---|---|
+| `Message` size / `mn_ReplyPort` / `mn_Length` | 20 / 14 / 18 | 24 / 16 / 20 |
+| `IORequest` size / `io_Device` / `io_Command` | 32 / 20 / 28 | 36 / 24 / 32 |
+| `IOStdReq` size / `io_Length` / `io_Data` | 48 / 36 / 40 | 52 / 40 / 44 |
+| `AHIRequest` size / `ahir_Type` / `ahir_Link` | 80 / 60 / 76 | 84 / 64 / 80 |
+| `Library` size / `lib_Version` / `lib_IdString` | 34 / 20 / 24 | 40 / 22 / 28 |
+
+Symptom: `OpenDevice("ahi.device")` returns 0, then `SendIO` + `WaitIO`
+never completes (the reply port was written at the wrong offset), and the
+whole machine wedges. This was first misread as "powerpc.library: Async
+Run68K function not supported" / a broken AHI interrupt path — it was purely
+the ABI. The same explanation applies to the earlier timer.device
+`GetSysTime`/`ReadEClock` crashes (the timerequest layout is wrong too).
+
+**How to do it:** define your own `__attribute__((packed))` mirror structs
+with the 68k layout and use those for the device/library call.
+`glquake/wos_ahi_abi.h` provides `wos_Message`, `wos_IORequest`,
+`wos_IOStdReq`, `wos_AHIRequest`, `wos_Library` plus compile-time size
+guards; `snd_amiga_AHI.c` typedefs `ahi_request_t` to the packed type under
+`WOS`. Note the MOS2WOS `IOStdReq` inlines the `IORequest` fields (there is
+no `io_Request` member), so `ahir_Std.io_Error` works — the packed mirror
+keeps that shape.
+
+Validated on real hardware (probe `wos_ahi`, 2026-09-20):
+`OpenDevice` v4 OK, `CMD_WRITE` + `WaitIO` `io_Error=0`, `CheckIO` polling
+`io_Error=0`, linked double-buffer streaming produced exactly 2 buffer
+completions in 3 s for a 1.49 s ring — audio audible.
+
+Rules of thumb:
+- Passing a *pointer* to a 68k object you never dereference (MsgPort,
+  library base, BPTR, socket fd) is safe.
+- Reading a field of a 68k struct from PPC through these headers is **not**
+  safe: `IntuitionBase->FirstScreen`, `GfxBase->DisplayFlags`,
+  `AHIBase->lib_Version` all sit at wrong offsets. Wrap them in a packed
+  mirror struct or avoid the read.
+- `netinclude` is the exception: it already forces `pack(2)` under `__PPC__`,
+  so `sockaddr_in`, `hostent`, ... are 68k-correct (verified on hardware).
+- Never rely on `#pragma amiga-align`; it is a no-op with this GCC.
+
+### Measuring a struct ABI locally (no hardware needed)
+
+Declare one uninitialised global array per size/offset; each becomes a
+COMMON symbol whose `nm -S` value *is* the size/offset:
+
+```c
+#include <stddef.h>
+#include <exec/types.h>
+#include <exec/ports.h>
+#include <exec/io.h>
+#include <devices/ahi.h>
+char size_Message[sizeof(struct Message)];
+char off_msg_replyport[offsetof(struct Message, mn_ReplyPort)];
+char size_AHIRequest[sizeof(struct AHIRequest)];
+char off_ahi_type[offsetof(struct AHIRequest, ahir_Type)];
+```
+
+```sh
+# 68k (AmigaOS 3.x headers = packed ABI)
+/opt/amiga/bin/m68k-amigaos-gcc -std=gnu89 -c abi.c -o abi68k.o
+/opt/amiga/bin/m68k-amigaos-nm -S abi68k.o
+# PPC (MOS2WOS headers)
+ppc-amigaos-gcc -std=gnu89 -mcpu=604e -mbig-endian -nostdinc -D__PPC__ \
+  -DWARPUP -DNEWLIB -isystem $WOS_SDK_ROOT/newlib/include \
+  -isystem $WOS_SDK_ROOT/os-includeppc -isystem $WOS_SDK_ROOT/include \
+  -c abi.c -o abippc.o
+ppc-amigaos-nm -S abippc.o
+```
+
+If the two columns differ, add a packed mirror struct for that object.
+
+## AHI on WarpOS: use the Q3 high-level scheme (measured)
+
+The first working AHI implementation here was McGavin's low-level
+`ahi.device` double-buffer (2 linked `CMD_WRITE` requests, wall-clock play
+position). It worked but cost ~30 ms/frame: the per-frame sound path issued
+2 emulated LP calls (`DateStamp` for the position estimate + `CacheClearE`
+for the DMA flush), and each Run68K call is milliseconds on this stack
+(contended with mglhost on the shared 68060). Measured at 640x480x16
+fullscreen, timedemo demo1, 969 frames:
+
+| configuration | fps | ms/frame |
+|---|---|---|
+| low-level AHI + 2 LP calls/frame | 19.97 | 50.1 |
+| `-nosound` baseline | 55.82 | 17.9 |
+| **high-level AHI + effect hook (final)** | **44.82** | **22.3** |
+
+The final implementation is a 1:1 port of `quake3amiga/code/amiga/amiga_snd.c`
+(Quake 2 code by Jarmo Laakkonen / Hans-Joerg Frieden):
+
+- `AHI_AllocAudio(AHIA_AudioID, AHI_DEFAULT_ID, AHIA_MixFreq, speed,
+  AHIA_Channels, 1, AHIA_Sounds, 1, TAG_END)`; buffer size from
+  `AHIDB_MaxPlaySamples * speed / mixfreq` (min 64 KB).
+- `AHI_LoadSound(0, AHIST_DYNAMICSAMPLE, &sample, actrl)` +
+  `AHIC_Play` + `AHI_Play(...)` + `AHI_SetEffect(AHIET_CHANNELINFO)`.
+- **Play position from the AHI effect hook**: `ahieci_Offset[0]` is copied
+  into `hook->h_Data` by a 68k code blob that AHI calls on every mix.
+  `SNDDMA_GetDMAPos()` is then just `h_Data * channels` - no OS call.
+- `AHIBase = (struct Library *)AHIio->ahir_Std.io_Device` (the Q3 trick);
+  the AHI_* library vectors are reached through the device base.
+- The 68k hook blob is a static `unsigned short[]` in the PPC executable's
+  data (PPC RAM is visible/executable by the 68k); copy the exact 10 words
+  from the Q3 source, do not rewrite it in C.
+- Shutdown order: `AHIET_CANCEL` effect, `AHIC_Play FALSE`, `UnloadSound`,
+  free buffer, `FreeAudio`, `CloseDevice`, `DeleteIORequest`, `DeleteMsgPort`.
+
+Adaptation for this tree: the buffer is `malloc`'d because this runtime has
+`PowerPCBase == NULL` (`AllocVecPPC` unavailable), so `SNDDMA_Submit` still
+flushes the painted range with one `CacheClearE` per frame (~3.5 ms). The
+residual 4.4 ms vs `-nosound` is that flush plus the AHI driver's 68k load.
+A native `dcbf`+`sync` flush was tried and produced silence (cause not yet
+identified - the instruction encoding was verified correct), so keep
+`CacheClearE` unless you can test the native variant with audio confirmed.
+
+Also validated in the same session:
+- `net_bsdsocket.c` pure `__P*` layer: real NetQuake `CCREQ_SERVER_INFO` and
+  `CCREQ_CONNECT` exchanges against a little-endian x86 responder on the LAN
+  decoded correctly (server name/map/players, and the `CCREP_ACCEPT` port as
+  `LittleLong`).
+- A cached per-frame wall clock (`WOS_FrameClockTick()` in `sys_amiga_std.c`)
+  keeps all intra-frame `Sys_FloatTime()` callers on one `DateStamp` per
+  frame instead of one per sound update.
 
 ## 68k-isms that become fatal on PPC
 
@@ -185,9 +344,21 @@ ppc-amigaos-ld -r -EB -d -x -T warpos-etrel.ld \
 
 ## BlitzQuake-specific fixes applied (see git diff)
 
-- `snd_amiga_AHI.c`: guard `<powerup/ppcinline/alib.h>` (missing in MOS2WOS).
-- `net_bsdsocket.c`: WOS branch using `__P*` + LP macros + `SocketBaseTagList`
-  tag array; `-noudp` until the fd-layer mixing is resolved.
+- `snd_amiga_AHI.c`: guard `<powerup/ppcinline/alib.h>` (missing in MOS2WOS);
+  WOS path is the Q3-style high-level AHI + `AHIET_CHANNELINFO` hook (see the
+  AHI section above), packed `wos_AHIRequest` via `wos_ahi_abi.h`, graceful
+  no-sound fallback, `-audspeed` honored.
+- `sys_amiga_std.c`: one `DateStamp` per frame (`WOS_FrameClockTick()`),
+  reused by all intra-frame `Sys_FloatTime()` callers.
+- `net_bsdsocket.c`: WOS branch is pure `__P*` (no raw bsdsocket LP calls);
+  `ioctl(FIONBIO)`/`close()`; stack errno constants; `sockaddr_in` zeroed and
+  `sin_len` set; `CloseLibrary` skipped on WOS (libglosswos owns the base).
+- `snd_dma.c`: `_snd_mixahead` registered on WOS so it can be raised when the
+  frame rate is too low for the default 0.1 s mix-ahead.
+- probes: `warpos_gcc_v19/probe/wos_ahi.c` (staged + per-line traced AHI,
+  `-step N`), `wos_net.c` (UDP/endian/Quake server-info+connect) and
+  `wos_time.c` (LP-call/cache cost), built with
+  `Makefile.GCCAmigaWOS_probe_io` (no MiniGL dependency).
 - `sys_amiga_std.c`: WOS `TimerBase`/`PowerPCBase` definitions, `Delay(1)`,
   `WOS_EClockTime()` (DateStamp), unbuffered stdout, `Sys_WOSTrace`.
 - `gl_vidamiga.c`: define+open IntuitionBase/GfxBase; MINIGL_DISPATCH_CLIENT
@@ -204,9 +375,19 @@ C:InitPPC
 Run >NIL: Execute Work:ibdraw/gqhostrun
 cd Work:games/quake
 Stack 1048576
-Run >NIL: glquakeWOS -width 320 -height 240 -bpp 16 -windowmode -nosound -stdout -condebug -noudp
+Run >NIL: glquakeWOS -width 320 -height 240 -bpp 16 -windowmode -stdout -condebug
+; sound: AHI is forced on WOS (the audio.device path is disabled); -nosound
+; still turns it off, -audspeed N sets the mixing rate, "_snd_mixahead 0.3"
+; helps at low frame rates. Networking: drop -noudp to enable bsdsocket UDP
+; (Roadshow is installed on the target).
 ; fullscreen 640x480x16: drop -windowmode, use -width 640 -height 480 -bpp 16
 ```
 
 Deploy pipeline: build → zip → push → UnZip → Elf2Exe2 → Copy to
 `Work:games/quake` → CRC verify → (fresh host) → run.
+
+Probe pipeline (same, no MiniGL host needed):
+`make -f Makefile.GCCAmigaWOS_probe_io PROBE=wos_ahi` → zip/push/UnZip →
+`Elf2Exe2 wos_ahi.warpelf wos_ahi` → run. `wos_ahi -step N` stops after
+stage N; each stage appends to `Work:wosbuild/wos_ahi_trace.log` so a wedge
+names the failing call.

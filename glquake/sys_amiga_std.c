@@ -278,6 +278,7 @@ static qboolean prevent_crash = true; //surgeon
 
 #ifdef WOS
 double WOS_EClockTime (void);
+void WOS_FrameClockTick (void);
 #endif
 #if defined(WOS) && WOS_DIAGNOSTICS
 /* Stage tracing to RAM:gqtrace via direct dos.library calls (stdio-independent,
@@ -503,6 +504,27 @@ void Sys_HighFPPrecision (void)
 }
 
 #ifdef WOS
+/* Cached wall clock: refreshed once per host frame (WOS_FrameClockTick).
+ * Every Sys_FloatTime() caller inside the frame - host timing and the sound
+ * position estimate - reuses it, so the per-frame sound path issues no
+ * dos.library LP call. Each Run68K LP call costs milliseconds here (it
+ * queues behind / contends with mglhost on the shared 68060), which is what
+ * made AHI cost ~30 ms/frame. DateStamp resolution is 1/50 s, so caching
+ * per frame loses nothing. */
+static double wos_frame_clock;
+static int wos_frame_clock_valid;
+
+void WOS_FrameClockTick (void)
+{
+  struct DateStamp now;
+
+  DateStamp (&now);
+  wos_frame_clock = (double)now.ds_Days * 86400.0
+                  + (double)now.ds_Minute * 60.0
+                  + (double)now.ds_Tick / 50.0;
+  wos_frame_clock_valid = 1;
+}
+
 /* WarpOS timing: dos.library DateStamp() (1/50s), same approach as the
  * validated MiniGL gears client ("ported ... instead of the PPC-only
  * GetSysTimePPC/SubTimePPC it used"). timer.device ReadEClock/GetSysTime
@@ -510,6 +532,10 @@ void Sys_HighFPPrecision (void)
 double WOS_EClockTime (void)
 {
   struct DateStamp now;
+
+  if (wos_frame_clock_valid)
+    return wos_frame_clock;
+
   DateStamp(&now);
   /* all unit math in double: ds_Tick is 1/50s units while Days/Minute are
    * calendar units, and days*86400*50 overflows 32-bit long on PPC. */
@@ -693,6 +719,10 @@ main (int argc, char *argv[])
   oldtime = Sys_FloatTime () - 0.1;
 
   while (1) {
+#ifdef WOS
+    /* one DateStamp per frame; the sound path reuses this cached value */
+    WOS_FrameClockTick ();
+#endif
     newtime = Sys_FloatTime ();
     time = newtime - oldtime;
 

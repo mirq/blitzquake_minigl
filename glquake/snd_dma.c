@@ -196,7 +196,10 @@ void S_Init (void)
   Cvar_RegisterVariable(&ambient_fade);
   Cvar_RegisterVariable(&snd_noextraupdate);
   Cvar_RegisterVariable(&snd_show);
-#ifndef AMIGA
+#if !defined(AMIGA) || defined(WOS)
+  /* WOS: expose the mix-ahead so it can be raised (e.g. "_snd_mixahead 0.5")
+     when the frame rate is too low for the default 0.1 s to keep the AHI
+     ring fed. */
   Cvar_RegisterVariable(&_snd_mixahead);
 #endif
   if (host_parms.memsize < 0x800000)
