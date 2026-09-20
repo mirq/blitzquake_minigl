@@ -1,0 +1,463 @@
+FP VERSION 2 frames=970 clock_hz=25102364 wall_s=28.584 fps=33.936
+FP NOTE sections nest; totals overlap across levels; pct is vs whole FRAME
+FP NOTE LMUPLOAD includes synchronous DLL work/waits; bytes are source rectangle bytes, not actual VRAM traffic
+FP CONFIG r_dynamic=1 gl_texsort=1
+FP CONFIG width=640 height=480
+FP TOTAL SCREEN     s=14.044 ms=14044.224 pct=49.13
+FP TOTAL VIEW       s=12.558 ms=12557.753 pct=43.93
+FP TOTAL SCENE      s=12.509 ms=12508.583 pct=43.76
+FP TOTAL WORLD      s=3.363 ms=3363.413 pct=11.77
+FP TOTAL VIS        s=0.215 ms=214.853 pct=0.75
+FP TOTAL CHAINS     s=1.710 ms=1710.267 pct=5.98
+FP TOTAL LMBLEND    s=1.435 ms=1434.684 pct=5.02
+FP TOTAL LMBUILD    s=0.000 ms=0.414 pct=0.00
+FP TOTAL LMUPLOAD   s=0.406 ms=405.528 pct=1.42
+FP TOTAL ENTBRUSH   s=1.444 ms=1443.541 pct=5.05
+FP TOTAL ENTALIAS   s=7.414 ms=7414.079 pct=25.94
+FP TOTAL PARTICLES  s=0.174 ms=173.530 pct=0.61
+FP TOTAL WATER      s=0.001 ms=0.763 pct=0.00
+FP TOTAL MIRROR     s=0.000 ms=0.060 pct=0.00
+FP TOTAL GLOW       s=0.052 ms=52.219 pct=0.18
+FP TOTAL CLEAR      s=0.006 ms=6.469 pct=0.02
+FP TOTAL BLEND      s=0.019 ms=19.416 pct=0.07
+FP TOTAL HUD        s=1.072 ms=1072.055 pct=3.75
+FP TOTAL PRESENT    s=0.463 ms=463.274 pct=1.62
+FP TOTAL host_other s=14.539 ms=14539.283 pct=50.87
+FP COUNTERS lm_upload_calls=35 lm_upload_kb=73
+FP COUNTERS overlay_draws=447 overlay_first_use=0
+FP WORST rank=0 frame=1 total_ms=11992.338
+FPW 0 host_frame=0 demo_frame=0 demo_s=1.675306
+FPW 0 items=4353 active_weapon=1 weapon_model=116
+FPW 0 bonus_end=0 blend_alpha_end=0.000000
+FPW 0 weapon_name=progs/v_shot.mdl
+FPW 0 screen=38.154 view=26.397 scene=26.335 world=5.171
+FPW 0 ents=20.963 brush=2.046 alias=18.917
+FPW 0 parts=0.007 blend=0.000 lmbuild=0.000
+FPW 0 hud=63.441 present=4.609 lmup=0.000
+FPW 0 lm_calls=0 lm_kb=0 overlays=0
+FPW 0 upload_details=0 upload_dropped=0
+FP WORST rank=1 frame=82 total_ms=85.448
+FPW 1 host_frame=81 demo_frame=81 demo_s=7.234348
+FPW 1 items=5137 active_weapon=16 weapon_model=118
+FPW 1 bonus_end=0 blend_alpha_end=0.000000
+FPW 1 weapon_name=progs/v_rock.mdl
+FPW 1 screen=66.318 view=65.413 scene=65.373 world=49.964
+FPW 1 ents=14.877 brush=0.771 alias=14.106
+FPW 1 parts=0.322 blend=0.000 lmbuild=0.044
+FPW 1 hud=0.647 present=0.247 lmup=45.051
+FPW 1 lm_calls=3 lm_kb=11 overlays=0
+FPW 1 upload_details=3 upload_dropped=0
+FPU 0 atlas=5 site=2 ms=30.877
+FPUR 0 top=118 rows=7 bytes=896
+FPU 1 atlas=6 site=2 ms=7.217
+FPUR 1 top=0 rows=16 bytes=2048
+FPU 2 atlas=8 site=2 ms=6.957
+FPUR 2 top=19 rows=70 bytes=8960
+FP WORST rank=2 frame=140 total_ms=70.485
+FPW 2 host_frame=139 demo_frame=139 demo_s=12.319282
+FPW 2 items=5137 active_weapon=16 weapon_model=118
+FPW 2 bonus_end=43 blend_alpha_end=0.168627
+FPW 2 weapon_name=progs/v_rock.mdl
+FPW 2 screen=68.040 view=67.215 scene=67.139 world=37.640
+FPW 2 ents=28.996 brush=19.919 alias=9.077
+FPW 2 parts=0.326 blend=0.046 lmbuild=0.047
+FPW 2 hud=0.468 present=0.348 lmup=53.037
+FPW 2 lm_calls=3 lm_kb=12 overlays=1
+FPW 2 upload_details=3 upload_dropped=0
+FPU 0 atlas=11 site=2 ms=11.396
+FPUR 0 top=112 rows=15 bytes=1920
+FPU 1 atlas=12 site=2 ms=6.970
+FPUR 1 top=0 rows=15 bytes=1920
+FPU 2 atlas=8 site=2 ms=34.672
+FPUR 2 top=19 rows=72 bytes=9216
+FP WORST rank=3 frame=459 total_ms=64.787
+FPW 3 host_frame=458 demo_frame=458 demo_s=35.618088
+FPW 3 items=4629 active_weapon=4 weapon_model=117
+FPW 3 bonus_end=33 blend_alpha_end=0.129412
+FPW 3 weapon_name=progs/v_nail.mdl
+FPW 3 screen=62.388 view=61.482 scene=61.433 world=4.500
+FPW 3 ents=56.751 brush=0.607 alias=56.144
+FPW 3 parts=0.005 blend=0.017 lmbuild=0.000
+FPW 3 hud=0.561 present=0.335 lmup=0.000
+FPW 3 lm_calls=0 lm_kb=0 overlays=1
+FPW 3 upload_details=0 upload_dropped=0
+FP WORST rank=4 frame=66 total_ms=64.388
+FPW 4 host_frame=65 demo_frame=65 demo_s=5.762501
+FPW 4 items=5137 active_weapon=16 weapon_model=118
+FPW 4 bonus_end=7 blend_alpha_end=0.027451
+FPW 4 weapon_name=progs/v_rock.mdl
+FPW 4 screen=61.964 view=60.832 scene=60.781 world=34.013
+FPW 4 ents=26.588 brush=12.564 alias=14.024
+FPW 4 parts=0.004 blend=0.020 lmbuild=0.008
+FPW 4 hud=0.697 present=0.425 lmup=41.286
+FPW 4 lm_calls=2 lm_kb=3 overlays=1
+FPW 4 upload_details=2 upload_dropped=0
+FPU 0 atlas=11 site=2 ms=10.322
+FPUR 0 top=16 rows=13 bytes=1664
+FPU 1 atlas=8 site=2 ms=30.964
+FPUR 1 top=19 rows=11 bytes=1408
+FP WORST rank=5 frame=558 total_ms=58.268
+FPW 5 host_frame=557 demo_frame=557 demo_s=44.186905
+FPW 5 items=4629 active_weapon=4 weapon_model=117
+FPW 5 bonus_end=0 blend_alpha_end=0.062700
+FPW 5 weapon_name=progs/v_nail.mdl
+FPW 5 screen=55.612 view=30.072 scene=29.919 world=5.844
+FPW 5 ents=22.951 brush=0.777 alias=22.174
+FPW 5 parts=0.934 blend=0.124 lmbuild=0.000
+FPW 5 hud=0.739 present=24.794 lmup=0.000
+FPW 5 lm_calls=0 lm_kb=0 overlays=1
+FPW 5 upload_details=0 upload_dropped=0
+FP WORST rank=6 frame=601 total_ms=56.950
+FPW 6 host_frame=600 demo_frame=600 demo_s=47.882523
+FPW 6 items=4629 active_weapon=4 weapon_model=117
+FPW 6 bonus_end=0 blend_alpha_end=0.000000
+FPW 6 weapon_name=progs/v_nail.mdl
+FPW 6 screen=37.399 view=36.648 scene=36.574 world=30.986
+FPW 6 ents=5.251 brush=0.006 alias=5.245
+FPW 6 parts=0.195 blend=0.047 lmbuild=0.000
+FPW 6 hud=0.568 present=0.177 lmup=0.000
+FPW 6 lm_calls=0 lm_kb=0 overlays=1
+FPW 6 upload_details=0 upload_dropped=0
+FP WORST rank=7 frame=843 total_ms=54.670
+FPW 7 host_frame=842 demo_frame=842 demo_s=66.917076
+FPW 7 items=4629 active_weapon=4 weapon_model=117
+FPW 7 bonus_end=0 blend_alpha_end=0.000000
+FPW 7 weapon_name=progs/v_nail.mdl
+FPW 7 screen=52.328 view=27.352 scene=27.321 world=5.006
+FPW 7 ents=22.158 brush=0.005 alias=22.153
+FPW 7 parts=0.004 blend=0.000 lmbuild=0.000
+FPW 7 hud=0.365 present=24.602 lmup=0.000
+FPW 7 lm_calls=0 lm_kb=0 overlays=0
+FPW 7 upload_details=0 upload_dropped=0
+FP WORST rank=8 frame=579 total_ms=52.250
+FPW 8 host_frame=578 demo_frame=578 demo_s=45.802502
+FPW 8 items=4629 active_weapon=4 weapon_model=117
+FPW 8 bonus_end=0 blend_alpha_end=0.000000
+FPW 8 weapon_name=progs/v_nail.mdl
+FPW 8 screen=49.895 view=42.722 scene=42.691 world=4.311
+FPW 8 ents=38.152 brush=0.463 alias=37.689
+FPW 8 parts=0.064 blend=0.000 lmbuild=0.000
+FPW 8 hud=6.856 present=0.308 lmup=0.000
+FPW 8 lm_calls=0 lm_kb=0 overlays=0
+FPW 8 upload_details=0 upload_dropped=0
+FP WORST rank=9 frame=660 total_ms=51.512
+FPW 9 host_frame=659 demo_frame=659 demo_s=52.612888
+FPW 9 items=4629 active_weapon=4 weapon_model=117
+FPW 9 bonus_end=46 blend_alpha_end=0.180392
+FPW 9 weapon_name=progs/v_nail.mdl
+FPW 9 screen=48.958 view=48.124 scene=48.055 world=4.025
+FPW 9 ents=43.822 brush=0.705 alias=43.117
+FPW 9 parts=0.049 blend=0.039 lmbuild=0.000
+FPW 9 hud=0.587 present=0.240 lmup=0.000
+FPW 9 lm_calls=0 lm_kb=0 overlays=1
+FPW 9 upload_details=0 upload_dropped=0
+FP WORST rank=10 frame=63 total_ms=51.429
+FPW 10 host_frame=62 demo_frame=62 demo_s=5.482660
+FPW 10 items=5137 active_weapon=16 weapon_model=118
+FPW 10 bonus_end=20 blend_alpha_end=0.078431
+FPW 10 weapon_name=progs/v_rock.mdl
+FPW 10 screen=49.030 view=47.613 scene=47.559 world=5.164
+FPW 10 ents=42.263 brush=0.702 alias=41.562
+FPW 10 parts=0.003 blend=0.018 lmbuild=0.000
+FPW 10 hud=0.797 present=0.613 lmup=0.000
+FPW 10 lm_calls=0 lm_kb=0 overlays=1
+FPW 10 upload_details=0 upload_dropped=0
+FP WORST rank=11 frame=473 total_ms=51.345
+FPW 11 host_frame=472 demo_frame=472 demo_s=36.963478
+FPW 11 items=4629 active_weapon=4 weapon_model=117
+FPW 11 bonus_end=0 blend_alpha_end=0.000000
+FPW 11 weapon_name=progs/v_nail.mdl
+FPW 11 screen=48.977 view=48.126 scene=48.093 world=3.390
+FPW 11 ents=44.576 brush=7.906 alias=36.669
+FPW 11 parts=0.003 blend=0.000 lmbuild=0.000
+FPW 11 hud=0.534 present=0.309 lmup=0.000
+FPW 11 lm_calls=0 lm_kb=0 overlays=0
+FPW 11 upload_details=0 upload_dropped=0
+FP WORST rank=12 frame=68 total_ms=51.051
+FPW 12 host_frame=67 demo_frame=67 demo_s=5.948999
+FPW 12 items=5137 active_weapon=16 weapon_model=118
+FPW 12 bonus_end=0 blend_alpha_end=0.000000
+FPW 12 weapon_name=progs/v_rock.mdl
+FPW 12 screen=48.638 view=47.999 scene=47.965 world=3.705
+FPW 12 ents=44.128 brush=0.800 alias=43.328
+FPW 12 parts=0.003 blend=0.003 lmbuild=0.000
+FPW 12 hud=0.362 present=0.267 lmup=0.000
+FPW 12 lm_calls=0 lm_kb=0 overlays=0
+FPW 12 upload_details=0 upload_dropped=0
+FP WORST rank=13 frame=935 total_ms=50.061
+FPW 13 host_frame=934 demo_frame=934 demo_s=73.879326
+FPW 13 items=267285 active_weapon=16 weapon_model=118
+FPW 13 bonus_end=0 blend_alpha_end=0.000000
+FPW 13 weapon_name=progs/v_rock.mdl
+FPW 13 screen=47.285 view=46.759 scene=46.728 world=4.149
+FPW 13 ents=42.402 brush=0.445 alias=41.957
+FPW 13 parts=0.024 blend=0.003 lmbuild=0.000
+FPW 13 hud=0.353 present=0.166 lmup=0.000
+FPW 13 lm_calls=0 lm_kb=0 overlays=0
+FPW 13 upload_details=0 upload_dropped=0
+FP WORST rank=14 frame=139 total_ms=49.819
+FPW 14 host_frame=138 demo_frame=138 demo_s=12.220229
+FPW 14 items=5137 active_weapon=16 weapon_model=118
+FPW 14 bonus_end=49 blend_alpha_end=0.192157
+FPW 14 weapon_name=progs/v_rock.mdl
+FPW 14 screen=47.186 view=17.234 scene=17.174 world=2.394
+FPW 14 ents=14.366 brush=7.875 alias=6.491
+FPW 14 parts=0.299 blend=0.031 lmbuild=0.000
+FPW 14 hud=0.603 present=29.342 lmup=0.000
+FPW 14 lm_calls=0 lm_kb=0 overlays=1
+FPW 14 upload_details=0 upload_dropped=0
+FP WORST rank=15 frame=675 total_ms=49.653
+FPW 15 host_frame=674 demo_frame=674 demo_s=53.801544
+FPW 15 items=4629 active_weapon=4 weapon_model=117
+FPW 15 bonus_end=36 blend_alpha_end=0.141176
+FPW 15 weapon_name=progs/v_nail.mdl
+FPW 15 screen=47.257 view=46.253 scene=46.202 world=4.701
+FPW 15 ents=41.314 brush=0.698 alias=40.617
+FPW 15 parts=0.003 blend=0.016 lmbuild=0.000
+FPW 15 hud=0.676 present=0.320 lmup=0.000
+FPW 15 lm_calls=0 lm_kb=0 overlays=1
+FPW 15 upload_details=0 upload_dropped=0
+FP WINDOW_INFO first=250 last=270 valid=1 count=21
+FP WINDOW rank=0 frame=250 total_ms=8.899
+FPW 0 host_frame=249 demo_frame=249 demo_s=22.043789
+FPW 0 items=4369 active_weapon=1 weapon_model=116
+FPW 0 bonus_end=0 blend_alpha_end=0.000000
+FPW 0 weapon_name=progs/v_shot.mdl
+FPW 0 screen=6.477 view=5.615 scene=5.580 world=1.319
+FPW 0 ents=3.871 brush=1.375 alias=2.496
+FPW 0 parts=0.273 blend=0.002 lmbuild=0.000
+FPW 0 hud=0.578 present=0.276 lmup=0.000
+FPW 0 lm_calls=0 lm_kb=0 overlays=0
+FPW 0 upload_details=0 upload_dropped=0
+FP WINDOW rank=1 frame=251 total_ms=8.618
+FPW 1 host_frame=250 demo_frame=250 demo_s=22.108278
+FPW 1 items=4369 active_weapon=1 weapon_model=116
+FPW 1 bonus_end=0 blend_alpha_end=0.000000
+FPW 1 weapon_name=progs/v_shot.mdl
+FPW 1 screen=6.193 view=5.446 scene=5.408 world=1.072
+FPW 1 ents=4.026 brush=1.385 alias=2.641
+FPW 1 parts=0.242 blend=0.000 lmbuild=0.000
+FPW 1 hud=0.466 present=0.273 lmup=0.000
+FPW 1 lm_calls=0 lm_kb=0 overlays=0
+FPW 1 upload_details=0 upload_dropped=0
+FP WINDOW rank=2 frame=252 total_ms=34.267
+FPW 2 host_frame=251 demo_frame=251 demo_s=22.163649
+FPW 2 items=4369 active_weapon=1 weapon_model=116
+FPW 2 bonus_end=0 blend_alpha_end=0.000000
+FPW 2 weapon_name=progs/v_shot.mdl
+FPW 2 screen=31.919 view=31.262 scene=31.232 world=25.515
+FPW 2 ents=5.271 brush=1.473 alias=3.798
+FPW 2 parts=0.327 blend=0.000 lmbuild=0.025
+FPW 2 hud=0.381 present=0.268 lmup=24.411
+FPW 2 lm_calls=2 lm_kb=2 overlays=0
+FPW 2 upload_details=2 upload_dropped=0
+FPU 0 atlas=5 site=2 ms=11.118
+FPUR 0 top=119 rows=4 bytes=512
+FPU 1 atlas=6 site=2 ms=13.293
+FPUR 1 top=0 rows=14 bytes=1792
+FP WINDOW rank=3 frame=253 total_ms=9.494
+FPW 3 host_frame=252 demo_frame=252 demo_s=22.225891
+FPW 3 items=4369 active_weapon=1 weapon_model=116
+FPW 3 bonus_end=0 blend_alpha_end=0.000000
+FPW 3 weapon_name=progs/v_shot.mdl
+FPW 3 screen=7.091 view=6.296 scene=6.259 world=1.118
+FPW 3 ents=4.820 brush=2.339 alias=2.482
+FPW 3 parts=0.252 blend=0.000 lmbuild=0.000
+FPW 3 hud=0.526 present=0.261 lmup=0.000
+FPW 3 lm_calls=0 lm_kb=0 overlays=0
+FPW 3 upload_details=0 upload_dropped=0
+FP WINDOW rank=4 frame=254 total_ms=13.297
+FPW 4 host_frame=253 demo_frame=253 demo_s=22.283295
+FPW 4 items=4369 active_weapon=1 weapon_model=116
+FPW 4 bonus_end=0 blend_alpha_end=0.000000
+FPW 4 weapon_name=progs/v_shot.mdl
+FPW 4 screen=10.912 view=9.969 scene=9.940 world=4.162
+FPW 4 ents=5.362 brush=1.460 alias=3.902
+FPW 4 parts=0.285 blend=0.000 lmbuild=0.000
+FPW 4 hud=0.674 present=0.260 lmup=0.000
+FPW 4 lm_calls=0 lm_kb=0 overlays=0
+FPW 4 upload_details=0 upload_dropped=0
+FP WINDOW rank=5 frame=255 total_ms=13.140
+FPW 5 host_frame=254 demo_frame=254 demo_s=22.349152
+FPW 5 items=4369 active_weapon=1 weapon_model=116
+FPW 5 bonus_end=0 blend_alpha_end=0.000000
+FPW 5 weapon_name=progs/v_shot.mdl
+FPW 5 screen=10.761 view=7.244 scene=7.211 world=1.500
+FPW 5 ents=5.389 brush=1.525 alias=3.864
+FPW 5 parts=0.255 blend=0.000 lmbuild=0.000
+FPW 5 hud=0.310 present=3.199 lmup=0.000
+FPW 5 lm_calls=0 lm_kb=0 overlays=0
+FPW 5 upload_details=0 upload_dropped=0
+FP WINDOW rank=6 frame=256 total_ms=9.513
+FPW 6 host_frame=255 demo_frame=255 demo_s=22.407360
+FPW 6 items=4369 active_weapon=1 weapon_model=116
+FPW 6 bonus_end=0 blend_alpha_end=0.000000
+FPW 6 weapon_name=progs/v_shot.mdl
+FPW 6 screen=7.120 view=6.366 scene=6.335 world=1.537
+FPW 6 ents=4.464 brush=0.880 alias=3.584
+FPW 6 parts=0.268 blend=0.000 lmbuild=0.000
+FPW 6 hud=0.496 present=0.250 lmup=0.000
+FPW 6 lm_calls=0 lm_kb=0 overlays=0
+FPW 6 upload_details=0 upload_dropped=0
+FP WINDOW rank=7 frame=257 total_ms=10.285
+FPW 7 host_frame=256 demo_frame=256 demo_s=22.464376
+FPW 7 items=4369 active_weapon=1 weapon_model=116
+FPW 7 bonus_end=0 blend_alpha_end=0.000000
+FPW 7 weapon_name=progs/v_shot.mdl
+FPW 7 screen=7.893 view=6.967 scene=6.936 world=1.512
+FPW 7 ents=5.087 brush=1.658 alias=3.429
+FPW 7 parts=0.270 blend=0.000 lmbuild=0.000
+FPW 7 hud=0.621 present=0.298 lmup=0.000
+FPW 7 lm_calls=0 lm_kb=0 overlays=0
+FPW 7 upload_details=0 upload_dropped=0
+FP WINDOW rank=8 frame=258 total_ms=10.279
+FPW 8 host_frame=257 demo_frame=257 demo_s=22.529562
+FPW 8 items=4369 active_weapon=1 weapon_model=116
+FPW 8 bonus_end=0 blend_alpha_end=0.000000
+FPW 8 weapon_name=progs/v_shot.mdl
+FPW 8 screen=7.901 view=7.085 scene=7.050 world=1.354
+FPW 8 ents=5.380 brush=1.802 alias=3.578
+FPW 8 parts=0.248 blend=0.000 lmbuild=0.000
+FPW 8 hud=0.506 present=0.300 lmup=0.000
+FPW 8 lm_calls=0 lm_kb=0 overlays=0
+FPW 8 upload_details=0 upload_dropped=0
+FP WINDOW rank=9 frame=259 total_ms=10.006
+FPW 9 host_frame=258 demo_frame=258 demo_s=22.585360
+FPW 9 items=4369 active_weapon=1 weapon_model=116
+FPW 9 bonus_end=0 blend_alpha_end=0.000000
+FPW 9 weapon_name=progs/v_shot.mdl
+FPW 9 screen=7.625 view=6.819 scene=6.786 world=1.346
+FPW 9 ents=5.100 brush=1.626 alias=3.474
+FPW 9 parts=0.274 blend=0.000 lmbuild=0.000
+FPW 9 hud=0.510 present=0.289 lmup=0.000
+FPW 9 lm_calls=0 lm_kb=0 overlays=0
+FPW 9 upload_details=0 upload_dropped=0
+FP WINDOW rank=10 frame=260 total_ms=42.331
+FPW 10 host_frame=259 demo_frame=259 demo_s=22.585360
+FPW 10 items=4369 active_weapon=1 weapon_model=116
+FPW 10 bonus_end=0 blend_alpha_end=0.000000
+FPW 10 weapon_name=progs/v_shot.mdl
+FPW 10 screen=39.959 view=39.064 scene=39.029 world=32.563
+FPW 10 ents=6.064 brush=1.604 alias=4.461
+FPW 10 parts=0.331 blend=0.000 lmbuild=0.127
+FPW 10 hud=0.620 present=0.268 lmup=31.069
+FPW 10 lm_calls=4 lm_kb=12 overlays=0
+FPW 10 upload_details=4 upload_dropped=0
+FPU 0 atlas=3 site=2 ms=10.318
+FPUR 0 top=53 rows=22 bytes=2816
+FPU 1 atlas=5 site=2 ms=6.861
+FPUR 1 top=118 rows=10 bytes=1280
+FPU 2 atlas=6 site=2 ms=6.706
+FPUR 2 top=0 rows=16 bytes=2048
+FPU 3 atlas=8 site=2 ms=7.184
+FPUR 3 top=71 rows=53 bytes=6784
+FP WINDOW rank=11 frame=261 total_ms=9.166
+FPW 11 host_frame=260 demo_frame=260 demo_s=22.655878
+FPW 11 items=4629 active_weapon=4 weapon_model=117
+FPW 11 bonus_end=0 blend_alpha_end=0.000000
+FPW 11 weapon_name=progs/v_nail.mdl
+FPW 11 screen=6.730 view=4.869 scene=4.828 world=1.444
+FPW 11 ents=3.048 brush=0.720 alias=2.329
+FPW 11 parts=0.257 blend=0.000 lmbuild=0.000
+FPW 11 hud=0.570 present=1.283 lmup=0.000
+FPW 11 lm_calls=0 lm_kb=0 overlays=0
+FPW 11 upload_details=0 upload_dropped=0
+FP WINDOW rank=12 frame=262 total_ms=7.144
+FPW 12 host_frame=261 demo_frame=261 demo_s=22.655878
+FPW 12 items=4629 active_weapon=4 weapon_model=117
+FPW 12 bonus_end=0 blend_alpha_end=0.000000
+FPW 12 weapon_name=progs/v_nail.mdl
+FPW 12 screen=4.815 view=3.867 scene=3.835 world=1.398
+FPW 12 ents=2.131 brush=0.696 alias=1.434
+FPW 12 parts=0.241 blend=0.000 lmbuild=0.000
+FPW 12 hud=0.620 present=0.320 lmup=0.000
+FPW 12 lm_calls=0 lm_kb=0 overlays=0
+FPW 12 upload_details=0 upload_dropped=0
+FP WINDOW rank=13 frame=263 total_ms=8.095
+FPW 13 host_frame=262 demo_frame=262 demo_s=22.714529
+FPW 13 items=4629 active_weapon=4 weapon_model=117
+FPW 13 bonus_end=48 blend_alpha_end=0.188235
+FPW 13 weapon_name=progs/v_nail.mdl
+FPW 13 screen=5.167 view=4.187 scene=4.131 world=1.400
+FPW 13 ents=2.392 brush=0.970 alias=1.422
+FPW 13 parts=0.270 blend=0.022 lmbuild=0.000
+FPW 13 hud=0.628 present=0.346 lmup=0.000
+FPW 13 lm_calls=0 lm_kb=0 overlays=1
+FPW 13 upload_details=0 upload_dropped=0
+FP WINDOW rank=14 frame=264 total_ms=9.062
+FPW 14 host_frame=263 demo_frame=263 demo_s=22.782532
+FPW 14 items=4629 active_weapon=4 weapon_model=117
+FPW 14 bonus_end=47 blend_alpha_end=0.184314
+FPW 14 weapon_name=progs/v_nail.mdl
+FPW 14 screen=6.685 view=5.817 scene=5.770 world=1.711
+FPW 14 ents=3.753 brush=2.438 alias=1.315
+FPW 14 parts=0.239 blend=0.018 lmbuild=0.000
+FPW 14 hud=0.516 present=0.344 lmup=0.000
+FPW 14 lm_calls=0 lm_kb=0 overlays=1
+FPW 14 upload_details=0 upload_dropped=0
+FP WINDOW rank=15 frame=265 total_ms=8.879
+FPW 15 host_frame=264 demo_frame=264 demo_s=22.840696
+FPW 15 items=4629 active_weapon=4 weapon_model=117
+FPW 15 bonus_end=45 blend_alpha_end=0.176471
+FPW 15 weapon_name=progs/v_nail.mdl
+FPW 15 screen=6.468 view=5.491 scene=5.444 world=1.368
+FPW 15 ents=3.747 brush=2.337 alias=1.410
+FPW 15 parts=0.263 blend=0.018 lmbuild=0.000
+FPW 15 hud=0.628 present=0.341 lmup=0.000
+FPW 15 lm_calls=0 lm_kb=0 overlays=1
+FPW 15 upload_details=0 upload_dropped=0
+FP WINDOW rank=16 frame=266 total_ms=36.138
+FPW 16 host_frame=265 demo_frame=265 demo_s=22.907717
+FPW 16 items=4629 active_weapon=4 weapon_model=117
+FPW 16 bonus_end=44 blend_alpha_end=0.172549
+FPW 16 weapon_name=progs/v_nail.mdl
+FPW 16 screen=33.596 view=32.545 scene=32.494 world=1.355
+FPW 16 ents=30.800 brush=29.450 alias=1.350
+FPW 16 parts=0.271 blend=0.018 lmbuild=0.000
+FPW 16 hud=0.707 present=0.335 lmup=0.000
+FPW 16 lm_calls=0 lm_kb=0 overlays=1
+FPW 16 upload_details=0 upload_dropped=0
+FP WINDOW rank=17 frame=267 total_ms=7.593
+FPW 17 host_frame=266 demo_frame=266 demo_s=22.966217
+FPW 17 items=4629 active_weapon=4 weapon_model=117
+FPW 17 bonus_end=40 blend_alpha_end=0.156863
+FPW 17 weapon_name=progs/v_nail.mdl
+FPW 17 screen=4.995 view=3.999 scene=3.950 world=1.366
+FPW 17 ents=2.246 brush=0.736 alias=1.509
+FPW 17 parts=0.271 blend=0.018 lmbuild=0.000
+FPW 17 hud=0.643 present=0.346 lmup=0.000
+FPW 17 lm_calls=0 lm_kb=0 overlays=1
+FPW 17 upload_details=0 upload_dropped=0
+FP WINDOW rank=18 frame=268 total_ms=10.972
+FPW 18 host_frame=267 demo_frame=267 demo_s=23.032152
+FPW 18 items=4629 active_weapon=4 weapon_model=117
+FPW 18 bonus_end=39 blend_alpha_end=0.152941
+FPW 18 weapon_name=progs/v_nail.mdl
+FPW 18 screen=8.565 view=7.559 scene=7.511 world=1.375
+FPW 18 ents=5.809 brush=4.364 alias=1.445
+FPW 18 parts=0.258 blend=0.018 lmbuild=0.000
+FPW 18 hud=0.648 present=0.352 lmup=0.000
+FPW 18 lm_calls=0 lm_kb=0 overlays=1
+FPW 18 upload_details=0 upload_dropped=0
+FP WINDOW rank=19 frame=269 total_ms=9.183
+FPW 19 host_frame=268 demo_frame=268 demo_s=23.088633
+FPW 19 items=4629 active_weapon=4 weapon_model=117
+FPW 19 bonus_end=37 blend_alpha_end=0.145098
+FPW 19 weapon_name=progs/v_nail.mdl
+FPW 19 screen=6.805 view=5.920 scene=5.865 world=1.701
+FPW 19 ents=3.839 brush=2.517 alias=1.322
+FPW 19 parts=0.258 blend=0.017 lmbuild=0.000
+FPW 19 hud=0.531 present=0.348 lmup=0.000
+FPW 19 lm_calls=0 lm_kb=0 overlays=1
+FPW 19 upload_details=0 upload_dropped=0
+FP WINDOW rank=20 frame=270 total_ms=9.140
+FPW 20 host_frame=269 demo_frame=269 demo_s=23.155426
+FPW 20 items=4629 active_weapon=4 weapon_model=117
+FPW 20 bonus_end=35 blend_alpha_end=0.137255
+FPW 20 weapon_name=progs/v_nail.mdl
+FPW 20 screen=6.755 view=5.757 scene=5.709 world=1.367
+FPW 20 ents=4.027 brush=2.572 alias=1.455
+FPW 20 parts=0.248 blend=0.018 lmbuild=0.000
+FPW 20 hud=0.641 present=0.351 lmup=0.000
+FPW 20 lm_calls=0 lm_kb=0 overlays=1
+FPW 20 upload_details=0 upload_dropped=0

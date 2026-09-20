@@ -281,6 +281,15 @@ Evidence: `tools/evidence/frame260/qfix4_*` (host traces and frame profiles
 for both targets), `qfix2/qfix3` trace logs (the gate iterations),
 `qfix4_updt.log`.
 
+### Merged-artifact confirmation (2026-09-21)
+
+The merged MiniGL main-branch canonical pair (`bin/minigl_ppc_r200.warpelf`
+E241EE4B -> target `53145132`, `bin/minigl_ppc_host` EFDF7EAC) was deployed
+and run at 640x480x16: **53.893 fps**, 969 frames / 978 presents /
+`failed=0`, 48/48 direct BEGINs ok=1 (13 load-time + 35 subimage
+recommits, zero non-lightmap), frame 260 **42.3 ms** total with 31.1 ms in
+the four upload calls. Evidence: `tools/evidence/frame260/merged_m16_*`.
+
 ## Next targeted work
 
 1. **Coalesce per-frame lightmap uploads** (client-side): frame 260 still
