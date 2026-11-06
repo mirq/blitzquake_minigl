@@ -1,0 +1,8 @@
+%% Performance milestones. Embedded in docs/performance/README.md.
+%% Resolution differs per milestone and is shown on each label.
+flowchart LR
+    A["4.523 fps<br/>pre-optimization<br/>800x600x32"] --> B["5.089 fps<br/>particle fast points<br/>800x600x32"]
+    B --> C["12.158 fps<br/>CP emit enabled<br/>800x600x32"]
+    C --> D["15.870 fps<br/>640x480x16"]
+    D --> E["24.1 fps<br/>W-10 descriptor cache<br/>800x600x32"]
+    E --> F["53.9-55.2 fps<br/>640x480x16<br/>W-10 / merged artifact"]

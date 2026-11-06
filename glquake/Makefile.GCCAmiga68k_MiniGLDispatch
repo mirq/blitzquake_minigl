@@ -26,16 +26,18 @@ VASM ?= /opt/amiga/bin/vasmm68k_mot
 AMIGA_NDK ?= /opt/amiga/m68k-amigaos/ndk-include
 PISTORM_SDK ?= /home/mirek/PiStorm_SDK_v10
 
-CC=$(CROSS_PREFIX)gcc -noixemul
+CC=$(CROSS_PREFIX)gcc -noixemul -m68060 -m68881
 
-OPTIMIZE = -m68060 -O3 -ffast-math -fomit-frame-pointer -DOPTIMIZE_060
+# -m68881: this GCC defaults to soft-float even with -m68060 (every float
+# op was a libgcc call such as __mulsf3); the 060 has an FPU, use it.
+OPTIMIZE = -m68060 -m68881 -O3 -ffast-math -fomit-frame-pointer -DOPTIMIZE_060
 
 EYECANDY= -DLITFILES -DGLOWEFFECTS
 
 MINIGL_INC = -I$(PISTORM_SDK)/include -I$(PISTORM_SDK)/third_party/warp3d/include
 MINIGL_LIB = -L$(PISTORM_SDK)/lib -lminigl_dispatch
 
-CFLAGS= $(OPTIMIZE) $(EYECANDY) -D__M68K__ -DFASTBOPS -DGLQUAKE -DAMIGA -DMINIGL_DISPATCH_CLIENT -DMINIGL_PERF_DIAGNOSTICS -DCOMMON68KASM -Dstricmp=strcasecmp -DNDEBUG $(MINIGL_INC)
+CFLAGS= $(OPTIMIZE) $(EYECANDY) -D__M68K__ -DFASTBOPS -DGLQUAKE -DAMIGA -DMINIGL_DISPATCH_CLIENT -DMINIGL_PERF_DIAGNOSTICS -DFP_68K -DCOMMON68KASM -Dstricmp=strcasecmp -DNDEBUG $(MINIGL_INC)
 
 
 NOP_CFLAGS= $(CFLAGS)
@@ -150,7 +152,9 @@ QUAKE_OBJS= \
 	$(BUILDDIR)/snd_mem.o \
 	$(BUILDDIR)/sys_amiga.o \
 	$(BUILDDIR)/sys_amigaclip.o \
-	$(BUILDDIR)/twfsound_CD.o 
+	$(BUILDDIR)/twfsound_CD.o \
+	$(BUILDDIR)/frame_profile.o \
+	$(BUILDDIR)/pcsamp68k.o
 
 
 QUAKE_AS_OBJS= \
@@ -171,6 +175,7 @@ INCS = quakedef.h \
        miniglclient.h frame_profile.h
 
 $(BUILDDIR)/glquake68k_060_perf: $(QUAKE_OBJS) $(QUAKE_AS_OBJS) | $(BUILDDIR)
+	$(CC) -o $@.sym $(QUAKE_OBJS) $(QUAKE_AS_OBJS) $(LDLIBS)
 	$(CC) $(LDFLAGS) -o $@ $(QUAKE_OBJS) $(QUAKE_AS_OBJS) $(LDLIBS)
 
 ##
@@ -285,6 +290,12 @@ $(BUILDDIR)/gl_test.o :        gl_test.c $(INCS) | $(BUILDDIR)
 	$(DO_OPT_CC)
 
 $(BUILDDIR)/gl_vidamiga.o :        gl_vidamiga.c $(INCS) | $(BUILDDIR)
+	$(DO_OPT_CC)
+
+$(BUILDDIR)/pcsamp68k.o :           pcsamp68k.c $(INCS) | $(BUILDDIR)
+	$(DO_OPT_CC)
+
+$(BUILDDIR)/frame_profile.o :       frame_profile.c $(INCS) | $(BUILDDIR)
 	$(DO_OPT_CC)
 
 $(BUILDDIR)/sbar.o :                sbar.c $(INCS) | $(BUILDDIR)

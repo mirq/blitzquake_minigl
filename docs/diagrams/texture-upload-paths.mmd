@@ -1,0 +1,11 @@
+%% Texture upload routing on the R200 dispatch stack.
+%% Embedded in docs/architecture/minigl-dispatch.md.
+flowchart TB
+    UP["glTexImage2D / glTexSubImage2D"] --> Q{"single-channel source?<br/>GL_LUMINANCE / GL_ALPHA /<br/>GL_LUMINANCE_ALPHA"}
+    Q -- "yes (lightmap class)" --> DIRECT["direct recommit path"]
+    Q -- "no (world textures)" --> SHARED["shared 68k path"]
+    DIRECT --> BEGIN{"direct BEGIN accepted?"}
+    BEGIN -- "yes" --> SHADOW["retained shadow recommit<br/>no 68k residency churn"]
+    BEGIN -- "no" --> SHARED
+    SHARED --> NATIVE["native TexSubImage on the 68k side<br/>old surface released + re-imported<br/>~16 ms per upload"]
+    NATIVE --> FIRST["first upload of a frame also pays<br/>the render-drain barrier"]

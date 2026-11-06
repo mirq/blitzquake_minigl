@@ -6,9 +6,14 @@
 #include "quakedef.h"
 #include "frame_profile.h"
 
-#if defined(WOS) && defined(__PPC__)
+#if (defined(WOS) && defined(__PPC__)) || defined(FP_68K)
 
 #include <proto/dos.h>
+#ifdef FP_68K
+#include <devices/timer.h>
+#include <proto/timer.h>
+extern struct Device *TimerBase;
+#endif
 #include <stdio.h>
 #include <string.h>
 
@@ -42,9 +47,16 @@ typedef struct {
 
 static ULONG FP_Clock (void)
 {
+#ifdef FP_68K
+	// 68k: the EClock (709 kHz on PAL machines) through timer.device.
+	struct EClockVal ev;
+	ReadEClock (&ev);
+	return ev.ev_lo ? ev.ev_lo : 1;
+#else
 	ULONG value;
 	__asm__ volatile ("mftb %0" : "=r"(value));
 	return value;
+#endif
 }
 
 static qboolean fp_enabled;
@@ -78,7 +90,7 @@ static qboolean fp_window_requested, fp_window_valid;
 static const char *fp_names[FP_SECTIONS] = {
 	"SCREEN", "VIEW", "SCENE", "WORLD", "VIS", "CHAINS", "LMBLEND",
 	"LMBUILD", "LMUPLOAD", "ENTBRUSH", "ENTALIAS", "PARTICLES", "WATER",
-	"MIRROR", "GLOW", "CLEAR", "BLEND", "HUD", "PRESENT"
+	"MIRROR", "GLOW", "CLEAR", "BLEND", "HUD", "PRESENT", "ALIGHT", "ASETUP", "ADRAW", "SPRITES", "VIEWMDL", "RDRAW"
 };
 
 /* Startup-only, strict bounded parsing; no overflowing atoi/strtol result. */
@@ -391,4 +403,4 @@ void FP_AutoDump (void)
 	fclose (f);
 }
 
-#endif // WOS && __PPC__
+#endif // (WOS && __PPC__) || FP_68K

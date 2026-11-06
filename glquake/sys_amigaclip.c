@@ -4,11 +4,19 @@
 */
 
 #define CBIO
+/* GCC ignores the SAS/C amiga-align pragma; the IOClipReq/IOStdReq structs
+   use the real 2-byte Amiga ABI on the WarpOS/PPC GCC build. */
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#endif
 #include "sys.h"
 #include "sys_amigaclip.h"
 
 #include <proto/exec.h>
 #include <clib/alib_protos.h>
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(pop)
+#endif
 
 
 static int ReadLong(struct IOClipReq *ior,ULONG *ldata)

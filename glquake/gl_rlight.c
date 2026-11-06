@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #include "quakedef.h"
+#ifdef MGL68K_RESIDENT
+extern int r68k_now;
+#endif
 #ifndef MINIGL_DISPATCH_CLIENT
 #include <mgl/mglmacros.h>
 #endif
@@ -98,6 +101,116 @@ void R_InitBubble()
     *bub_cos++ = cos(a);
   }
 }
+
+
+#ifdef MGL68K_RESIDENT
+/* minigl68k: every glow / flash-blend bubble of the frame as one ring draw
+ * (each was a glBegin fan, a draw of its own). A fan is a centre vertex
+ * and 17 rim vertices: 16 triangles. */
+#include <exec/types.h>
+extern qboolean R_ResidentDynBegin (int numverts, volatile ULONG **dst,
+  ULONG *handle, ULONG *offset);
+extern qboolean R_ResidentDynDraw (ULONG handle, ULONG offset,
+  const unsigned short *indices, int count);
+
+#define FAN_MAX 128
+extern float glowcos[17], glowsin[17];
+static unsigned short fan_indices[FAN_MAX * 48];
+static volatile ULONG *fan_dst;
+static ULONG fan_handle, fan_offset;
+static int fan_count, fan_room;
+
+static ULONG FanSwapLE (ULONG v)
+{
+  return (v >> 24) | ((v >> 8) & 0xff00) | ((v << 8) & 0xff0000) | (v << 24);
+}
+
+static ULONG FanColour (float r, float g, float b, float a)
+{
+  int ir = (int)(r * 255), ig = (int)(g * 255), ib = (int)(b * 255),
+      ia = (int)(a * 255);
+  if (ir < 0) ir = 0; if (ir > 255) ir = 255;
+  if (ig < 0) ig = 0; if (ig > 255) ig = 255;
+  if (ib < 0) ib = 0; if (ib > 255) ib = 255;
+  if (ia < 0) ia = 0; if (ia > 255) ia = 255;
+  return ((ULONG)ia << 24) | ((ULONG)ir << 16) | ((ULONG)ig << 8) | ib;
+}
+
+static void FanVertex (const float *v, ULONG c)
+{
+  union { float f; ULONG u; } x, y, z;
+  x.f = v[0]; y.f = v[1]; z.f = v[2];
+  fan_dst[0] = FanSwapLE (x.u);
+  fan_dst[1] = FanSwapLE (y.u);
+  fan_dst[2] = FanSwapLE (z.u);
+  if (r68k_now)
+  {
+    fan_dst[3] = FanSwapLE (c);
+    fan_dst += 4;
+  }
+  else
+  {
+    fan_dst[3] = 0x0000803f;
+    fan_dst[4] = FanSwapLE (c);
+    fan_dst[5] = 0;
+    fan_dst[6] = 0;
+    fan_dst += 7;
+  }
+}
+
+/* room for n fans; FALSE: draw them the old way */
+static qboolean FanBegin (int n)
+{
+  int i;
+  fan_count = 0;
+  if (n <= 0 || n > FAN_MAX ||
+      !R_ResidentDynBegin (n * 18, &fan_dst, &fan_handle, &fan_offset))
+    return false;
+  if (!fan_indices[1])
+    for (i = 0; i < FAN_MAX; i++)
+    {
+      int j;
+      for (j = 0; j < 16; j++)
+      {
+        fan_indices[i * 48 + j * 3] = i * 18;
+        fan_indices[i * 48 + j * 3 + 1] = i * 18 + 1 + j;
+        fan_indices[i * 48 + j * 3 + 2] = i * 18 + 2 + j;
+      }
+    }
+  fan_room = n;
+  return true;
+}
+
+static void FanAdd (const float *centre, ULONG centrecolour,
+  const float *origin, float radius, const float *cosv, const float *sinv)
+{
+  int i;
+  vec3_t v;
+  if (fan_count >= fan_room)
+    return;
+  FanVertex (centre, centrecolour);
+  for (i = 16; i >= 0; i--)
+  {
+    v[0] = origin[0] + radius * (vright[0] * cosv[i] + vup[0] * sinv[i]);
+    v[1] = origin[1] + radius * (vright[1] * cosv[i] + vup[1] * sinv[i]);
+    v[2] = origin[2] + radius * (vright[2] * cosv[i] + vup[2] * sinv[i]);
+    FanVertex (v, 0);
+  }
+  fan_count++;
+}
+
+extern qboolean R_ResidentPatternDraw (ULONG handle, ULONG offset,
+  int pattern, int count);
+
+static void FanEnd (void)
+{
+  if (fan_count &&
+      !R_ResidentPatternDraw (fan_handle, fan_offset, 2, fan_count * 48))
+    (void)R_ResidentDynDraw (fan_handle, fan_offset, fan_indices,
+      fan_count * 48);
+  fan_count = 0;
+}
+#endif
 
 void R_RenderDlight (dlight_t *light)
 {
@@ -202,6 +315,19 @@ void R_RenderGlows (void)
   glEnable (GL_BLEND);
   glBlendFunc (GL_ONE, GL_ONE);
 
+#ifdef MGL68K_RESIDENT
+  if (FanBegin (numglows))
+  {
+    for (i=0 ; i<numglows; i++)
+    {
+      glow_t *g = &glowchain[i];
+      FanAdd (g->v, FanColour (g->color[0], g->color[1], g->color[2],
+        g->color[3]), g->origin, g->radius, glowcos, glowsin);
+    }
+    FanEnd ();
+  }
+  else
+#endif
   for (i=0 ; i<numglows; i++)
   {
 	GL_RenderGlow (&glowchain[i]);
@@ -253,12 +379,50 @@ void R_RenderDlights (void)
   glEnable (GL_BLEND);
   glBlendFunc (GL_ONE, GL_ONE);
 
+#ifdef MGL68K_RESIDENT
+  if (FanBegin (MAX_DLIGHTS))
+  {
+    float rsin[17], rcos[17];
+    int k;
+    /* the bubble tables run backwards; FanAdd walks 16..0 */
+    for (k = 0; k < 17; k++)
+    {
+      rsin[16 - k] = bubble_sintable[k];
+      rcos[16 - k] = bubble_costable[k];
+    }
+    l = cl_dlights;
+    for (i=0 ; i<MAX_DLIGHTS ; i++, l++)
+    {
+      vec3_t v, vp2;
+      float rad;
+      if (l->die < cl.time || !l->radius)
+        continue;
+      rad = l->radius * 0.35;
+      VectorSubtract (l->origin, r_origin, v);
+      if (Length (v) < rad)
+      {
+        AddLightBlend (1, 0.5, 0, l->radius * 0.0003);
+        continue;
+      }
+      VectorSubtract (l->origin, r_origin, vp2);
+      VectorNormalize (vp2);
+      v[0] = l->origin[0] - vp2[0]*rad;
+      v[1] = l->origin[1] - vp2[1]*rad;
+      v[2] = l->origin[2] - vp2[2]*rad;
+      FanAdd (v, FanColour (0.4, 0.2, 0.0, 0.2), l->origin, rad, rcos, rsin);
+    }
+    FanEnd ();
+  }
+  else
+#endif
+  {
   l = cl_dlights;
   for (i=0 ; i<MAX_DLIGHTS ; i++, l++)
   {
     if (l->die < cl.time || !l->radius)
       continue;
     R_RenderDlight (l);
+  }
   }
 
   glColor3f (1,1,1);

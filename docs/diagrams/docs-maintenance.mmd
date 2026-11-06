@@ -1,0 +1,11 @@
+%% Documentation update workflow. Embedded in docs/README.md and AGENTS.md.
+flowchart LR
+    CH["code, build or<br/>experiment change"] --> DEC{"changes behaviour,<br/>build or measurements?"}
+    DEC -- yes --> EDIT["update the affected<br/>docs page"]
+    DEC -- no --> NOTE["no docs change"]
+    EDIT --> DIAG["update .mmd + inline mermaid<br/>if architecture changed"]
+    EDIT --> HIST["record results/artifacts in<br/>performance history + index"]
+    EDIT --> IDX["update docs/README.md<br/>when files are added"]
+    DIAG --> CHECK["python3 tools/check_docs.py"]
+    HIST --> CHECK
+    IDX --> CHECK

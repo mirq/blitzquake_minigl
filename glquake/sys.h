@@ -45,7 +45,13 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 // memory allocation
 //
 #ifdef AMIGA
+/* GCC ignores the SAS/C amiga-align pragma; pack OS structs to the real
+   2-byte Amiga ABI on the WarpOS/PPC GCC build (see gl_vidamiga.c). */
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#else
 #pragma amiga-align
+#endif
 #if defined(__PPC__) && !defined(MORPHOS)
 
 #ifdef WOS
@@ -69,7 +75,11 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 #define Sys_Free(ptr) FreeVec(ptr)
 #endif
 
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(pop)
+#else
 #pragma default-align
+#endif
 #endif /* AMIGA */
 
 //

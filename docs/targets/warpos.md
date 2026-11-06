@@ -1,8 +1,29 @@
-# PPC Toolchain Notes — MOS2WOS/WarpOS porting landmines
-# (learned porting BlitzQuake GLQuake to ppc-amigaos-gcc + MiniGL V19 R200, Sep 2026)
+# WarpOS/PPC target guide
 
-Target: Amiga 4000, MPC7410 WarpOS PPC card, Prometheus + Radeon 9200,
-MiniGL V19 WOS stack (`minigl_ppc.dll` + 68k `mglhost`). Cross-build on Linux.
+Target: **Amiga 4000, MPC7410 WarpOS PPC card, Prometheus + Radeon 9200,
+MiniGL V19 WOS stack** (`minigl_ppc.dll` + 68k `mglhost`). Cross-build on
+Linux with `ppc-amigaos-gcc` + the MOS2WOS SDK overlay.
+
+This page collects the toolchain/runtime landmines learned while porting to
+this stack. They are ordered roughly by how much time they cost. Read
+[building.md](../building.md) for the build command and
+[operations/runbook.md](../operations/runbook.md) for the session protocol.
+
+Contents:
+
+1. [Toolchain](#toolchain)
+2. [ET_REL link contract (warpelf)](#et_rel-link-contract-warpelf)
+3. [Deployment over the bridge](#deployment-over-the-bridge)
+4. [MOS2WOS runtime landmines](#mos2wos-runtime-landmines)
+5. [The packed-struct ABI trap](#the-packed-struct-abi-trap)
+6. [AHI on WarpOS](#ahi-on-warpos-use-the-q3-high-level-scheme)
+7. [68k-isms that become fatal on PPC](#68k-isms-that-become-fatal-on-ppc)
+8. [MiniGL V19 WOS client session protocol](#minigl-v19-wos-client-session-protocol)
+9. [MiniGL R200 frontend restrictions](#minigl-r200-frontend-restrictions)
+10. [Porting landmines hit in the game path](#porting-landmines-hit-in-the-game-path-client-bugs)
+11. [Debugging techniques that worked](#debugging-techniques-that-worked)
+12. [BlitzQuake-specific fixes applied](#blitzquake-specific-fixes-applied)
+13. [Launch recipe](#launch-recipe)
 
 ## Toolchain
 
@@ -38,7 +59,7 @@ ppc-amigaos-ld -r -EB -d -x -T warpos-etrel.ld \
 - Converting a ~1 MB ELF takes ~30 s on the 68060; do it in a foreground
   `dos_command` with output captured, not inside long batch scripts.
 
-## Deployment (bridge)
+## Deployment over the bridge
 
 - `push_file` times out above ~450 KB. Compress locally (python zipfile),
   push the ZIP, `UnZip -o x.zip -d Work:wosbuild` on the Amiga, then CRC32
@@ -49,14 +70,16 @@ ppc-amigaos-ld -r -EB -d -x -T warpos-etrel.ld \
   out (~120 s) and leaves half-executed state on the Amiga. Do steps
   individually and verify each artifact.
 
-## MOS2WOS runtime landmines (the ones that cost days)
+## MOS2WOS runtime landmines
+
+These are the ones that cost days:
 
 1. **Library bases are YOURS to define and open.** The old PowerUp toolchain's
    `libppcamiga` auto-defined/auto-opened bases. MOS2WOS does not:
    - `TimerBase` is declared `extern struct Library *` by `proto/timer.h` —
      define it with EXACTLY that type (`struct Library *`, not `struct Device *`).
    - `IntuitionBase`, `GfxBase` etc.: define them yourself and open the
-     libraries (we open intuition.library + graphics.library in VID_Init).
+     libraries (we open intuition.library + graphics.library in `VID_Init`).
    - `PowerPCBase`: referenced by libglosswos/libcwos/libgccwos internals.
      Leaving it NULL is FINE for the libglosswos fallback paths
      (printf/write/open/malloc all work with NULL).
@@ -66,8 +89,8 @@ ppc-amigaos-ld -r -EB -d -x -T warpos-etrel.ld \
 3. **timer.device `ReadEClock`/`GetSysTime` LP calls crash from a PPC task**
    on this stack. The validated MiniGL gears client replaced PPC timing with
    `DateStamp()` (dos.library, 1/50 s). Use DateStamp. (Most likely the same
-   packed-struct ABI trap as in "68k struct ABI" below — the timerequest
-   layout is wrong too; not re-tested because DateStamp is sufficient.)
+   packed-struct ABI trap as below — the timerequest layout is wrong too;
+   not re-tested because DateStamp is sufficient.)
 4. **`usleep()` crashes when PowerPCBase is NULL** (libglosswos sleep path).
    Use dos `Delay()`.
 5. **exec/dos inline calls work** via `proto/*.h` → `powerup/ppcinline/*.h`
@@ -113,7 +136,27 @@ ppc-amigaos-ld -r -EB -d -x -T warpos-etrel.ld \
    which does **not** match the 68k ABI; see the next section before
    passing any struct to 68k code.
 
-## 68k struct ABI: the packed-layout trap (the real AHI hang)
+## The packed-struct ABI trap
+
+(The original notes for this section called it the "packed-layout trap".)
+
+<!-- mmd: abi-alignment.mmd -->
+```mermaid
+flowchart TB
+    subgraph PPC["MOS2WOS os-includeppc: natural PPC alignment"]
+        P1["struct Message<br/>mn_ReplyPort at 16, size 24"]
+        P2["struct IORequest<br/>size 36"]
+        P3["struct AHIRequest<br/>size 84"]
+    end
+    subgraph M68K["68k AmigaOS ABI: packed 2-byte alignment"]
+        M1["struct Message<br/>mn_ReplyPort at 14, size 20"]
+        M2["struct IORequest<br/>size 32"]
+        M3["struct AHIRequest<br/>size 80"]
+    end
+    P1 -->|"pointer passed to 68k code"| BAD["fields read at wrong offsets<br/>SendIO/WaitIO never completes<br/>whole machine wedges"]
+    M1 -->|"packed mirror in wos_ahi_abi.h"| GOOD["correct device/library IO"]
+    P1 -. "compare sizes with<br/>m68k-amigaos-nm -S /<br/>ppc-amigaos-nm -S" .-> M1
+```
 
 The MOS2WOS `os-includeppc` headers are OS4-style: `struct Message`,
 `IORequest`, `IOStdReq`, `Library`, ... get **natural PPC alignment**. Every
@@ -144,12 +187,12 @@ the ABI. The same explanation applies to the earlier timer.device
 
 **How to do it:** define your own `__attribute__((packed))` mirror structs
 with the 68k layout and use those for the device/library call.
-`glquake/wos_ahi_abi.h` provides `wos_Message`, `wos_IORequest`,
-`wos_IOStdReq`, `wos_AHIRequest`, `wos_Library` plus compile-time size
-guards; `snd_amiga_AHI.c` typedefs `ahi_request_t` to the packed type under
-`WOS`. Note the MOS2WOS `IOStdReq` inlines the `IORequest` fields (there is
-no `io_Request` member), so `ahir_Std.io_Error` works — the packed mirror
-keeps that shape.
+[`glquake/wos_ahi_abi.h`](../../glquake/wos_ahi_abi.h) provides
+`wos_Message`, `wos_IORequest`, `wos_IOStdReq`, `wos_AHIRequest`,
+`wos_Library` plus compile-time size guards; `snd_amiga_AHI.c` typedefs
+`ahi_request_t` to the packed type under `WOS`. Note the MOS2WOS `IOStdReq`
+inlines the `IORequest` fields (there is no `io_Request` member), so
+`ahir_Std.io_Error` works — the packed mirror keeps that shape.
 
 Validated on real hardware (probe `wos_ahi`, 2026-09-20):
 `OpenDevice` v4 OK, `CMD_WRITE` + `WaitIO` `io_Error=0`, `CheckIO` polling
@@ -157,6 +200,7 @@ Validated on real hardware (probe `wos_ahi`, 2026-09-20):
 completions in 3 s for a 1.49 s ring — audio audible.
 
 Rules of thumb:
+
 - Passing a *pointer* to a 68k object you never dereference (MsgPort,
   library base, BPTR, socket fd) is safe.
 - Reading a field of a 68k struct from PPC through these headers is **not**
@@ -166,6 +210,38 @@ Rules of thumb:
 - `netinclude` is the exception: it already forces `pack(2)` under `__PPC__`,
   so `sockaddr_in`, `hostent`, ... are 68k-correct (verified on hardware).
 - Never rely on `#pragma amiga-align`; it is a no-op with this GCC.
+
+### The BlitzQuake input-pack fix (2026-09-22, keyboard + mouse on WOS)
+
+Concrete case of the trap, and the reason the WOS client's keyboard and mouse
+were completely dead while Q3's input worked with the same MiniGL DLL:
+`gl_vidamiga.c` (and several siblings) included `intuition/intuition.h` under
+`#pragma amiga-align`, which the PPC GCC build ignores. `struct Window` and
+`struct IntuiMessage` therefore decoded at PowerUp 4-byte offsets, +2 bytes
+past the real Amiga 2-byte layout from `IDCMPFlags` onwards. Consequences:
+`IDCMPFlags`/`UserPort`/`WScreen` read garbage (a *stale port pointer*,
+never a `SEGV`), `GetMsg(UserPort)` saw nothing, and
+`IntuitionBase->ActiveWindow` in `IN_MouseMove` (`in_amigamouse.c`) never
+equalled `QuakeWindow`, silently disabling mouse look. Mouse buttons still
+arrived through the RAWKEY/MOUSEBUTTONS pump in the (later packed)
+`gl_vidamiga.c`, which is why "keyboard works, buttons work, mouse look does
+not" was the observable split.
+
+Fix: replace the ignored pragma with `#pragma pack(push,2)` /
+`#pragma pack(pop)` around the OS include blocks, gated to
+`defined(__GNUC__) && defined(__PPC__)` so the 68k dispatch build is
+untouched (Q3 does exactly this around its system headers). Patched WOS-build
+TUs: `gl_vidamiga.c`, `in_amigamouse.c`, `in_amigajoy.c`, `in_amigapsx.c`,
+`miniglext.c`, `net_bsdsocket.c`, `snd_amiga_AHI.c`, `sys_amiga_std.c`,
+`sys_amigaclip.c` and `sys.h`. Verified in the compiled objects: the input
+poll loads `UserPort` at offset **86** (not 88) and `ActiveWindow` at **52**
+(not 56); on hardware the client trace shows a sane
+`win/port/flags/idcmp/screen` capture, `idcmp=0x00100418` exactly as
+requested, and RAWKEY messages arriving. `ActivateWindow()` from an earlier
+attempt was removed (Q3 does not call it; the host opens the fullscreen
+window with `WFLG_ACTIVATE` already). The input setup is otherwise Q3
+parity: `mglGetWindowHandle()` only, mask **replaced** with
+`RAWKEY|MOUSEBUTTONS|MOUSEMOVE|DELTAMOVE`, `win->Flags |= WFLG_REPORTMOUSE`.
 
 ### Measuring a struct ABI locally (no hardware needed)
 
@@ -234,14 +310,45 @@ The final implementation is a 1:1 port of `quake3amiga/code/amiga/amiga_snd.c`
   free buffer, `FreeAudio`, `CloseDevice`, `DeleteIORequest`, `DeleteMsgPort`.
 
 Adaptation for this tree: the buffer is `malloc`'d because this runtime has
-`PowerPCBase == NULL` (`AllocVecPPC` unavailable), so `SNDDMA_Submit` still
-flushes the painted range with one `CacheClearE` per frame (~3.5 ms). The
-residual 4.4 ms vs `-nosound` is that flush plus the AHI driver's 68k load.
-A native `dcbf`+`sync` flush was tried and produced silence (cause not yet
-identified - the instruction encoding was verified correct), so keep
-`CacheClearE` unless you can test the native variant with audio confirmed.
+`PowerPCBase == NULL` (`AllocVecPPC` unavailable), so the PPC must push the
+painted range to memory before the 68k driver reads it. `SNDDMA_Submit` now
+uses a native `dcbf`+`sync` over the exact painted range (`-sndflush
+native`, default); the old `CacheClearE` LP call remains as a fallback
+(`-sndflush exec`). The earlier native attempt produced silence because the
+range was masked with `AHIBUFFERSIZE` (256 KB, the old low-level constant)
+instead of the real high-level ring size (`wos_buflen`, 64 KB): after ~1.5 s
+of painting the flush targeted memory past the ring. `CacheClearE` had
+hidden that bug because the LP stub flushes the whole PPC cache; a targeted
+`dcbf` did not. The ring-size mask is fixed and hardware-validated
+(`wos_cache` probe: the 68k sees `dcbf`'d fast-RAM data, and it does not
+serve stale lines on the next read).
+
+**The dominant sound cost is the AHI mode, not the flush.** With a
+CPU-mixing Paula mode the driver mixes on the same 68060 that runs mglhost,
+and the frame (which waits on the host) stretches by almost the same amount.
+Measured 2026-09-22, 640x480x16 fullscreen, timedemo demo1, 969 frames,
+same-boot runs:
+
+| configuration (same client) | fps | ms/frame | vs `-nosound` |
+|---|---|---|---|
+| `-nosound` | 55.31 | 18.08 | - |
+| old `CacheClearE` flush + Paula 14-bit calibrated | 41.55 | 24.07 | +5.99 |
+| native flush + Paula 14-bit calibrated (`0002000d`) | 43.57 | 22.95 | +4.87 |
+| native flush + Paula 8-bit HiFi stereo (`00020011`) | 45.45 | 22.00 | +3.92 |
+| native flush + Paula 14-bit, `-audspeed 4000` | 51.32 | 19.48 | +1.40 |
+| native flush + Paula 14-bit, `-audspeed 22050` | 30.84 | 31.42 | +13.34 |
+| **native flush + AHI DMA mode (`00020018`)** | **54.87-55.37** | **17.5-17.7** | **~0** |
+
+Select an AHI **DMA** mode (e.g. `Paula:DMA 8 bit stereo`) in AHI prefs for
+full speed; CPU-mixing Paula modes cost several ms/frame and scale with the
+mix rate (`-audspeed`). `-ahiid <hex>` overrides the mode for a single run
+without touching the user's AHI preferences (enumerate modes with the
+`wos_ahimodes` probe), and the game prints a note when the selected mode is
+not a DMA mode. Do not benchmark with `-condebug`: console log I/O costs
+~4 fps (51.0 vs 54.9 measured).
 
 Also validated in the same session:
+
 - `net_bsdsocket.c` pure `__P*` layer: real NetQuake `CCREQ_SERVER_INFO` and
   `CCREQ_CONNECT` exchanges against a little-endian x86 responder on the LAN
   decoded correctly (server name/map/players, and the `CCREP_ACCEPT` port as
@@ -257,7 +364,7 @@ Also validated in the same session:
   → strcpy(glt->identifier, NULL)` silently "worked". On PPC the NULL page
   faults → PowerPC Exception. Guard every NULL that reaches str*/*printf*.
   (Found: `GL_LoadPicTexture` passes `identifier=NULL` into
-  `GL_LoadTexture` which strcpy'd it — now guarded in gl_draw.c.)
+  `GL_LoadTexture` which strcpy'd it — now guarded in `gl_draw.c`.)
 - **Function pointers into unset tables**: Quake's `net_landrivers[]`/
   `net_drivers[]` config must match the linked driver set, else NULL calls.
 
@@ -267,7 +374,8 @@ Also validated in the same session:
   `minigl_ppc.dll` via the Hyperion loader. `Open("minigl_ppc.dll")` is
   CWD-relative → either put the exe next to the DLL, or compile
   `-DMINIGL_PPC_DLLNAME="\"Work:ibdraw/minigl_ppc.dll\""` (header supports
-  the override).
+  the override; the maintained Makefile does this through
+  `MGL_DLL_OVERRIDE`).
 - Per session: cold boot → `C:InitPPC` **exactly once** → start the 68k host
   (`Run >NIL: Execute Work:ibdraw/gqhostrun`; Stack 65536; fresh host per
   client run; host exits after a client's clean `MiniGLClose`) → run client
@@ -286,36 +394,46 @@ Also validated in the same session:
 - Known no-ops on this stack: `mglResizeContext` (mode changes need a
   restart), `glClientActiveTextureARB`.
 
-## MiniGL R200 frontend restrictions (measured, see MiniGL_R200_BUG_REPORT.md)
+## MiniGL R200 frontend restrictions
+
+Measured on the stack; see
+[history/MiniGL_R200_BUG_REPORT.md](../performance/history/MiniGL_R200_BUG_REPORT.md)
+for the original report and
+[minigl-dispatch.md](../architecture/minigl-dispatch.md#frontend-restrictions-measured-on-this-stack)
+for the client-side handling:
 
 - `glTexImage2D` internalformat: **GL_RGBA and GL_LUMINANCE fail** (MiniGL
   error 0x59/0x58); **GL_RGB and GL_RGB5_A1 work**. MGL_UNSIGNED_SHORT_5_6_5
-  also fails (game's `-lm_RGB` path unusable).
-- Consequence mapping for GLQuake: font texture (GL_RGBA) → broken console
-  text; lightmaps (GL_LUMINANCE) → broken dynamic lighting.
-- **`glTexImage2D` costs ~101 ms per call regardless of size** (128² =
-  256² = ~101 ms) — fixed latency, likely blocking fence in the submit path.
-  Level load ≈ 20–30 s from this alone.
-- **`glTexSubImage2D` ≈ 136 ms per 128×128 / 408 ms per 256×256** update —
-  Quake's per-frame lightmap updates make the game run at ~0.5 fps.
-  Workaround applied: static lightmaps only (texsub call sites compiled out
-  under WOS; dynamic lights lost).
+  also fails (game's `-lm_RGB` path unusable). Fixed in later DLLs; verify
+  the deployed DLL CRC before assuming.
+- `glTexImage2D` costs ~101 ms per call regardless of size — fixed latency,
+  likely a blocking fence in the submit path. Level load ≈ 20-30 s from this
+  alone.
+- `glTexSubImage2D` ≈ 136 ms per 128×128 / 408 ms per 256×256 update before
+  the frame-260 direct-recommit fix; Quake's per-frame lightmap updates made
+  the game run at ~0.5 fps. Workaround history: static lightmaps only
+  (texsub call sites compiled out under WOS; dynamic lights lost), later
+  replaced by the direct class.
 - `mglWriteShotPPM` is a silent no-op (no file, no GL error) — game
   screenshots don't work; don't trust bridge P96 grabs in fullscreen either.
-- Draw calls / vertex dispatch / glClear are FAST (0.07–0.27 ms/quad,
-  25–75 µs/vertex-pair, 2–7 ms/clear) — the GPU frontend itself is fine.
+- Draw calls / vertex dispatch / glClear are FAST (0.07-0.27 ms/quad,
+  25-75 µs/vertex-pair, 2-7 ms/clear) — the GPU frontend itself is fine.
 
 ## Porting landmines hit in the game path (client bugs)
 
 - `GL_LoadTexture(identifier=NULL)` → `strcpy(dst, NULL)`: tolerated on 68k
-  (low memory readable), fatal on PPC. Guard it.
-- AHI sound: the classic AHI interrupt/callback path from a PPC task
-  triggers "powerpc.library: Async Run68K function not supported" — keep
-  `-nosound` until snd_amiga_AHI is ported to a PPC-safe interface.
-- OPEN ISSUE: "PPC Memory corruption detected during freeing" during demo
-  playback — a heap stomp somewhere in the gameplay path, detected at
-  free-time by powerpc.library. Bisect with features disabled
-  (particles/entities/etc.) next session.
+  (low memory readable), fatal on PPC. Guarded in `gl_draw.c`; see
+  [68k-isms that become fatal on PPC](#68k-isms-that-become-fatal-on-ppc).
+- AHI sound: the classic AHI interrupt/callback path from a PPC task triggers
+  "powerpc.library: Async Run68K function not supported" — this is why the
+  maintained WOS sound path is the high-level scheme
+  [below](#ahi-on-warpos-use-the-q3-high-level-scheme) and why `-nosound` is
+  kept as a clean fallback.
+- **RESOLVED**: "PPC Memory corruption detected during freeing" during demo
+  playback was the unused timer.device request being opened and torn down
+  from the PPC task; timer open/cleanup is now `#ifndef WOS`
+  (`glquake/sys_amiga_std.c`). It was detected at free time by
+  powerpc.library; no heap stomp remained after the fix.
 
 ## Debugging techniques that worked
 
@@ -342,7 +460,11 @@ Also validated in the same session:
   ones (`amiga_last_crash` stays empty).
 - `Work:` volume (= old DH2:) survives warm resets; PPC RAM state does not.
 
-## BlitzQuake-specific fixes applied (see git diff)
+See also the [archived handover](../performance/history/GLQUAKE_WOS_HANDOVER.md)
+for the debugging recipes from the first bring-up, and
+[operations/runbook.md](../operations/runbook.md) for the current protocol.
+
+## BlitzQuake-specific fixes applied
 
 - `snd_amiga_AHI.c`: guard `<powerup/ppcinline/alib.h>` (missing in MOS2WOS);
   WOS path is the Q3-style high-level AHI + `AHIET_CHANNELINFO` hook (see the
@@ -362,12 +484,21 @@ Also validated in the same session:
 - `sys_amiga_std.c`: WOS `TimerBase`/`PowerPCBase` definitions, `Delay(1)`,
   `WOS_EClockTime()` (DateStamp), unbuffered stdout, `Sys_WOSTrace`.
 - `gl_vidamiga.c`: define+open IntuitionBase/GfxBase; MINIGL_DISPATCH_CLIENT
-  path is used throughout.
+  path is used throughout; `VID_ConfigureInputWindow` calls `ActivateWindow()`
+  on the Quake window (the MiniGL test suite does the same) so RAWKEY events
+  reach the client when it is started in the background, e.g. by the launcher
+  or `Run >NIL:`.
 - `gl_draw.c`: NULL-identifier guard in `GL_LoadTexture`.
 - Build: `glquake/Makefile.GCCAmigaWOS_MGL_V19` (targets
   `warpos_gcc_v19/glquake/glquake_wos.warpelf`).
 
-## Launch recipe (current working state)
+## Launch recipe
+
+> For interactive play the 68k
+> [BlitzQuakePPC MiniGL Launcher](../operations/launcher.md) wraps this recipe:
+> it starts `mglhost` from the game drawer, checks the host port and launches
+> the client with the selected options. The manual recipe below remains the
+> authoritative reference.
 
 ```
 ; after cold boot, once:
@@ -391,3 +522,7 @@ Probe pipeline (same, no MiniGL host needed):
 `Elf2Exe2 wos_ahi.warpelf wos_ahi` → run. `wos_ahi -step N` stops after
 stage N; each stage appends to `Work:wosbuild/wos_ahi_trace.log` so a wedge
 names the failing call.
+
+> **Benchmark note.** The launch recipe above is for interactive play. For
+> timedemo measurements, always start a fresh host and verify the host port
+> first; see [operations/runbook.md](../operations/runbook.md).

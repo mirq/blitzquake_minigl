@@ -2,7 +2,7 @@
 #define __FRAME_PROFILE_H
 
 // Frame-level profiler for the WarpOS PPC GLQuake client.
-// Plan: PERFORMANCE_PLAN_2026-09-20_0024.md (phase 1).
+// Plan: docs/performance/history/PERFORMANCE_PLAN_2026-09-20_0024.md (phase 1).
 //
 // Runtime opt-in: launch with -frameprofile [path]. When disabled the cost
 // is one flag test per enter/exit. Timing uses the PPC timebase (mftb),
@@ -19,7 +19,7 @@
 // when an A/B change removes them from the worst-frame table. FP numbers keep
 // their historical meaning; host/demo frame and server time are also logged.
 
-#if defined(WOS) && defined(__PPC__)
+#if (defined(WOS) && defined(__PPC__)) || defined(FP_68K)
 
 enum {
 	FP_SCREEN = 0,   // SCR_UpdateScreen total (contains VIEW, HUD, PRESENT)
@@ -42,6 +42,12 @@ enum {
 	FP_BLEND,        // R_PolyBlend (pickup/damage/contents overlay)
 	FP_HUD,          // 2D pass: tile/sbar/console/menus + V_UpdatePalette
 	FP_PRESENT,      // GL_EndRendering -> mglSwitchDisplay
+	FP_ALIGHT,       // alias: lighting (R_LightPoint, dlights)
+	FP_ASETUP,       // alias: matrices, bind
+	FP_ADRAW,        // alias: vertex frame
+	FP_SPRITES,      // sprite models
+	FP_VIEWMDL,      // view model
+	FP_RDRAW,        // minigl68k resident draw calls (library time)
 	FP_SECTIONS
 };
 

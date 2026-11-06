@@ -1,6 +1,19 @@
 /* in_amigamouse.c -- AMIGA mouse driver */
 /* Written by Frank Wille <frank@phoenix.owl.de> */
 
+/* GCC ignores the SAS/C amiga-align pragma; 'IntuitionBase->ActiveWindow'
+   and friends decode at wrong offsets without 2-byte packing (see
+   gl_vidamiga.c header comment; Q3 does the same around its OS headers). */
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#include <exec/memory.h>
+#include <exec/interrupts.h>
+#include <devices/input.h>
+#include <intuition/intuitionbase.h>
+#include <clib/alib_protos.h>
+#include <proto/exec.h>
+#pragma pack(pop)
+#else
 #pragma amiga-align
 #include <exec/memory.h>
 #include <exec/interrupts.h>
@@ -9,6 +22,7 @@
 #include <clib/alib_protos.h>
 #include <proto/exec.h>
 #pragma default-align
+#endif
 #include "quakedef.h"
 
 #ifdef NOMOUSEASMASM

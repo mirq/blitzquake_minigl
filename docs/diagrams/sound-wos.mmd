@@ -1,0 +1,11 @@
+%% WarpOS high-level AHI sound path.
+%% Embedded in docs/architecture/platform.md.
+flowchart LR
+    MIX["S_Update_ mixer<br/>snd_mix_AHI.c"] --> SUB["SNDDMA_Submit"]
+    SUB --> CC["SND_FlushRange<br/>native dcbf+sync<br/>exec CacheClearE fallback"]
+    CC --> BUF["AHI loop buffer<br/>malloc in PPC RAM"]
+    BUF --> DEV["ahi.device<br/>1-channel high-level stream"]
+    DEV --> DRV["AHI driver<br/>DMA mode: no 68k mixing"]
+    DRV --> HOOK["68k effect hook blob<br/>ahieci_Offset0 copied to h_Data"]
+    HOOK --> POS["SNDDMA_GetDMAPos<br/>h_Data * channels<br/>zero OS calls per frame"]
+    POS --> MIX

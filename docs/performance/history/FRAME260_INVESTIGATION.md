@@ -1,5 +1,11 @@
 # Frame 260: measured lightmap-upload hitch
 
+> **Archived working document.** Originally `FRAME260_INVESTIGATION.md` at the
+> repository root. Repository-relative paths below are relative to the
+> repository root (e.g. `tools/evidence/frame260/`). The fix described in
+> "FIX IMPLEMENTED AND VALIDATED" was merged into the MiniGL main branch; see
+> [docs/performance/README.md](../README.md) for the current status.
+
 Targeted continuation of `PERFORMANCE_PLAN_2026-09-20_0024.md`, after W-80
 was parked. Physical A4000 / MPC7410 400 MHz / 68060 / Prometheus / Radeon
 9200; both requested video modes, `demo1`, 969 timed frames, no sound/network.

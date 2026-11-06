@@ -48,7 +48,12 @@
 #else
 
 /* Amiga includes */
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#else
 #pragma amiga-align
+#endif
+
 #include <exec/types.h>
 #include <exec/libraries.h>
 #ifdef MIAMI_SDK
@@ -65,7 +70,12 @@
 #include <netdb.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(pop)
+#else
 #pragma default-align
+#endif
+
 #include <errno.h>
 
 #define NET_EWOULDBLOCK   EWOULDBLOCK

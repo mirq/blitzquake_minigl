@@ -328,8 +328,26 @@ int CL_GetMessage (void)
         {
           cls.td_starttime = realtime;
 #ifdef MINIGL_PERF_DIAGNOSTICS
-          glHint (MGL_PERF_COUNTERS_HINT, GL_NICEST);
+          if (COM_CheckParm ("-mglperf"))  /* counters cost EClock reads */
+            glHint (MGL_PERF_COUNTERS_HINT, GL_NICEST);
 #endif
+          { extern void PCS_Start (void); PCS_Start (); }
+        }
+        /* -tdframes n: end the timedemo after n timed frames (a short
+         * benchmark on slow configurations). */
+        {
+          static int tdframes = -1;
+          if (tdframes < 0)
+          {
+            int p = COM_CheckParm ("-tdframes");
+            tdframes = (p && p + 1 < com_argc) ? Q_atoi (com_argv[p + 1]) : 0;
+          }
+          if (tdframes > 0 &&
+              host_framecount - cls.td_startframe - 1 >= tdframes)
+          {
+            CL_StopPlayback ();   /* finishes the timedemo */
+            return 0;
+          }
         }
       }
       else if ( /* cl.time > 0 && */ cl.time <= cl.mtime[0])
@@ -562,6 +580,7 @@ void CL_FinishTimeDemo (void)
   cls.timedemo = false;
   
 // the first frame didn't count
+  { extern void PCS_Stop (void); PCS_Stop (); }
   frames = (host_framecount - cls.td_startframe) - 1;
   time = realtime - cls.td_starttime;
   if (!time)

@@ -1,5 +1,10 @@
 # Step 4 decision: reject the generic client-array path
 
+> **Decision record — still binding.** Originally
+> `STEP4_REJECTED_GENERIC_ARRAY_PATH.md` at the repository root. The WarpOS
+> A1/A1b batching work later reproduced this result on the PPC side; see
+> [docs/decisions/REJECTED_PATHS.md](../../decisions/REJECTED_PATHS.md).
+
 Do **not** retry replacing `mglTV23fv()` / `mglTV23fvLM()` with the existing
 `glVertexPointer()` + `glTexCoordPointer()` + `glDrawArrays(GL_POLYGON)` path
 for Quake `glpoly_t` surfaces.

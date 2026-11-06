@@ -1,5 +1,12 @@
 # GLQuake WarpOS performance plan — 2026-09-20 00:24 CEST
 
+> **Archived working document.** Originally `PERFORMANCE_PLAN_2026-09-20_0024.md`
+> at the repository root. Repository-relative paths below are relative to the
+> repository root. Current status and the benchmark protocol live in
+> [docs/performance/README.md](../README.md); the sibling logs are in this
+> directory. This is a point-in-time session log — do not treat its plan
+> sections as current instructions without checking the status summary first.
+
 **Committed 2026-09-20 ~01:55 CEST** (working trees were clean checkpoints
 of everything below):
 

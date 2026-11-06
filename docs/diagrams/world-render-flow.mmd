@@ -1,0 +1,18 @@
+%% World-surface routing by surface type and ordering pass.
+%% Embedded in docs/architecture/renderer.md.
+flowchart TB
+    START["R_DrawWorld"] --> VIS["R_RecursiveWorldNode(nodes)<br/>mark visible surfaces"]
+    VIS --> SKY["SURF_DRAWSKY -> sky chain"]
+    VIS --> TURB["SURF_DRAWTURB -> turb chain"]
+    VIS --> OPAQ["opaque surfaces -> texturechain"]
+    VIS --> UNDER["SURF_UNDERWATER warp -> lightmap_polys chain"]
+
+    OPAQ --> DT["DrawTextureChains<br/>gl_texsort 0: sequential/multitexture<br/>gl_texsort 1: per-texture two-pass"]
+    DT --> BASE["base pass<br/>R_RenderBrushPoly / R_DrawSequentialPoly<br/>mglTV23fv"]
+    BASE --> LM["R_BlendLightmaps<br/>second pass"]
+    LM --> DYN["R_RenderDynamicLightmaps<br/>dirty atlas -> glTexSubImage2D"]
+    DYN --> LM2["lightmap pass<br/>mglTV23fvLM"]
+    TURB --> TURBD["turb draw per polygon<br/>EmitWaterPolys"]
+    UNDER --> UWD["DrawGLWaterPoly / Lightmap"]
+    SKY --> SKYD["R_DrawSkyChain<br/>scrolling + static layers"]
+    DT --> WATER["R_DrawWaterSurfaces<br/>translucent water after opaque"]

@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #include "quakedef.h"
+#ifdef MGL68K_RESIDENT
+extern int r68k_now;
+#endif
 #include "frame_profile.h"
 
 #ifndef MINIGL_DISPATCH_CLIENT
@@ -185,7 +188,7 @@ static void qgl_EnableArray()
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 
-#ifdef OPTIMIZE_060
+#if defined(OPTIMIZE_060) && !defined(MINIGL_DISPATCH_CLIENT)
 	if(r_interpolations.value)
 	{
 		glVertexPointer(3, GL_FLOAT, sizeof(qglarray_t), &global_qglarray->x);
@@ -851,6 +854,431 @@ const ULONG lighttab[256] = {
 };
 #endif
 
+#ifdef MINIGL_DISPATCH_CLIENT
+/*
+ * Dispatch client: the whole model as ONE indexed triangle list.
+ * Quake's glcmds are short strips and fans; drawn one glDrawArrays each,
+ * every command became its own draw record with a full TCL state header
+ * (strips/fans cannot merge in the R200 backend), which made alias models
+ * the most expensive part of a frame on the 68060. The vertices of all
+ * commands go into the vertex array back to back and the strips/fans are
+ * expanded into a GL_TRIANGLES index list, which takes the backend's
+ * fused indexed path (one record, no per-command state).
+ */
+#define ALIAS_MAX_VERTS 4096
+#define ALIAS_MAX_INDICES (3 * ALIAS_MAX_VERTS)
+static UWORD alias_indices[ALIAS_MAX_INDICES];
+
+#ifdef MGL68K_RESIDENT
+/*
+ * minigl68k resident alias draw: the model's command vertices are written
+ * straight into a VRAM ring buffer (compact TCL layout, little-endian) and
+ * drawn as ONE indexed triangle list; the Radeon's TCL transforms them.
+ * No per-vertex work in the library and no triangle expansion.
+ */
+extern qboolean R_ResidentDynBegin (int numverts, volatile ULONG **dst,
+  ULONG *handle, ULONG *offset);
+extern qboolean R_ResidentDynDraw (ULONG handle, ULONG offset,
+  const unsigned short *indices, int count);
+extern int R_ResidentModelIndices (const void *key, int verts, int count,
+  int hash, const unsigned short *indices);
+extern qboolean R_ResidentIndexedDraw (ULONG handle, ULONG offset,
+  int idxoffset, int count);
+
+static ULONG A_SwapLE (ULONG v)
+{
+  return (v >> 24) | ((v >> 8) & 0xff00) | ((v << 8) & 0xff0000) | (v << 24);
+}
+
+extern int R_StoreGet (const void *key, int tag, int bytes,
+  volatile ULONG **fill);
+extern qboolean R_ResidentStreams (int posoff, ULONG colhandle, ULONG coloff,
+  int texoff, int idxoff, int count);
+
+/* Alias colour of one vertex (GLQuake's shadedots lighting) */
+static ULONG R_AliasColour (const trivertx_t *v, qboolean smooth, ULONG flatc)
+{
+  if (!smooth)
+    return flatc;
+#ifdef LITFILES
+  if (eyecandy)
+  {
+    float l = shadedots[v->lightnormalindex];
+    ULONG r = (ULONG)(lightcolor[0]*l);
+    ULONG g = (ULONG)(lightcolor[1]*l);
+    ULONG b = (ULONG)(lightcolor[2]*l);
+    if (r > 255) r = 255;
+    if (g > 255) g = 255;
+    if (b > 255) b = 255;
+    return 0xFF000000 | (r<<16) | (g<<8) | b;
+  }
+#endif
+  {
+    ULONG l = (ULONG)(shadedots[v->lightnormalindex] * shadelight);
+    if (l > 255) l = 255;
+    return lighttab[l];
+  }
+}
+
+/* Streams: texcoords per model and positions per pose stay in VRAM (sent
+ * once); a frame writes one colour dword a vertex. */
+/* VRAM keys of the model being drawn: its model_t (fixed for the level)
+ * and pose. The alias data itself lives in Quake's cache, which can evict
+ * and reload it elsewhere (sound loading at a pickup did): keyed by the
+ * data's address, a stale entry then served another model's positions. */
+static const void *alias_key;
+static int alias_pose;
+
+static qboolean R_DrawAliasStreams (trivertx_t *verts, int *order,
+  qboolean smooth, ULONG flatc, int total, int itotal, int idxoff)
+{
+  volatile ULONG *fill, *d;
+  int texoff, posoff, i, count;
+  ULONG handle, offset;
+  int *o;
+  union { float f; ULONG u; } x;
+
+  if (idxoff < 0 || !r68k_now)
+    return false;
+  texoff = R_StoreGet (alias_key, 1, total * 8, &fill);
+  if (texoff < 0)
+    return false;
+  if (fill)
+  {
+    o = order;
+    while ((count = *o++) != 0)
+    {
+      if (count < 0)
+        count = -count;
+      do
+      {
+        x.f = ((float *)o)[0]; *fill++ = A_SwapLE (x.u);
+        x.f = ((float *)o)[1]; *fill++ = A_SwapLE (x.u);
+        o += 2;
+      } while (--count);
+    }
+    (void)fill[-1];
+  }
+  posoff = R_StoreGet (alias_key, 2 + alias_pose, total * 12, &fill);
+  if (posoff < 0)
+    return false;
+  if (fill)
+  {
+    const trivertx_t *v = verts;
+    for (i = 0; i < total; i++, v++)
+    {
+      x.f = v->v[0]; *fill++ = A_SwapLE (x.u);
+      x.f = v->v[1]; *fill++ = A_SwapLE (x.u);
+      x.f = v->v[2]; *fill++ = A_SwapLE (x.u);
+    }
+    (void)fill[-1];
+  }
+  if (!R_ResidentDynBegin ((total * 4 + 27) / 28, &d, &handle, &offset))
+    return false;
+  if (smooth)
+  {
+    const trivertx_t *v = verts;
+    for (i = 0; i < total; i++, v++)
+      d[i] = A_SwapLE (R_AliasColour (v, true, flatc));
+  }
+  else
+  {
+    ULONG c = A_SwapLE (flatc);
+    for (i = 0; i < total; i++)
+      d[i] = c;
+  }
+  (void)d[total - 1];
+  return R_ResidentStreams (posoff, handle, offset, texoff, idxoff, itotal);
+}
+
+static qboolean R_DrawAliasResident (aliashdr_t *paliashdr,
+  trivertx_t *verts, int *order, qboolean smooth)
+{
+  int *order0 = order;
+  int *o = order;
+  int count, total = 0, icount = 0, base = 0, i;
+  int itotal = 0, hash = 0, idxoff;
+  qboolean gen;
+  volatile ULONG *d;
+  ULONG handle, offset, flatc = 0xffffffff;
+  union { float f; ULONG u; } x, y, z, s, t;
+
+  /* size of the vertex list */
+  while ((count = *o++) != 0)
+  {
+    hash = hash * 31 + count;
+    if (count < 0)
+      count = -count;
+    total += count;
+    itotal += (count - 2) * 3;
+    o += 2 * count;
+  }
+  /* the index list is the same every frame: kept in VRAM per model */
+  idxoff = R_ResidentModelIndices (alias_key, total, itotal, hash, NULL);
+  gen = idxoff < 0;
+  if (total > ALIAS_MAX_VERTS)
+    return false;
+  { extern int r68k_alias_ents, r68k_alias_verts;
+    r68k_alias_ents++; r68k_alias_verts += total; }
+
+  if (!smooth)
+  {
+    float lr, lg, lb;
+#ifdef LITFILES
+    if (eyecandy)
+    {
+      lr = (1.2/255.0)*lightcolor[0]; if (lr > 1.0) lr = 1.0;
+      lg = (1.2/255.0)*lightcolor[1]; if (lg > 1.0) lg = 1.0;
+      lb = (1.2/255.0)*lightcolor[2]; if (lb > 1.0) lb = 1.0;
+    }
+    else
+#endif
+    {
+      float l = shadelight * 1.20;
+      if (l > 255) l = 255.f;
+      lr = lg = lb = l * (1.f / 255.f);
+    }
+    flatc = 0xff000000 | ((ULONG)(lr * 255.f) << 16) |
+            ((ULONG)(lg * 255.f) << 8) | (ULONG)(lb * 255.f);
+  }
+
+  if (!gen && R_DrawAliasStreams (verts, order0, smooth, flatc, total,
+      itotal, idxoff))
+    return true;
+  if (!R_ResidentDynBegin (total, &d, &handle, &offset))
+    return false;
+
+  while ((count = *order++) != 0)
+  {
+    qboolean fan = count < 0;
+    if (fan)
+      count = -count;
+    if (gen)
+    for (i = 2; i < count; i++)
+    {
+      if (fan)
+      {
+        alias_indices[icount++] = base;
+        alias_indices[icount++] = base + i - 1;
+        alias_indices[icount++] = base + i;
+      }
+      else if (i & 1)
+      {
+        alias_indices[icount++] = base + i - 1;
+        alias_indices[icount++] = base + i - 2;
+        alias_indices[icount++] = base + i;
+      }
+      else
+      {
+        alias_indices[icount++] = base + i - 2;
+        alias_indices[icount++] = base + i - 1;
+        alias_indices[icount++] = base + i;
+      }
+    }
+    base += count;
+    do
+    {
+      ULONG c = flatc;
+      s.f = ((float *)order)[0];
+      t.f = ((float *)order)[1];
+      order += 2;
+      if (smooth)
+      {
+#ifdef LITFILES
+        if (eyecandy)
+        {
+          float l = shadedots[verts->lightnormalindex];
+          ULONG r = (ULONG)(lightcolor[0]*l);
+          ULONG g = (ULONG)(lightcolor[1]*l);
+          ULONG b = (ULONG)(lightcolor[2]*l);
+          if (r > 255) r = 255;
+          if (g > 255) g = 255;
+          if (b > 255) b = 255;
+          c = 0xFF000000 | (r<<16) | (g<<8) | b;
+        }
+        else
+#endif
+        {
+          ULONG l = (ULONG)(shadedots[verts->lightnormalindex] * shadelight);
+          if (l > 255) l = 255;
+          c = lighttab[l];
+        }
+      }
+      x.f = verts->v[0];
+      y.f = verts->v[1];
+      z.f = verts->v[2];
+      d[0] = A_SwapLE (x.u);
+      d[1] = A_SwapLE (y.u);
+      d[2] = A_SwapLE (z.u);
+      if (r68k_now)
+      {
+        d[3] = A_SwapLE (c);
+        d[4] = A_SwapLE (s.u);
+        d[5] = A_SwapLE (t.u);
+        d += 6;
+      }
+      else
+      {
+        d[3] = 0x0000803f;
+        d[4] = A_SwapLE (c);
+        d[5] = A_SwapLE (s.u);
+        d[6] = A_SwapLE (t.u);
+        d += 7;
+      }
+      verts++;
+    } while (--count);
+  }
+  (void)d[-1];
+  if (gen && icount)
+    idxoff = R_ResidentModelIndices (alias_key, total, itotal, hash,
+      alias_indices);
+  if (idxoff >= 0 && R_ResidentIndexedDraw (handle, offset, idxoff, itotal))
+    return true;
+  if (!gen)
+    return false;   /* nothing drawn; the caller takes its own path */
+  return icount ? R_ResidentDynDraw (handle, offset, alias_indices, icount)
+                : true;
+}
+#endif
+
+void GL_DrawAliasArrayFrame (aliashdr_t *paliashdr, int posenum)
+{
+#ifdef LITFILES
+  ULONG r,g,b;
+#endif
+  float   l;
+  trivertx_t  *verts;
+  int   *order;
+  int   count, i;
+  int   vcount = 0, icount = 0;
+  qglarray_t *lva = global_qglarray;
+  qboolean smooth = gl_smoothmodels.value != 0;
+
+  lastposenum = posenum;
+
+  verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+  verts += posenum * paliashdr->poseverts;
+  order = (int *)((byte *)paliashdr + paliashdr->commands);
+
+#ifdef MGL68K_RESIDENT
+  alias_key = currententity->model;
+  alias_pose = posenum;
+  if (alias_key && R_DrawAliasResident (paliashdr, verts, order, smooth))
+    return;
+#endif
+
+  if (!smooth)
+  {
+#ifdef LITFILES
+    if (eyecandy)
+    {
+      float fr,fg,fb;
+      fr = (1.2/255.0)*lightcolor[0]; if(fr > 1.0) fr = 1.0;
+      fg = (1.2/255.0)*lightcolor[1]; if(fg > 1.0) fg = 1.0;
+      fb = (1.2/255.0)*lightcolor[2]; if(fb > 1.0) fb = 1.0;
+      glColor3f(fr, fg, fb);
+    }
+    else
+#endif
+    {
+      l = shadelight * 1.20;
+      if (l > 255) l = 255.f;
+      l *= 1.f / 255.f;
+      glColor3f(l,l,l);
+    }
+  }
+
+  while (1)
+  {
+    int base;
+    qboolean fan;
+
+    count = *order++;
+    if (!count)
+      break;
+    fan = count < 0;
+    if (fan)
+      count = -count;
+
+    if (vcount + count > ALIAS_MAX_VERTS ||
+        icount + 3 * (count - 2) > ALIAS_MAX_INDICES)
+    {
+      if (icount)
+        glDrawElements (GL_TRIANGLES, icount, GL_UNSIGNED_SHORT, alias_indices);
+      vcount = icount = 0;
+      lva = global_qglarray;
+    }
+
+    base = vcount;
+    if (fan)
+    {
+      for (i = 2; i < count; i++)
+      {
+        alias_indices[icount++] = base;
+        alias_indices[icount++] = base + i - 1;
+        alias_indices[icount++] = base + i;
+      }
+    }
+    else
+    {
+      for (i = 2; i < count; i++)
+      {
+        if (i & 1)
+        {
+          alias_indices[icount++] = base + i - 1;
+          alias_indices[icount++] = base + i - 2;
+          alias_indices[icount++] = base + i;
+        }
+        else
+        {
+          alias_indices[icount++] = base + i - 2;
+          alias_indices[icount++] = base + i - 1;
+          alias_indices[icount++] = base + i;
+        }
+      }
+    }
+    vcount += count;
+
+    do
+    {
+      lva->s = ((float *)order)[0];
+      lva->t = ((float *)order)[1];
+      order += 2;
+      if (smooth)
+      {
+#ifdef LITFILES
+        if (eyecandy)
+        {
+          l = shadedots[verts->lightnormalindex];
+          r = (ULONG)(lightcolor[0]*l);
+          g = (ULONG)(lightcolor[1]*l);
+          b = (ULONG)(lightcolor[2]*l);
+          if(r > 255) r = 255;
+          if(g > 255) g = 255;
+          if(b > 255) b = 255;
+          lva->c = (0xFF000000 | (r<<16) | (g<<8) | b);
+        }
+        else
+#endif
+        {
+          ULONG c = (ULONG)(shadedots[verts->lightnormalindex] * shadelight);
+          if (c > 255) c = 255;
+          lva->c = lighttab[c];
+        }
+      }
+      /* float positions: the R200 frontend's direct array fast path */
+      lva->x = (float)verts->v[0];
+      lva->y = (float)verts->v[1];
+      lva->z = (float)verts->v[2];
+      lva++;
+      verts++;
+    } while (--count);
+  }
+  if (icount)
+    glDrawElements (GL_TRIANGLES, icount, GL_UNSIGNED_SHORT, alias_indices);
+}
+#else
+
 void GL_DrawAliasArrayFrame (aliashdr_t *paliashdr, int posenum)
 {
 #ifdef LITFILES
@@ -1062,6 +1490,7 @@ void GL_DrawAliasArrayFrame (aliashdr_t *paliashdr, int posenum)
   }
 #endif
 }
+#endif /* MINIGL_DISPATCH_CLIENT */
 
 
 #if 0
@@ -1620,6 +2049,23 @@ extern void R_RenderGlows (void);
 #endif
 
 
+/* An entity that has not moved sees the same light until the light
+ * styles step (10 Hz): its BSP light trace is reused for up to 0.1 s.
+ * Dynamic lights are added per frame after this, as before. */
+static int R_LightPointCached (entity_t *e)
+{
+  static struct { entity_t *e; vec3_t org; double time; int value; } c[64];
+  int h = ((unsigned)e >> 4) & 63;
+  if (c[h].e == e && VectorCompare (c[h].org, e->origin) &&
+      cl.time >= c[h].time && cl.time - c[h].time < 0.1)
+    return c[h].value;
+  c[h].e = e;
+  VectorCopy (e->origin, c[h].org);
+  c[h].time = cl.time;
+  c[h].value = R_LightPoint (e->origin);
+  return c[h].value;
+}
+
 void R_DrawAliasModel (entity_t *e)
 {
 #ifdef LITFILES
@@ -1660,6 +2106,7 @@ void R_DrawAliasModel (entity_t *e)
 
   if (R_CullBox (mins, maxs))
     return;
+  unsigned long fp_al = FP_Enter (FP_ALIGHT), fp_as = 0, fp_ad = 0;
 
 //Surgeon: far culling
 	cvec[0] = r_refdef.vieworg[0] - currententity->origin[0];
@@ -1745,7 +2192,7 @@ if(!eyecandy)
 
   if (strcmp (clmodel->name, "progs/flame2.mdl")
     && strcmp (clmodel->name, "progs/flame.mdl") )
-  ambientlight = shadelight = (float)R_LightPoint (currententity->origin);
+  ambientlight = shadelight = (float)R_LightPointCached (currententity);
 
   // allways give the gun some light
   if (e == &cl.viewent && ambientlight < 24)
@@ -1893,6 +2340,8 @@ else
 }
 #endif
 
+  FP_Exit (FP_ALIGHT, fp_al);
+  fp_as = FP_Enter (FP_ASETUP);
   //
   // locate the proper data
   //
@@ -1908,6 +2357,34 @@ else
 
     glPushMatrix ();
 
+#ifdef MGL68K_RESIDENT
+  /* one matrix call instead of translate, three rotates, translate and
+   * scale (each a trip through the library) */
+  if (!(r_interpolations.value && currententity != &cl.viewent) &&
+      !(!strcmp (clmodel->name, "progs/eyes.mdl") && gl_doubleeyes.value))
+  {
+    float m[16], R[3][3];
+    float cy = cos (e->angles[1] * (M_PI / 180)), sy = sin (e->angles[1] * (M_PI / 180));
+    float cp = cos (-e->angles[0] * (M_PI / 180)), sp = sin (-e->angles[0] * (M_PI / 180));
+    float cr = cos (e->angles[2] * (M_PI / 180)), sr = sin (e->angles[2] * (M_PI / 180));
+    float *so = paliashdr->scale_origin, *sc = paliashdr->scale;
+    int r, c;
+    /* Rz(yaw) * Ry(-pitch) * Rx(roll), as glRotatef builds them */
+    R[0][0] = cy*cp; R[0][1] = cy*sp*sr - sy*cr; R[0][2] = cy*sp*cr + sy*sr;
+    R[1][0] = sy*cp; R[1][1] = sy*sp*sr + cy*cr; R[1][2] = sy*sp*cr - cy*sr;
+    R[2][0] = -sp;   R[2][1] = cp*sr;            R[2][2] = cp*cr;
+    for (c = 0; c < 3; c++)
+      for (r = 0; r < 3; r++)
+        m[c*4 + r] = R[r][c] * sc[c];
+    m[3] = m[7] = m[11] = 0;
+    for (r = 0; r < 3; r++)
+      m[12 + r] = e->origin[r] + R[r][0]*so[0] + R[r][1]*so[1] + R[r][2]*so[2];
+    m[15] = 1;
+    glMultMatrixf (m);
+  }
+  else
+#endif
+  {
 if(r_interpolations.value && currententity != &cl.viewent)
   R_RotateInterpolatedForEntity (e);
 else
@@ -1921,6 +2398,9 @@ else
     glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
     glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
   }
+#ifdef MGL68K_RESIDENT
+  }
+#endif
 
   anim = (int)(cl.time*10) & 3;
     GL_Bind(paliashdr->gl_texturenum[currententity->skinnum][anim]);
@@ -1945,6 +2425,8 @@ else
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   }
 
+  FP_Exit (FP_ASETUP, fp_as);
+  fp_ad = FP_Enter (FP_ADRAW);
 /*
   R_SetupAliasFrame (currententity->frame, paliashdr);
 */
@@ -1968,6 +2450,7 @@ else
     else 
        R_SetupAliasFrame (currententity->frame, paliashdr); 
 
+  FP_Exit (FP_ADRAW, fp_ad);
 
   glPopMatrix ();
 
@@ -2054,7 +2537,9 @@ void R_DrawEntitiesOnList (int routine)
 		if (currententity->model->type != mod_sprite)
 			continue;
 
+		{ unsigned long fp_t = FP_Enter (FP_SPRITES);
 		R_DrawSpriteModel(currententity);
+		FP_Exit (FP_SPRITES, fp_t); }
 		}
 		//glDepthMask(GL_TRUE);
 
@@ -2081,7 +2566,9 @@ void R_DrawEntitiesOnList (int routine)
 		}
 
 		if(r_vertexarrays.value)
+		{ unsigned long fp_t = FP_Enter (FP_VIEWMDL);
 		R_DrawViewModel ();
+		FP_Exit (FP_VIEWMDL, fp_t); }
 
 		if(r_vertexarrays.value)
 		qgl_DisableArray();
@@ -2168,6 +2655,19 @@ void R_PolyBlend (void)
 
   if(mtexenabled) GL_DisableMultitexture();
 
+#ifdef MGL68K_RESIDENT
+  {
+    extern qboolean pb_pending; extern float pb_rgba[4]; extern int pb_height;
+    if (r68k_now)
+    {
+      pb_rgba[0] = v_blend[0]; pb_rgba[1] = v_blend[1];
+      pb_rgba[2] = v_blend[2]; pb_rgba[3] = v_blend[3];
+      pb_height = vid.height - sb_lines;
+      pb_pending = true;
+      return;
+    }
+  }
+#endif
 #ifdef MINIGL_DISPATCH_CLIENT
   /* Protect the status-bar rows in hardware as well as by geometry. */
   if (sb_lines)
@@ -2576,6 +3076,9 @@ void R_RenderScene (void)
 
      { unsigned long fp_t = FP_Enter (FP_ENTBRUSH);
        R_DrawEntitiesOnList (1); //brushmodels
+#ifdef MGL68K_RESIDENT
+       { extern void R_FlushBrushDeferred (void); R_FlushBrushDeferred (); }
+#endif
        FP_Exit (FP_ENTBRUSH, fp_t); }
 
      { unsigned long fp_t = FP_Enter (FP_WORLD);

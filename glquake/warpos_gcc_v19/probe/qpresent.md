@@ -1,5 +1,10 @@
 # Quake presentation regression probe
 
+> Part of the probe catalogue in
+> [`docs/operations/testing.md`](../../../docs/operations/testing.md#probes);
+> session protocol in
+> [`docs/operations/runbook.md`](../../../docs/operations/runbook.md).
+
 Build from `glquake/`:
 
 ```

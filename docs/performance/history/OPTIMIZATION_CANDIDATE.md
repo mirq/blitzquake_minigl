@@ -1,5 +1,10 @@
 # Optimization candidate and measured results
 
+> **Archived working document.** Originally `OPTIMIZATION_CANDIDATE.md` at the
+> repository root. Repository-relative paths below are relative to the
+> repository root. These 4.5–5.1 fps measurements predate CP emission; see
+> [docs/performance/README.md](../README.md) for the current results.
+
 Timedemo environment: 969-frame `demo1`, fullscreen 800x600x32, `-nosound
 -noudp`, no runtime diagnostics, benchmark result written after the timed
 interval via `-benchmarklog`. Amiga is the physical A4000/MPC7410 machine.

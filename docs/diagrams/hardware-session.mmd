@@ -1,0 +1,23 @@
+%% Hardware session state machine (see docs/operations/runbook.md).
+stateDiagram-v2
+    [*] --> ColdBoot
+    ColdBoot --> InitPPC
+    InitPPC --> HealthProbe
+    HealthProbe --> StartHost
+    StartHost --> VerifyPort
+    VerifyPort --> LaunchClient
+    LaunchClient --> Running
+    Running --> CleanExit
+    CleanExit --> HostExits
+    HostExits --> [*]
+    Running --> Crashed
+    Crashed --> Reboot
+    Reboot --> ColdBoot
+    note right of Crashed
+        Break does not work on wedged PPC tasks.
+        The host stays ghosted, so a reboot is required.
+    end note
+    note right of VerifyPort
+        Confirm the MiniGL host port is present
+        and start a fresh host before every client.
+    end note

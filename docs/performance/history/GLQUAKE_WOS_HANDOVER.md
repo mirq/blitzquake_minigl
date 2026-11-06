@@ -3,6 +3,22 @@ Date: 2026-09-13. Status: **game runs on real hardware** (A4000, MPC7410
 WarpOS, Prometheus + Radeon 9200, MiniGL R200 stack), ~2–3 fps in demo
 playback at 640×480×32 windowed. Performance work is the next frontier.
 
+> **Archived handover, status updated 2026-09-22.** Originally
+> `GLQUAKE_WOS_HANDOVER.md` at the repository root. Repository-relative paths
+> below are relative to the repository root. Section 5's open issues were
+> worked on after this handover was written:
+>
+> | Handover issue | Status |
+> |---|---|
+> | 5.1 ~2–3 fps performance | **Resolved.** 53.893 fps at 640×480×16 on the merged-artifact confirmation run (2026-09-21); see [docs/performance/README.md](../README.md) and the sibling logs in this directory. |
+> | 5.2 "PPC Memory corruption detected during freeing" | **Resolved.** It was the unused timer.device request opened/torn down from the PPC task; timer open/cleanup is now `#ifndef WOS` (`glquake/sys_amiga_std.c`). |
+> | 5.3 Sound "Async Run68K not supported" | **Resolved.** `snd_amiga_AHI.c` now uses the Q3-style high-level AHI + `AHIET_CHANNELINFO` hook (commit `1ab3df1`); measured 44.82 fps with sound vs 55.82 fps `-nosound`. |
+> | 5.4 Networking fd-layer mix | **Resolved.** `net_bsdsocket.c` is pure libglosswos `__P*`; validated on hardware with the `wos_net` probe (commit `1ab3df1`). |
+> | 5.5 ASL ScreenModeRequester | **Still open.** ASL is not referenced anywhere in the GL video path (`glquake/gl_vidamiga.c`); the software-renderer path has an ASL requester in `glquake/vid_cppcstatic.c`. |
+>
+> The runbook in section 3 remains the basis for the current protocol; the
+> maintained version is [docs/operations/runbook.md](../../operations/runbook.md).
+
 ## 1. What exists (files)
 
 - `glquake/Makefile.GCCAmigaWOS_MGL_V19` — working build: ppc-amigaos-gcc

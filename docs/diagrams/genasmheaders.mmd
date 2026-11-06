@@ -1,0 +1,11 @@
+%% genasmheaders offset-header generation.
+%% Embedded in docs/building.md and docs/targets/68k.md.
+flowchart LR
+    SRC["genasmheaders.c"] --> TOOL["genasmheaders binary<br/>(host or target)"]
+    CMD["*.gen command files<br/>#h headers, #s struct pairs"] --> TOOL
+    TOOL --> TMP["temporary T:gendefs.c<br/>offsetof() / sizeof()"]
+    TMP --> CC["target C compiler<br/>with matching ABI"]
+    CC --> RUN["run generated program"]
+    RUN --> HDR["quakedef68k.i / quakedefPPC.i<br/>glquakedef68k.i / glquakedefPPC.i"]
+    HDR --> ASM68["68k .s: INCLUDE quakedef68k.i"]
+    HDR --> ASMPPC["PPC .s: .include quakedefPPC.i"]

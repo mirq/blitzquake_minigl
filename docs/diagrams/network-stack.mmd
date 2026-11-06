@@ -1,0 +1,10 @@
+%% Network driver stack.
+%% Embedded in docs/architecture/platform.md.
+flowchart TB
+    QNET["Quake network layer<br/>net_dgrm.c: BigLong/BigShort headers"] --> DRV["net_amiga.c driver table"]
+    DRV --> LOOP["Loopback<br/>net_loop.c in-process<br/>always available"]
+    DRV --> UDP["Datagram / UDP<br/>net_bsdsocket.c"]
+    UDP --> P["libglosswos __P* POSIX layer<br/>socket, bind, sendto, recvfrom,<br/>ioctl FIONBIO, close"]
+    P --> BSD["bsdsocket.library v4<br/>Roadshow"]
+    BSD --> ETH["RTL8139 at 192.168.1.21<br/>or a real peer"]
+    NOTE["No loopback interface on this install:<br/>127.0.0.1 tests never receive"] -.-> P

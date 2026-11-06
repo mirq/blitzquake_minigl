@@ -1,0 +1,16 @@
+%% The packed-struct ABI trap on MOS2WOS headers.
+%% Embedded in docs/targets/warpos.md.
+flowchart TB
+    subgraph PPC["MOS2WOS os-includeppc: natural PPC alignment"]
+        P1["struct Message<br/>mn_ReplyPort at 16, size 24"]
+        P2["struct IORequest<br/>size 36"]
+        P3["struct AHIRequest<br/>size 84"]
+    end
+    subgraph M68K["68k AmigaOS ABI: packed 2-byte alignment"]
+        M1["struct Message<br/>mn_ReplyPort at 14, size 20"]
+        M2["struct IORequest<br/>size 32"]
+        M3["struct AHIRequest<br/>size 80"]
+    end
+    P1 -->|"pointer passed to 68k code"| BAD["fields read at wrong offsets<br/>SendIO/WaitIO never completes<br/>whole machine wedges"]
+    M1 -->|"packed mirror in wos_ahi_abi.h"| GOOD["correct device/library IO"]
+    P1 -. "compare sizes with<br/>m68k-amigaos-nm -S /<br/>ppc-amigaos-nm -S" .-> M1

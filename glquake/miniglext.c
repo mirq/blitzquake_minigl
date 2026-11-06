@@ -4,11 +4,21 @@ MiniGL extensions - direct vertexbuffer construction with quake polys and interf
 
 */
 
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#else
 #pragma amiga-align
+#endif
+
 
 #include <Warp3D/Warp3D.h>
 
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(pop)
+#else
 #pragma default-align
+#endif
+
 
 #include "quakedef.h"
 

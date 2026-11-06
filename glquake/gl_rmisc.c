@@ -223,6 +223,9 @@ void R_Init (void)
   Cvar_RegisterVariable (&r_particle_hack);
   Cvar_RegisterVariable (&r_particle_size);
   Cvar_RegisterVariable (&r_worldbatch);
+#ifdef MGL68K_RESIDENT
+  { extern cvar_t r_resident, r_resstatic, r_lmatlas; Cvar_RegisterVariable (&r_resident); Cvar_RegisterVariable (&r_resstatic); Cvar_RegisterVariable (&r_lmatlas); { extern cvar_t r_bmdefer, r_partpoints; Cvar_RegisterVariable (&r_bmdefer); Cvar_RegisterVariable (&r_partpoints); } }
+#endif
   Cvar_RegisterVariable (&gl_glows);
   Cvar_RegisterVariable (&gl_fake_multitexture);
   Cvar_RegisterVariable (&r_interpolations);

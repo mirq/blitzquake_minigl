@@ -1,0 +1,19 @@
+%% MiniGL dispatch round trip. Embedded in docs/architecture/minigl-dispatch.md.
+%% Behaviour is described from this tree's client code and the MiniGL docs.
+sequenceDiagram
+    participant Q as Quake renderer
+    participant C as dispatch client<br/>(PPC WarpOS or 68k)
+    participant R as shared ring slot
+    participant H as 68k host mglhost
+    participant G as Radeon CP / GPU
+
+    Q->>C: glTexCoord2f + glVertex3f<br/>or glDrawElements
+    C->>R: publish semantic draw record
+    C->>H: signal host
+    H->>R: consume record
+    H->>G: expand to R200 CP indirect buffer
+    Note over H,G: CP emit mode builds commands on the PPC client
+    Note over H,G: the host mostly forwards them
+    G-->>H: fence / idle
+    H-->>C: release ring slot
+    C-->>Q: return from GL call

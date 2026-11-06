@@ -1,0 +1,22 @@
+%% Documentation map for BlitzQuake_src.
+%% Embedded in docs/README.md. Keep both copies in sync.
+flowchart TB
+    ROOT["docs/README.md<br/>documentation index"]
+    ROOT --> ARCH["architecture/"]
+    ARCH --> A1["overview.md"]
+    ARCH --> A2["renderer.md"]
+    ARCH --> A3["minigl-dispatch.md"]
+    ARCH --> A4["platform.md"]
+    ROOT --> BUILD["building.md"]
+    ROOT --> TARGETS["targets/"]
+    TARGETS --> T1["warpos.md"]
+    TARGETS --> T2["68k.md"]
+    TARGETS --> T3["legacy.md"]
+    ROOT --> OPS["operations/"]
+    OPS --> O1["runbook.md"]
+    OPS --> O2["testing.md"]
+    OPS --> O3["launcher.md"]
+    ROOT --> PERF["performance/README.md"]
+    PERF --> PH["history/<br/>point-in-time session logs"]
+    ROOT --> DEC["decisions/REJECTED_PATHS.md"]
+    ROOT --> DIAG["diagrams/*.mmd<br/>standalone Mermaid sources"]

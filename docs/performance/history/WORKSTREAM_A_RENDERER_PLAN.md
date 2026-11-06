@@ -1,5 +1,12 @@
 # Workstream A: GLQuake Renderer Architecture
 
+> **Archived plan — closed.** Originally `WORKSTREAM_A_RENDERER_PLAN.md` at the
+> repository root. The batching line was hardware-falsified and abandoned
+> (see the "A1b verdict" section at the end and
+> [docs/decisions/REJECTED_PATHS.md](../../decisions/REJECTED_PATHS.md));
+> `r_worldbatch` remains default `0`. Repository-relative paths below are
+> relative to the repository root.
+
 Target: physical Amiga, 68060 at 50 MHz, Radeon RV280/Radeon 9200, V10
 `minigl.library` R200 backend.
 
@@ -248,6 +255,88 @@ frontend/serialize/execute/wait/present ticks, failures and RHW clamps.
 
 Physical validation is pending because the hardware bridge at
 `192.168.1.21:2345` was unavailable during implementation.
+
+## A1b. Water and underwater-warp batches (renderer item 2)
+
+The remaining per-surface world paths under `gl_texsort 1` are now staged
+through the same client-array model as A1, behind the same `r_worldbatch`
+opt-in and the same `gl_texsort 1` / no-fake-multitexture gate:
+
+- `EmitWaterPolys()` turbulent water: `R_StageWaterPoly()` (`gl_warp.c`)
+  writes the same warp arithmetic into a staging array; one
+  `glDrawElements(GL_TRIANGLES)` per water texture (opaque chain in
+  `DrawTextureChains`, translucent chain in `R_DrawWaterSurfaces`).
+- `DrawGLWaterPoly()` / `DrawGLWaterPolyLightmap()` underwater warp: warped
+  positions are staged per texture for the base pass and per lightmap atlas
+  in `R_BlendLightmaps`; the underwater surfaces still chain into
+  `lightmap_polys` through the extracted `R_ChainBrushLightmap()` so the
+  lightmap pass ordering and dynamic-light rebuilds are unchanged.
+- Staging buffers are fixed-size hunk allocations made once per map (1024
+  vertices / 4080 indices) and are overwritten every frame. This is safe
+  because the MiniGL R200 frontend re-fetches every client-array vertex on
+  each `glDrawElements` (its index cache is generation-stamped per draw),
+  the same contract the alias-model array path uses.
+- Surfaces whose polygons exceed the staging limits, and all sky, brush
+  entity, and `gl_texsort 0` paths, keep the immediate renderer.
+
+A1 draw calls were also split below the frontend's `MAX_VERTICES` (4096)
+per-call index limit; the previous single draw per texture/segment could
+silently fail on maps whose visible batch exceeded it.
+
+Validation status: WarpOS `glquake_wos.warpelf` (ET_REL, zero undefined
+symbols) and the 68060 dispatch executable both build. Physical A/B is
+pending and must compare, at `gl_texsort 1` with the profiler on:
+
+```text
+r_worldbatch 0   (world + water + underwater immediate)
+r_worldbatch 1   (world + water + underwater batched)
+```
+
+plus a water-heavy demo segment; acceptance requires geometry parity, the
+same failures/RHW clamps, and a three-run median gain above the 2% gate.
+
+## A1b verdict — batching line abandoned (2026-09-21, hardware-falsified)
+
+The full batching workstream (`r_worldbatch`: A1 indexed world batches, Item 2
+water/underwater batches, every submission variant) was measured on the
+physical A4000 (MPC7410 + RV280, matched main DLL/host pair, timedemo demo1,
+fullscreen and windowed, single-boot A/B samples):
+
+| Variant | fps vs immediate control |
+|---|---:|
+| Client arrays + `glDrawElements` (A1) | −2 … −5% |
+| Item 2 water/underwater staging (`glDrawArrays`) | neutral-to-negative |
+| Batch-level FastPath direct writes (32K buffer) | −1.7% |
+| FastPath per polygon in `mglTV23fv` | −3 … −4% |
+
+Root cause: client→DLL dispatch on this stack is cheap; the dominant cost is
+the frontend's per-vertex work (TCL staging, per-vertex fog, `EmitPrimitive`),
+which is identical for every submission route, while every batching scheme adds
+client-side staging/conversion that cancels its dispatch savings. This
+confirms on WarpOS what `STEP4_REJECTED_GENERIC_ARRAY_PATH.md` measured on the
+68k R200 backend.
+
+Decisions:
+- `r_worldbatch` stays **0**; the batching line is closed unless MiniGL grows a
+  dedicated Quake-polygon submission entry (STEP4 "future direction") that
+  keeps the direct-write cost model.
+- The FastPath dispatch-ABI addition is **kept** (append-only, ABI 3
+  compatible, size check 0x238, all table copies synced except the classic
+  tree, which has diverged to its own ABI v4/v5 scheme and needs its own pass).
+  It is not used by the default renderer.
+- `MAX_VERTICES` stays **8192**: 4096 clipped batched draws (missing world
+  geometry with the batching path enabled); 16384/32768 showed no further
+  effect. The 8192 DLL is the deployed one.
+- Known separate defect: main-branch DLL is pathologically slow in **windowed**
+  mode (18–20 fps vs 86 fps on the W-10 DLL), independent of batching.
+  Unresolved; fullscreen is unaffected.
+
+Final deployed artifacts (this workstream): DLL `7FD5776D`
+(`Work:ibdraw/minigl_ppc.dll` + `Work:games/quake/minigl_ppc.dll`, warpelf
+`7104759E`), matched host `EFDF7EAC`, validation client
+`DH2:wosbuild/qitem2/glqfinal` (`689D74EC`). End-state validation:
+`wb0` 61.407 fps. Rollback chain: `.pre-fp` (32K), `.pre-max32k` (16K),
+`.pre-max16k` (8K), `.pre-max8k` (original W-10 DLL; `mglhost.pre-max8k`).
 
 ## Runtime controls
 

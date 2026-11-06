@@ -1,5 +1,11 @@
 # GLQuake WarpOS performance work — results and change log
 
+> **Archived working document.** Originally `PERFORMANCE_RESULTS_2026-09-19_2339.md`
+> at the repository root. Repository-relative paths below are relative to the
+> repository root. This log ends mid-September 2026; the deployed artifacts and
+> the current performance state are tracked in
+> [docs/performance/README.md](../README.md).
+
 **Timestamp:** 2026-09-19 23:39 CEST (21:39 UTC)
 **Machine:** Amiga 4000, 68060 host + Prometheus + Radeon 9200 (RV280),
 MPC7410 PPC **400 MHz**, WarpOS. Results below are for this 400 MHz target.

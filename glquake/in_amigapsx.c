@@ -14,7 +14,12 @@
 
 #include "quakedef.h" 
  
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#else
 #pragma amiga-align
+#endif
+
 #include <proto/lowlevel.h> 
 #include <intuition/intuition.h>
 #include <intuition/intuitionbase.h> 
@@ -23,7 +28,12 @@
 #include <proto/exec.h>
 #include <proto/lowlevel.h>
 #include "psxport.h" 
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(pop)
+#else
 #pragma default-align
+#endif
+
 
 extern cvar_t  joy_advanced;
 extern cvar_t  joy_forwardthreshold;

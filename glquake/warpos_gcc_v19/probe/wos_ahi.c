@@ -53,6 +53,7 @@ static ULONG              tonelen;
 static ULONG              tonetype;
 static int                max_step = 9;
 static BOOL               ahidevice_open = FALSE;
+static int                use_native_flush = 0;   /* -native: dcbf+sync */
 
 /* ---------------- tracing (per-line, crash-durable) ---------------- */
 
@@ -140,6 +141,27 @@ static void fill_tone (ULONG type)
   }
 }
 
+/* Push freshly written PPC sample data to main memory before the 68k AHI
+   driver reads it. Two variants:
+     exec   - CacheClearE via the LP stub (current game behavior; the stub
+              also flushes the whole PPC cache, which masks range mistakes)
+     native - dcbf+sync over the exact range (cheap; requires a correct
+              range, since nothing else is flushed) */
+static void flush_range (APTR addr, ULONG len)
+{
+  if (use_native_flush) {
+    unsigned long a = (unsigned long)addr & ~31UL;
+    unsigned long end = ((unsigned long)addr + (unsigned long)len + 31UL) & ~31UL;
+
+    for (; a < end; a += 32)
+      __asm__ __volatile__ ("dcbf 0,%0" : : "r" (a) : "memory");
+    __asm__ __volatile__ ("sync" ::: "memory");
+  }
+  else {
+    CacheClearE (addr, len, CACRF_ClearD);
+  }
+}
+
 static void ahi_prep (struct wos_AHIRequest *r, struct wos_AHIRequest *link,
                       ULONG type, ULONG len)
 {
@@ -153,7 +175,7 @@ static void ahi_prep (struct wos_AHIRequest *r, struct wos_AHIRequest *link,
   r->ahir_Volume = 0x10000;
   r->ahir_Position = 0x8000;
   r->ahir_Link = link;
-  CacheClearE (tonebuf, len, CACRF_ClearD);
+  flush_range (tonebuf, len);
 }
 
 static void ahi_submit (struct wos_AHIRequest *r, struct wos_AHIRequest *link,
@@ -296,10 +318,13 @@ int main (int argc, char **argv)
   for (i = 1; i < argc; i++) {
     if (!strcmp (argv[i], "-step") && i + 1 < argc)
       max_step = atoi (argv[i + 1]);
+    else if (!strcmp (argv[i], "-native"))
+      use_native_flush = 1;
     else if (argv[i][0] >= '0' && argv[i][0] <= '9')
       unit = atoi (argv[i]);
   }
-  tracef ("max_step=%ld", (LONG)max_step);
+  tracef ("max_step=%ld native_flush=%ld", (LONG)max_step, (LONG)use_native_flush);
+  printf ("  flush: %s\n", use_native_flush ? "native dcbf+sync" : "CacheClearE (LP)");
 
   if (stage1_port_and_io () != 0) {
     trace ("FAIL: port/io setup");

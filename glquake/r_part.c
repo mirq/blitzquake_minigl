@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "quakedef.h"
+#ifdef MGL68K_RESIDENT
+extern int r68k_now;
+#endif
 #include "r_local.h"
 
 #ifdef GLQUAKE
@@ -41,6 +44,10 @@ int   ramp3[8] = {0x6d, 0x6b, 6, 5, 4, 3};
 
 particle_t  *active_particles = NULL;
 particle_t  *free_particles   = NULL;
+/* live particles are particles[0..part_n): a dead one is replaced by the
+ * last, so the per-frame walk reads memory in order (the linked list
+ * scattered them over the whole array: a cache miss or more each) */
+int part_n;
 particle_t  *particles        = NULL;
 
 int     r_numparticles;
@@ -54,6 +61,7 @@ vec3_t      r_pright, r_pup, r_ppn;
  * explosions (measured ~4% faster in demo1 at 800x600). Values above 1.5
  * force the per-point screen-quad expansion; 3 restores the old 3 px look. */
 cvar_t  r_particle_size = {"r_particle_size","1"};
+cvar_t  r_partpoints = {"r_partpoints","2"};
 
 
 /*
@@ -111,12 +119,9 @@ void R_DarkFieldParticles (entity_t *ent)
     for (j=-16 ; j<16 ; j+=8)
       for (k=0 ; k<32 ; k+=8)
       {
-        if (!free_particles)
+        if (part_n >= r_numparticles)
           return;
-        p = free_particles;
-        free_particles = p->next;
-        p->next = active_particles;
-        active_particles = p;
+        p = &particles[part_n++];
     
         p->die = cl.time + 0.2 + (rand()&7) * 0.02;
         p->color = 150 + rand()%6;
@@ -196,12 +201,9 @@ avelocities[0][i] = (rand()&255) * 0.01;
     forward[1] = cp*sy;
     forward[2] = -sp;
 
-    if (!free_particles)
+    if (part_n >= r_numparticles)
       return;
-    p = free_particles;
-    free_particles = p->next;
-    p->next = active_particles;
-    active_particles = p;
+    p = &particles[part_n++];
 
     p->die = cl.time + 0.01;
     p->color = 0x6f;
@@ -225,6 +227,7 @@ void R_ClearParticles (void)
   
   free_particles = &particles[0];
   active_particles = NULL;
+  part_n = 0;
 
   for (i=0 ;i<r_numparticles-1 ; i++)
   {
@@ -261,15 +264,12 @@ void R_ReadPointFile_f (void)
       break;
     c++;
     
-    if (!free_particles)
+    if (part_n >= r_numparticles)
     {
       Con_Printf ("Not enough free particles\n");
       break;
     }
-    p = free_particles;
-    free_particles = p->next;
-    p->next = active_particles;
-    active_particles = p;
+    p = &particles[part_n++];
     
     p->die = 99999;
     p->color = (-c)&15;
@@ -322,12 +322,9 @@ void R_ParticleExplosion (vec3_t org)
   
   for (i=0 ; i<1024 ; i++)
   {
-    if (!free_particles)
+    if (part_n >= r_numparticles)
       return;
-    p = free_particles;
-    free_particles = p->next;
-    p->next = active_particles;
-    active_particles = p;
+    p = &particles[part_n++];
 
     p->die = cl.time + 5;
     p->color = ramp1[0];
@@ -367,12 +364,9 @@ void R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 
   for (i=0; i<512; i++)
   {
-    if (!free_particles)
+    if (part_n >= r_numparticles)
       return;
-    p = free_particles;
-    free_particles = p->next;
-    p->next = active_particles;
-    active_particles = p;
+    p = &particles[part_n++];
 
     p->die = cl.time + 0.3;
     p->color = colorStart + (colorMod % colorLength);
@@ -400,12 +394,9 @@ void R_BlobExplosion (vec3_t org)
   
   for (i=0 ; i<1024 ; i++)
   {
-    if (!free_particles)
+    if (part_n >= r_numparticles)
       return;
-    p = free_particles;
-    free_particles = p->next;
-    p->next = active_particles;
-    active_particles = p;
+    p = &particles[part_n++];
 
     p->die = cl.time + 1 + (rand()&8)*0.05;
 
@@ -445,12 +436,9 @@ void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
   
   for (i=0 ; i<count ; i++)
   {
-    if (!free_particles)
+    if (part_n >= r_numparticles)
       return;
-    p = free_particles;
-    free_particles = p->next;
-    p->next = active_particles;
-    active_particles = p;
+    p = &particles[part_n++];
 
     if (count == 1024)
     { // rocket explosion
@@ -508,12 +496,9 @@ void R_LavaSplash (vec3_t org)
     for (j=-16 ; j<16 ; j++)
       for (k=0 ; k<1 ; k++)
       {
-        if (!free_particles)
+        if (part_n >= r_numparticles)
           return;
-        p = free_particles;
-        free_particles = p->next;
-        p->next = active_particles;
-        active_particles = p;
+        p = &particles[part_n++];
     
         p->die = cl.time + 2 + (rand()&31) * 0.02;
         p->color = 224 + (rand()&7);
@@ -550,12 +535,9 @@ void R_TeleportSplash (vec3_t org)
     for (j=-16 ; j<16 ; j+=4)
       for (k=-24 ; k<32 ; k+=4)
       {
-        if (!free_particles)
+        if (part_n >= r_numparticles)
           return;
-        p = free_particles;
-        free_particles = p->next;
-        p->next = active_particles;
-        active_particles = p;
+        p = &particles[part_n++];
     
         p->die = cl.time + 0.2 + (rand()&7) * 0.02;
         p->color = 7 + (rand()&7);
@@ -599,12 +581,9 @@ void R_RocketTrail (vec3_t start, vec3_t end, int type)
   {
     len -= dec;
 
-    if (!free_particles)
+    if (part_n >= r_numparticles)
       return;
-    p = free_particles;
-    free_particles = p->next;
-    p->next = active_particles;
-    active_particles = p;
+    p = &particles[part_n++];
     
     VectorCopy (vec3_origin, p->vel);
     p->die = cl.time + 2;
@@ -691,9 +670,147 @@ R_DrawParticles
 ===============
 */
 
+#ifdef MGL68K_RESIDENT
+#include <exec/types.h>
+extern qboolean R_ResidentDynBegin (int numverts, volatile ULONG **dst,
+  ULONG *handle, ULONG *offset);
+extern qboolean R_ResidentDynDraw (ULONG handle, ULONG offset,
+  const unsigned short *indices, int count);
+
+#define PRES_CHUNK 1024
+static unsigned short pres_indices[PRES_CHUNK * 3];
+static qboolean pres_active;
+static volatile ULONG *pres_dst;
+static ULONG pres_handle, pres_offset;
+static int pres_count;
+
+static ULONG PartSwapLE (ULONG v)
+{
+  return (v >> 24) | ((v >> 8) & 0xff00) | ((v << 8) & 0xff0000) | (v << 24);
+}
+
+static qboolean PartResChunk (void)
+{
+  pres_count = 0;
+  return R_ResidentDynBegin (PRES_CHUNK * 3, &pres_dst, &pres_handle,
+                             &pres_offset);
+}
+
+static qboolean PartResBegin (void)
+{
+  int i;
+  if (!pres_indices[1])
+    for (i = 0; i < PRES_CHUNK * 3; i++)
+      pres_indices[i] = i;
+  return PartResChunk ();
+}
+
+extern qboolean R_ResidentPatternDraw (ULONG handle, ULONG offset,
+  int pattern, int count);
+
+extern qboolean R_ResidentPointsDraw (ULONG handle, ULONG offset, int count);
+extern qboolean R_ResidentPointsOK (void);
+static qboolean pres_points;   /* one vertex a particle, GL_POINTS */
+
+static void PartResFlush (void)
+{
+  if (pres_points)
+  {
+    if (pres_count)
+      (void)R_ResidentPointsDraw (pres_handle, pres_offset, pres_count);
+    pres_count = 0;
+    return;
+  }
+  if (pres_count &&
+      !R_ResidentPatternDraw (pres_handle, pres_offset, 0, pres_count * 3))
+    (void)R_ResidentDynDraw (pres_handle, pres_offset, pres_indices,
+                             pres_count * 3);
+  pres_count = 0;
+}
+
+static void PartResVertex (const float *v, ULONG c)
+{
+  union { float f; ULONG u; } x, y, z;
+  x.f = v[0]; y.f = v[1]; z.f = v[2];
+  pres_dst[0] = PartSwapLE (x.u);
+  pres_dst[1] = PartSwapLE (y.u);
+  pres_dst[2] = PartSwapLE (z.u);
+  if (r68k_now)
+  {
+    pres_dst[3] = PartSwapLE (c);
+    pres_dst += 4;
+  }
+  else
+  {
+    pres_dst[3] = 0x0000803f;
+    pres_dst[4] = PartSwapLE (c);
+    pres_dst[5] = 0;
+    pres_dst[6] = 0;
+    pres_dst += 7;
+  }
+}
+
+static void PartResAdd (const float *org, const float *up,
+  const float *right, ULONG c)
+{
+  float scale, v[3];
+
+  if (!pres_active)
+    return;
+  if (pres_points)
+  {
+    if (pres_count == PRES_CHUNK * 3)
+    {
+      PartResFlush ();
+      if (!PartResChunk ())
+      {
+        pres_active = false;
+        return;
+      }
+    }
+    PartResVertex (org, c);
+    pres_count++;
+    return;
+  }
+  if (pres_count == PRES_CHUNK)
+  {
+    PartResFlush ();
+    if (!PartResChunk ())
+    {
+      pres_active = false;   /* ring full: skip the rest this frame */
+      return;
+    }
+  }
+  /* GLQuake's particle triangle, grown with distance */
+  scale = (org[0] - r_origin[0]) * vpn[0] + (org[1] - r_origin[1]) * vpn[1] +
+          (org[2] - r_origin[2]) * vpn[2];
+  scale = scale < 20 ? 1 : 1 + scale * 0.004f;
+  PartResVertex (org, c);
+  v[0] = org[0] + up[0] * scale;
+  v[1] = org[1] + up[1] * scale;
+  v[2] = org[2] + up[2] * scale;
+  PartResVertex (v, c);
+  v[0] = org[0] + right[0] * scale;
+  v[1] = org[1] + right[1] * scale;
+  v[2] = org[2] + right[2] * scale;
+  PartResVertex (v, c);
+  pres_count++;
+}
+
+static void PartResEnd (void)
+{
+  if (pres_active)
+    PartResFlush ();
+  else
+    pres_count = 0;
+  pres_active = false;
+}
+#endif
+
 void R_DrawParticles (void)
 {
-  particle_t    *p, *kill;
+  particle_t    *p;
+  int       pi;
   float     grav;
   int       i;
   float     time2, time3;
@@ -701,6 +818,9 @@ void R_DrawParticles (void)
   float     dvel;
   float     frametime;
   float minparticledist;
+#ifdef MGL68K_RESIDENT
+  float fd0, fd1, fd2, fd3;
+#endif
 
   
 #ifdef GLQUAKE
@@ -723,13 +843,30 @@ glEnable(GL_BLEND);
 
   pcount = 0;
 
-  glPointSize (r_particle_size.value > 0.0f
+  VectorScale (vup, 1.5, up);
+  VectorScale (vright, 1.5, right);
+
+#ifdef MGL68K_RESIDENT
+  /* minigl68k: one camera-facing triangle per particle (as GLQuake draws
+   * them) written straight into the VRAM ring, 256 per draw. */
+  /* r_partpoints n: n-pixel hardware point sprites from the ring;
+   * -n: the same through glBegin (test) */
+  pres_points = r_partpoints.value > 0 && r68k_now && R_ResidentPointsOK ();
+  if (pres_points)
+    glPointSize (r_partpoints.value);
+  pres_active = r_partpoints.value < 0 ? false : PartResBegin ();
+  if (!pres_active)
+#endif
+  {
+  glPointSize (
+#ifdef MGL68K_RESIDENT
+                 r_partpoints.value ? fabs (r_partpoints.value) :
+#endif
+                 r_particle_size.value > 0.0f
                  ? r_particle_size.value
                  : 0.5f + (float)vid.width/320.f);
   glBegin (GL_POINTS);
-
-  VectorScale (vup, 1.5, up);
-  VectorScale (vright, 1.5, right);
+  }
 
 #else //soft renderer
 //early out condition - Surgeon
@@ -752,36 +889,22 @@ if(r_numparticles < 2)
   grav = frametime * sv_gravity.value * 0.05;
   dvel = 4*frametime;
   
-  for ( ;; ) 
-  {
-    kill = active_particles;
-    if (kill && kill->die < cl.time)
-    {
-      active_particles = kill->next;
-      kill->next = free_particles;
-      free_particles = kill;
-      continue;
-    }
-    break;
-  }
-
 //LordHavoc:
   minparticledist = DotProduct(r_origin, vpn) + 16.0f; 
+#ifdef MGL68K_RESIDENT
+  fd0 = frustum[0].dist - 8; fd1 = frustum[1].dist - 8;
+  fd2 = frustum[2].dist - 8; fd3 = frustum[3].dist - 8;
+#endif
 
-  for (p=active_particles ; p ; p=p->next)
+  for (pi = 0; pi < part_n; )
   {
-    for ( ;; )
+    p = &particles[pi];
+    if (p->die < cl.time)
     {
-      kill = p->next;
-      if (kill && kill->die < cl.time)
-      {
-        p->next = kill->next;
-        kill->next = free_particles;
-        free_particles = kill;
-        continue;
-      }
-      break;
+      *p = particles[--part_n];
+      continue;
     }
+    pi++;
 
 #ifdef GLQUAKE
 
@@ -791,6 +914,23 @@ if(r_numparticles < 2)
 
     at = (byte *)&d_8to24table[(int)p->color];
 
+#ifdef MGL68K_RESIDENT
+    if (pres_active)
+    {
+      ULONG a;
+      /* outside the side planes: nothing to send over the bus */
+      if (DotProduct (p->org, frustum[0].normal) < fd0 ||
+          DotProduct (p->org, frustum[1].normal) < fd1 ||
+          DotProduct (p->org, frustum[2].normal) < fd2 ||
+          DotProduct (p->org, frustum[3].normal) < fd3)
+        goto part_move;
+      a = p->type == pt_fire ? (ULONG)(255*(6-p->ramp)/6) : 255;
+      PartResAdd (p->org, up, right,
+        (a << 24) | ((ULONG)at[0] << 16) | ((ULONG)at[1] << 8) | at[2]);
+    }
+    else
+#endif
+    {
     if (p->type==pt_fire)
     {
       theAlpha = 255*(6-p->ramp)/6;
@@ -810,11 +950,15 @@ if(r_numparticles < 2)
 		pcount = 0;
 		glBegin (GL_POINTS);
 	}
+    }
 
 #else
 
     D_DrawParticle (p);
 
+#endif
+#ifdef MGL68K_RESIDENT
+part_move:
 #endif
 
     p->org[0] += p->vel[0]*frametime;
@@ -881,6 +1025,11 @@ if(r_numparticles < 2)
   }
 
 #ifdef GLQUAKE
+#ifdef MGL68K_RESIDENT
+  if (pres_active)
+    PartResEnd ();
+  else
+#endif
   /* Always balance the glBegin above, including zero visible particles and
      exact 256-particle batches that leave a fresh empty batch open. */
   glEnd ();

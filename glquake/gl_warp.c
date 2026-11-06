@@ -245,6 +245,47 @@ void EmitWaterPolys (msurface_t *fa)
 }
 
 
+/*
+=============
+R_StageWaterPoly
+
+Writes one turbulent water polygon into a client-array staging buffer with
+the exact warp arithmetic EmitWaterPolys uses: static positions, the base
+texture coordinates copied to slots 3/4 and the warped coordinates in slots
+5/6 (the layout mglTV23fvLM consumes).  The source polygon is not modified.
+Returns the number of vertices written.
+=============
+*/
+int R_StageWaterPoly (glpoly_t *p, float *dst)
+{
+  int     i;
+  float   *v;
+  float   s, t, os, ot;
+
+  for (i=0, v=p->verts[0] ; i<p->numverts ; i++, v+=VERTEXSIZE, dst+=VERTEXSIZE)
+  {
+    os = v[3];
+    ot = v[4];
+
+    s = os + turbsin[(int)((ot*0.125+realtime) * TURBSCALE) & 255];
+    s *= (1.0/64);
+
+    t = ot + turbsin[(int)((os*0.125+realtime) * TURBSCALE) & 255];
+    t *= (1.0/64);
+
+    dst[0] = v[0];
+    dst[1] = v[1];
+    dst[2] = v[2];
+    dst[3] = os;
+    dst[4] = ot;
+    dst[5] = s;
+    dst[6] = t;
+  }
+
+  return p->numverts;
+}
+
+
 
 /*
 =============

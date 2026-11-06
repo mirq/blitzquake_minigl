@@ -1,5 +1,9 @@
 # Amiga 68k MiniGL-dispatch build
 
+> Full target guide: [`docs/targets/68k.md`](../docs/targets/68k.md) ·
+> build/validation gates: [`docs/building.md`](../docs/building.md).
+> This file covers the build-local details only.
+
 This target builds the GLQuake renderer for a 68060-class Amiga/PiStorm system
 using the dispatch-based `minigl.library` client from the PiStorm SDK.  It does
 not link against the legacy `mgl.library`, `mglasm.library`, or Warp3D library.

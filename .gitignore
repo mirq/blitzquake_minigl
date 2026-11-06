@@ -10,6 +10,11 @@
 glquake/m68k_gcc/
 glquake/m68k_gcc_perf/
 
+# Launcher build outputs (68k)
+launcher/build/
+launcher/build_trace/
+launcher/build_early/
+
 # WarpOS build + deployment staging trees (artifacts only; probe .c/.md kept)
 glquake/warpos_gcc_v19/glquake/
 glquake/warpos_flash/
@@ -22,3 +27,12 @@ glquake/warpos_gcc_v19/probe/qfail
 
 # Local tool output
 a.out
+
+# Python tooling
+__pycache__/
+*.pyc
+
+# 68k R200 build outputs and deploy/release staging
+glquake/m68k_r68k/
+glquake/warpos_gcc_v19/quakekb/*.warpelf
+build/

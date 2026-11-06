@@ -1,0 +1,16 @@
+%% GLQuake frame pipeline. Embedded in docs/architecture/renderer.md.
+flowchart TB
+    A["main loop / host frame<br/>host.c"] --> B["SCR_UpdateScreen<br/>gl_screen.c"]
+    B --> C["R_RenderView<br/>gl_rmain.c"]
+    C --> D["R_RenderScene"]
+    D --> E["R_DrawWorld<br/>gl_rsurf.c"]
+    D --> F["R_DrawEntitiesOnList<br/>brush + alias + sprites"]
+    D --> G["R_DrawParticles<br/>r_part.c"]
+    D --> H["R_DrawWaterSurfaces"]
+    D --> I["glow pass, R_PolyBlend, R_Mirror"]
+    B --> J["HUD / console / menu 2D<br/>gl_draw.c under FP_HUD"]
+    C --> K["R_Clear<br/>FP_CLEAR"]
+    B --> L["GL_EndRendering<br/>mglSwitchDisplay present"]
+    E --> E1["R_RecursiveWorldNode<br/>PVS + frustum walk"]
+    E1 --> E2["DrawTextureChains<br/>base texture pass"]
+    E2 --> E3["R_BlendLightmaps<br/>lightmap pass"]

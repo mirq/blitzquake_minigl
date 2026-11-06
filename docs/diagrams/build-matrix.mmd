@@ -1,0 +1,25 @@
+%% Maintained build pipelines and artifacts.
+%% Embedded in docs/building.md.
+flowchart LR
+    subgraph SRC["Sources"]
+        C["glquake/*.c"]
+        ASM["*.s (legacy builds only)"]
+        GEN["genasmheaders.c + *.gen"]
+    end
+
+    C --> D68["Makefile.GCCAmiga68k_MiniGLDispatch"]
+    C --> DWOS["Makefile.GCCAmigaWOS_MGL_V19"]
+    C --> PROBE["Makefile.GCCAmigaWOS_probe[_io]"]
+    L["launcher/*.c"] --> DL["launcher/Makefile"]
+
+    D68 --> B68["m68k_gcc_perf/glquake/<br/>glquake68k_060_perf<br/>Amiga HUNK (stripped)"]
+    DWOS --> BWOS["warpos_gcc_v19/glquake/<br/>glquake_wos.warpelf<br/>ET_REL"]
+    PROBE --> BPR["warpos_gcc_v19/probe/<br/>PROBE.warpelf"]
+
+    DL --> BL["launcher/build/<br/>BlitzLaunch<br/>Amiga HUNK (68k)"]
+
+    BWOS --> ELF["Elf2Exe2 on the Amiga"]
+    BPR --> ELF
+    ELF --> EXE["WarpOS executable"]
+
+    ASM -. "legacy Makefile.Amiga*<br/>regenerate headers" .-> GEN

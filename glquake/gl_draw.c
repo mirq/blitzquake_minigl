@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // vid buffer
 
 #include "quakedef.h"
+#ifdef MGL68K_RESIDENT
+extern int r68k_now;
+#endif
 #include "frame_profile.h"
 #include "wos_stalltrace.h"
 #ifndef MINIGL_DISPATCH_CLIENT
@@ -84,11 +87,206 @@ gltexture_t gltextures[MAX_GLTEXTURES];
 
 int numgltextures = 0; //surgeon: was not initialized to 0
 
+#ifdef MGL68K_RESIDENT
+/*
+ * minigl68k 2D batcher: Draw_Pic/TransPic/Character/String quads go into
+ * the VRAM ring (orthographic projection, hardware TCL) and are drawn with
+ * one resident draw per run of the same texture. Every GL state change in
+ * the 2D code passes through GL_Bind or a Draw_* function, which flush.
+ */
+#include <exec/types.h>
+extern qboolean R_ResidentDynBegin (int numverts, volatile ULONG **dst,
+  ULONG *handle, ULONG *offset);
+extern qboolean R_ResidentDynDraw (ULONG handle, ULONG offset,
+  const unsigned short *indices, int count);
+
+#define D2_MAX_QUADS 256
+static unsigned short d2_indices[D2_MAX_QUADS * 6];
+static volatile ULONG *d2_dst;
+static ULONG d2_handle, d2_offset;
+static int d2_count, d2_tex = -1;
+static qboolean d2_ready, d2_flushing;
+
+/* Queued quads: drawn at the next flush, regrouped by texture (a quad
+ * joins an earlier run of its texture unless it overlaps a quad queued
+ * after that run), so the status bar's icons, digits and text are a few
+ * draws instead of one per change of texture. */
+#define D2Q_MAX 512
+typedef struct { int tex; float x, y, w, h, sl, tl, sh, th; int run; } d2quad_t;
+static d2quad_t d2q[D2Q_MAX];
+static int d2q_count;
+
+static ULONG D2Swap (ULONG v)
+{
+  return (v >> 24) | ((v >> 8) & 0xff00) | ((v << 8) & 0xff0000) | (v << 24);
+}
+
+extern qboolean R_ResidentPatternDraw (ULONG handle, ULONG offset,
+  int pattern, int count);
+
+static void D2Vertex (float x, float y, float s, float t)
+{
+  union { float f; ULONG u; } a, b, c, d;
+  a.f = x; b.f = y; c.f = s; d.f = t;
+  d2_dst[0] = D2Swap (a.u);
+  d2_dst[1] = D2Swap (b.u);
+  d2_dst[2] = 0;                 /* z = 0 */
+  if (r68k_now)
+  {
+    d2_dst[3] = 0xffffffff;
+    d2_dst[4] = D2Swap (c.u);
+    d2_dst[5] = D2Swap (d.u);
+    d2_dst += 6;
+  }
+  else
+  {
+    d2_dst[3] = 0x0000803f;
+    d2_dst[4] = 0xffffffff;
+    d2_dst[5] = D2Swap (c.u);
+    d2_dst[6] = D2Swap (d.u);
+    d2_dst += 7;
+  }
+}
+
+void GL_Bind (int texnum);
+
+static qboolean D2Overlap (const d2quad_t *a, const d2quad_t *b)
+{
+  return a->x < b->x + b->w && b->x < a->x + a->w &&
+         a->y < b->y + b->h && b->y < a->y + a->h;
+}
+
+/* draws queued quads [from..to) of one run through the ring */
+static void D2DrawRun (int run, int from)
+{
+  int i, n = 0;
+  for (i = from; i < d2q_count; i++)
+    if (d2q[i].run == run)
+      n++;
+  GL_Bind (d2q[from].tex);
+  while (n > 0)
+  {
+    int chunk = n > D2_MAX_QUADS ? D2_MAX_QUADS : n, k = 0;
+    if (!R_ResidentDynBegin (chunk * 4, &d2_dst, &d2_handle, &d2_offset))
+    {
+      /* no ring space: the immediate way */
+      for (; i < d2q_count; i++) ;
+      for (i = from; i < d2q_count && n > 0; i++)
+        if (d2q[i].run == run)
+        {
+          d2quad_t *q = &d2q[i];
+          glBegin (MGL_FLATFAN);
+          glTexCoord2f (q->sl, q->tl); glVertex2f (q->x, q->y);
+          glTexCoord2f (q->sh, q->tl); glVertex2f (q->x + q->w, q->y);
+          glTexCoord2f (q->sh, q->th); glVertex2f (q->x + q->w, q->y + q->h);
+          glTexCoord2f (q->sl, q->th); glVertex2f (q->x, q->y + q->h);
+          glEnd ();
+          q->run = -1;
+          n--;
+        }
+      return;
+    }
+    for (i = from; i < d2q_count && k < chunk; i++)
+      if (d2q[i].run == run)
+      {
+        d2quad_t *q = &d2q[i];
+        D2Vertex (q->x, q->y, q->sl, q->tl);
+        D2Vertex (q->x + q->w, q->y, q->sh, q->tl);
+        D2Vertex (q->x + q->w, q->y + q->h, q->sh, q->th);
+        D2Vertex (q->x, q->y + q->h, q->sl, q->th);
+        q->run = -1;
+        k++;
+      }
+    if (!R_ResidentPatternDraw (d2_handle, d2_offset, 1, k * 6))
+      (void)R_ResidentDynDraw (d2_handle, d2_offset, d2_indices, k * 6);
+    n -= k;
+    from = i;
+  }
+}
+
+void Draw_Flush2D (void)
+{
+  int i, runs = 0;
+  static int runtex[D2Q_MAX];
+  static int runfirst[D2Q_MAX];
+
+  if (!d2q_count || d2_flushing)
+    return;
+  d2_flushing = true;
+  for (i = 0; i < d2q_count; i++)
+  {
+    d2quad_t *q = &d2q[i];
+    int r, j, target = -1;
+    /* the latest run of this texture that q may join */
+    for (r = runs - 1; r >= 0; r--)
+      if (runtex[r] == q->tex)
+      {
+        target = r;
+        break;
+      }
+    if (target >= 0)
+      for (j = 0; j < i; j++)
+        if (d2q[j].run > target && D2Overlap (&d2q[j], q))
+        {
+          target = -1;
+          break;
+        }
+    if (target < 0)
+    {
+      target = runs++;
+      runtex[target] = q->tex;
+      runfirst[target] = i;
+    }
+    q->run = target;
+  }
+  for (i = 0; i < runs; i++)
+    D2DrawRun (i, runfirst[i]);
+  d2q_count = 0;
+  d2_count = 0;
+  d2_tex = -1;
+  d2_flushing = false;
+}
+
+/* Queues one textured quad; FALSE: draw it the immediate way. */
+static qboolean Draw_Quad2D (int texnum, float x, float y, float w, float h,
+  float sl, float tl, float sh, float th)
+{
+  d2quad_t *q;
+  if (!d2_ready)
+  {
+    int i;
+    for (i = 0; i < D2_MAX_QUADS; i++)
+    {
+      d2_indices[i*6+0] = i*4;   d2_indices[i*6+1] = i*4+1;
+      d2_indices[i*6+2] = i*4+2; d2_indices[i*6+3] = i*4;
+      d2_indices[i*6+4] = i*4+2; d2_indices[i*6+5] = i*4+3;
+    }
+    d2_ready = true;
+  }
+  if (d2q_count == D2Q_MAX)
+    Draw_Flush2D ();
+  q = &d2q[d2q_count++];
+  q->tex = texnum;
+  q->x = x; q->y = y; q->w = w; q->h = h;
+  q->sl = sl; q->tl = tl; q->sh = sh; q->th = th;
+  d2_count = d2q_count;
+  return true;
+}
+#define D2_FLUSH() Draw_Flush2D ()
+#else
+#define D2_FLUSH() ((void)0)
+#endif
+
 void GL_Bind (int texnum)
 {
 //  if (gl_nobind.value)
 //    texnum = char_texture;
 
+#ifdef MGL68K_RESIDENT
+  /* a bind from outside the batcher: what is queued goes first */
+  if (d2q_count && !d2_flushing)
+    Draw_Flush2D ();
+#endif
   if (currenttexture == texnum)
     return;
 
@@ -101,6 +299,11 @@ void GL_Bind (int texnum)
 }
 
 //#define USE_SCRAP 1
+#ifdef MGL68K_RESIDENT
+/* minigl68k: the small HUD pictures share two textures, so the batched 2D
+ * pass is a few draws instead of one per picture */
+#define USE_SCRAP 1
+#endif
 
 #ifdef USE_SCRAP
 
@@ -186,15 +389,14 @@ int scrap_uploads;
 
 void Scrap_Upload (void)
 {
-  int   texnum;
-
   scrap_uploads++;
 
+    /* (was scrap_texels[texnum] with texnum never set) */
     GL_Bind(scrap_texnum); //alpha texture
-    GL_Upload8 (scrap_texels[texnum], BLOCK_WIDTH, BLOCK_HEIGHT, false, true);
+    GL_Upload8 (scrap_texels[0], BLOCK_WIDTH, BLOCK_HEIGHT, false, true);
 
     GL_Bind(scrap_texnum + 1); //noalpha texture
-    GL_Upload8 (scrap_texels[texnum], BLOCK_WIDTH, BLOCK_HEIGHT, false, false);
+    GL_Upload8 (scrap_texels[1], BLOCK_WIDTH, BLOCK_HEIGHT, false, false);
 
   scrap_dirty = false;
 }
@@ -648,6 +850,11 @@ void Draw_Character (int x, int y, int num)
   fcol = col*0.0625;
   size = 0.0625;
 
+#ifdef MGL68K_RESIDENT
+  if (Draw_Quad2D (char_texture, x, y, 8, 8, fcol, frow, fcol + size,
+                   frow + size))
+    return;
+#endif
   GL_Bind (char_texture);
 
 #if !defined(AMIGA)
@@ -715,6 +922,12 @@ void Draw_String (int x, int y, char *str)
 
   fx = (float)x;
 
+#ifdef MGL68K_RESIDENT
+  if (Draw_Quad2D (char_texture, fx, fy, 8.f, 8.f, fcol, frow, fcol + size,
+                   frow + size))
+    goto loc0;
+  GL_Bind (char_texture);
+#endif
 #if !defined(AMIGA)
   glBegin (GL_QUADS);
 #else
@@ -760,6 +973,7 @@ Draw_AlphaPic
 
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
 {
+  D2_FLUSH ();
   byte      *dest, *source;
   unsigned short  *pusdest;
   int       v, u;
@@ -821,6 +1035,11 @@ void Draw_Pic (int x, int y, qpic_t *pic)
 
   gl = (glpic_t *)pic->data;
 
+#ifdef MGL68K_RESIDENT
+  if (Draw_Quad2D (gl->texnum, x, y, pic->width, pic->height,
+                   gl->sl, gl->tl, gl->sh, gl->th))
+    return;
+#endif
   GL_Bind (gl->texnum);
 
 #if !defined(AMIGA)
@@ -865,6 +1084,11 @@ void Draw_TransPic (int x, int y, qpic_t *pic)
 
 //surgeon: inlined
   gl = (glpic_t *)pic->data;
+#ifdef MGL68K_RESIDENT
+  if (Draw_Quad2D (gl->texnum, x, y, pic->width, pic->height,
+                   gl->sl, gl->tl, gl->sh, gl->th))
+    return;
+#endif
   GL_Bind (gl->texnum);
 
 #if !defined(AMIGA)
@@ -895,6 +1119,7 @@ Only used for the player color selection menu
 
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
 {
+  D2_FLUSH ();
   int       v, u, c;
   unsigned    trans[64*64], *dest;
   byte      *src;
@@ -969,6 +1194,7 @@ refresh window.
 */
 void Draw_TileClear (int x, int y, int w, int h)
 {
+  D2_FLUSH ();
   GL_Bind (*(int *)draw_backtile->data);
 
 #if !defined(AMIGA)
@@ -998,6 +1224,7 @@ Fills a box of pixels with a single color
 */
 void Draw_Fill (int x, int y, int w, int h, int c)
 {
+  D2_FLUSH ();
   glDisable (GL_TEXTURE_2D);
 
   glColor3f (host_basepal[c*3]/255.0,
@@ -1029,6 +1256,7 @@ Draw_FadeScreen
 */
 void Draw_FadeScreen (void)
 {
+  D2_FLUSH ();
 #ifdef MINIGL_DISPATCH_CLIENT
   Draw_AlphaFill (0, 0, vid.width, vid.height, 0, 0, 0, 0.8f);
 #else
@@ -1102,6 +1330,7 @@ void Draw_AlphaFillPrewarm (void)
 void Draw_AlphaFill (int x, int y, int w, int h,
                       float red, float green, float blue, float alpha)
 {
+  D2_FLUSH ();
   int level;
 
   level = (int)(alpha * 15.0f + 0.5f);
@@ -1142,6 +1371,7 @@ Call before beginning any disc IO.
 */
 void Draw_BeginDisc (void)
 {
+  D2_FLUSH ();
   if (!draw_disc)
     return;
   glDrawBuffer  (GL_FRONT);
@@ -1169,6 +1399,55 @@ GL_Set2D
 Setup as if the screen was 320*200
 ================
 */
+#ifdef MGL68K_RESIDENT
+/* The view blend (pickup/damage flash): R_PolyBlend leaves it here and
+ * the 2D pass draws it as one resident untextured quad, its alpha in the
+ * vertex colour. The old way (MGL_FLATFAN with a 1x1 alpha texture)
+ * sometimes sampled a large area of VRAM: a mosaic of other textures
+ * over the whole view at every pickup. */
+qboolean pb_pending;
+float pb_rgba[4];
+int pb_height;
+
+static void D2PolyBlend (void)
+{
+  volatile ULONG *d;
+  ULONG h, o, c, a, r, g, b;
+  float xs[4], ys[4];
+  int i;
+  union { float f; ULONG u; } x, y;
+
+  pb_pending = false;
+  if (!r68k_now || pb_height <= 0 || !R_ResidentDynBegin (4, &d, &h, &o))
+    return;
+  a = (ULONG)(pb_rgba[3] * 255.0f); if (a > 255) a = 255;
+  r = (ULONG)(pb_rgba[0] * 255.0f); if (r > 255) r = 255;
+  g = (ULONG)(pb_rgba[1] * 255.0f); if (g > 255) g = 255;
+  b = (ULONG)(pb_rgba[2] * 255.0f); if (b > 255) b = 255;
+  c = (a << 24) | (r << 16) | (g << 8) | b;
+  xs[0] = 0; xs[1] = vid.width; xs[2] = vid.width; xs[3] = 0;
+  ys[0] = 0; ys[1] = 0; ys[2] = pb_height; ys[3] = pb_height;
+  for (i = 0; i < 4; i++)
+  {
+    x.f = xs[i]; y.f = ys[i];
+    d[0] = D2Swap (x.u);
+    d[1] = D2Swap (y.u);
+    d[2] = 0;
+    d[3] = D2Swap (c);
+    d += 4;
+  }
+  (void)d[-1];
+  glDisable (GL_TEXTURE_2D);
+  glDisable (GL_ALPHA_TEST);
+  glEnable (GL_BLEND);
+  glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  (void)R_ResidentPatternDraw (h, o, 1, 6);
+  glDisable (GL_BLEND);
+  glEnable (GL_ALPHA_TEST);
+  glEnable (GL_TEXTURE_2D);
+}
+#endif
+
 void GL_Set2D (void)
 {
 #ifdef MINIGL_DISPATCH_CLIENT
@@ -1177,7 +1456,9 @@ void GL_Set2D (void)
 //  glViewport (glx, gly, glwidth, glheight);
     glViewport (0, 0, glwidth, glheight);
   
-#if !defined(AMIGA)
+#if !defined(AMIGA) || defined(MGL68K_RESIDENT)
+  /* minigl68k: the batched 2D quads go through hardware TCL, so they need
+   * the orthographic projection (MGL_FLATFAN ignores the matrices). */
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity ();
   glOrtho  (0, vid.width, vid.height, 0, -99999, 99999);
@@ -1201,6 +1482,10 @@ void GL_Set2D (void)
   /* Never inherit GL_MODULATE from the 3D pass: its zero diffuse alpha would
    * make alpha-tested characters and menu pictures disappear. */
   glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+#endif
+#ifdef MGL68K_RESIDENT
+  if (pb_pending)
+    D2PolyBlend ();
 #endif
 
 #ifdef MINIGL_DISPATCH_CLIENT

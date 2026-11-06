@@ -19,7 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // snd_amiga.c
 
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#else
 #pragma amiga-align
+#endif
+
 
 #include <exec/exec.h>
 #include <exec/execbase.h>      /* CACRF_ClearD */
@@ -41,7 +46,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #endif
 
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(pop)
+#else
 #pragma default-align
+#endif
+
 
 #if defined (__GNUC__) && defined (__PPC__)
 #include <powerup/ppcproto/exec.h>
@@ -61,6 +71,45 @@ extern struct GfxBase *GfxBase;
 typedef struct wos_AHIRequest ahi_request_t;
 #else
 typedef struct AHIRequest ahi_request_t;
+#endif
+
+/* Cache-flush strategy for the freshly painted AHI ring (see SNDDMA_Submit).
+   1 = native PPC dcbf+sync over the painted range; 0 = exec CacheClearE via
+   the emulated LP call. Selected with -sndflush exec|native (default native;
+   the exec path remains as a fallback). */
+static int snd_flush_native = 1;
+
+/* Optional AHI audio-mode override (hex AudioID, 0 = AHI_DEFAULT_ID).
+   Selected with -ahiid <hex>; lets a cheaper Paula mode be tested without
+   touching the user's AHI preferences (the default "14 bit stereo++
+   calibrated" mode costs several ms/frame in driver mixing on this 68060). */
+static ULONG wos_ahi_id = 0;
+
+#ifdef WOS
+/* Native PPC data-cache push for a range. dcbf writes back dirty lines and
+   invalidates them; sync orders the writes before the 68k AHI driver reads
+   the buffer. Validated on hardware with the wos_cache probe: the 68k sees
+   dcbf'd fast-RAM data and does not serve stale lines on the next read. */
+static void SND_FlushRange (UBYTE *addr, int len)
+{
+  if (len <= 0)
+    return;
+
+  if (snd_flush_native) {
+    unsigned long a = (unsigned long)addr & ~31UL;
+    unsigned long end = ((unsigned long)addr + (unsigned long)len + 31UL)
+                        & ~31UL;
+
+    for (; a < end; a += 32)
+      __asm__ __volatile__ ("dcbf 0,%0" : : "r" (a) : "memory");
+    __asm__ __volatile__ ("sync" ::: "memory");
+  }
+  else {
+    CacheClearE (addr, len, CACRF_ClearD);
+  }
+}
+#else
+#define SND_FlushRange(a, l) CacheClearE ((a), (l), CACRF_ClearD)
 #endif
 
 /**********************************************************************/
@@ -314,6 +363,33 @@ static qboolean wos_ahi_init (void)
     def_smp_speed = (UWORD)desired_speed;
   speed = def_smp_speed;
 
+  /* cache-flush strategy for SNDDMA_Submit: -sndflush native|exec */
+  if (i = COM_CheckParm ("-sndflush")) {
+    if (i < com_argc - 1) {
+      if (!strcmp (com_argv[i + 1], "exec"))
+        snd_flush_native = 0;
+      else if (!strcmp (com_argv[i + 1], "native"))
+        snd_flush_native = 1;
+    }
+  }
+
+  /* optional AHI mode override: -ahiid <hex AudioID> (0 = default) */
+  if (i = COM_CheckParm ("-ahiid")) {
+    if (i < com_argc - 1) {
+      char *p = com_argv[i + 1];
+      ULONG v = 0;
+
+      while (*p) {
+        int c = *p++;
+        if (c >= '0' && c <= '9') v = (v << 4) | (c - '0');
+        else if (c >= 'a' && c <= 'f') v = (v << 4) | (c - 'a' + 10);
+        else if (c >= 'A' && c <= 'F') v = (v << 4) | (c - 'A' + 10);
+        else break;
+      }
+      wos_ahi_id = v;
+    }
+  }
+
   if ((shm = (dma_t *)malloc (sizeof (dma_t))) == NULL)
     Sys_Error ("malloc() failed");
   memset ((void *)shm, 0, sizeof (dma_t));
@@ -338,7 +414,8 @@ static qboolean wos_ahi_init (void)
   AHIDevice = 0;
   AHIBase = (struct Library *)wos_ahi_io->ahir_Std.io_Device;
 
-  if ((wos_actrl = AHI_AllocAudio (AHIA_AudioID, AHI_DEFAULT_ID,
+  if ((wos_actrl = AHI_AllocAudio (AHIA_AudioID,
+                                   wos_ahi_id ? wos_ahi_id : AHI_DEFAULT_ID,
                                    AHIA_MixFreq, speed,
                                    AHIA_Channels, 1,
                                    AHIA_Sounds, 1,
@@ -383,8 +460,19 @@ static qboolean wos_ahi_init (void)
 
   Con_Printf ("AHI audio initialized\n");
   Con_Printf ("AHI mode: %s (%08lx)\n", name, (unsigned long)mode);
+  if (wos_ahi_id)
+    Con_Printf ("AHI requested mode: %08lx\n", (unsigned long)wos_ahi_id);
+  /* CPU-mixing Paula modes cost several ms/frame on the 68k (measured ~4 ms
+     at 11025 Hz with "14 bit stereo++ calibrated"); the 68k also runs the
+     MiniGL host, so that time lands directly in the frame. AHI DMA modes
+     (e.g. Paula:DMA 8 bit stereo) measured ~0.1 ms. */
+  if (!strstr ((char *)name, "DMA"))
+    Con_Printf ("Note: select an AHI DMA mode for full speed "
+                "(Paula mixing modes cost several ms/frame here)\n");
   Con_Printf ("Output: 16bit stereo, %d byte loop (%d Hz mix)\n",
               wos_buflen, (int)mixfreq);
+  Con_Printf ("AHI cache flush: %s\n",
+              snd_flush_native ? "native dcbf+sync" : "exec CacheClearE");
 
   AHI_Play (wos_actrl,
             AHIP_BeginChannel, 0,
@@ -737,7 +825,7 @@ void SNDDMA_Shutdown (void)
 void SNDDMA_Submit (void)
 {
   static int flush_time;        /* paintedtime at the previous flush */
-  int t0, t1, bpf, len, start, first;
+  int t0, t1, bpf, len, start, first, ringbytes;
 
   if (!using_ahi || shm == NULL || shm->buffer == NULL)
     return;
@@ -755,17 +843,28 @@ void SNDDMA_Submit (void)
   if (bpf <= 0)
     return;
 
+  /* Ring size in bytes. The mixer wraps at shm->samples (16-bit units), so
+     the byte ring is samples * bytes-per-sample. Do NOT use AHIBUFFERSIZE:
+     that is the old low-level 256 KB constant while the WOS high-level ring
+     is wos_buflen (>= 64 KB). Masking with the wrong size made the flush
+     miss the painted range once t0*bpf passed wos_buflen (~1.5 s of
+     painting); CacheClearE still worked because the LP stub flushes the
+     whole PPC cache, but a native flush would have gone silent. */
+  ringbytes = shm->samples * (shm->samplebits >> 3);
+  if (ringbytes <= 0)
+    return;
+
   len = (t1 - t0) * bpf;
-  if (len > AHIBUFFERSIZE)
-    len = AHIBUFFERSIZE;
-  start = (t0 * bpf) & (AHIBUFFERSIZE - 1);
-  first = AHIBUFFERSIZE - start;
+  if (len > ringbytes)
+    len = ringbytes;
+  start = (t0 * bpf) & (ringbytes - 1);
+  first = ringbytes - start;
   if (first > len)
     first = len;
 
-  CacheClearE ((UBYTE *)shm->buffer + start, first, CACRF_ClearD);
+  SND_FlushRange ((UBYTE *)shm->buffer + start, first);
   if (len > first)
-    CacheClearE (shm->buffer, len - first, CACRF_ClearD);
+    SND_FlushRange (shm->buffer, len - first);
 
   flush_time = t1;
 }

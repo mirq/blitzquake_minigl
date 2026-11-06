@@ -258,6 +258,7 @@ void GL_EnableMultitexture(void);
 extern void GL_SubdivideSurface (msurface_t *fa);
 extern void EmitBothSkyLayers (msurface_t *fa);
 extern void EmitWaterPolys (msurface_t *fa);
+extern int R_StageWaterPoly (glpoly_t *p, float *dst);
 extern void EmitSkyPolys (msurface_t *fa);
 extern void R_DrawSkyChain (msurface_t *s);
 

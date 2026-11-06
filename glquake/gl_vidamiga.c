@@ -26,6 +26,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#include <sys/ioctl.h>
 #endif
 
+/* OS structs (struct Window, struct IntuiMessage) use the classic Amiga
+   2-byte-aligned layout.  GCC ignores the SAS/C '#pragma amiga-align' pragma,
+   which silently shifted every field past the Window pointer area by +2
+   bytes -- the root cause of the dead keyboard/mouse on WarpOS (Q3 wraps the
+   same headers in '#pragma pack(push,2)').  Gate the fix to the PPC build:
+   the 68k dispatch target has its own header alignment handling. */
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#include <exec/types.h>
+#include <exec/libraries.h>
+#include <exec/memory.h>
+#include <graphics/gfx.h>
+#include <graphics/gfxbase.h>
+#include <intuition/intuition.h>
+#include <powerup/ppcproto/exec.h>
+#include <proto/graphics.h>
+#include <proto/intuition.h>
+#pragma pack(pop)
+#else
 #pragma amiga-align
 #include <exec/types.h>
 #include <exec/libraries.h>
@@ -41,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #pragma default-align
+#endif
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -169,23 +189,54 @@ static void VID_ConfigureInputWindow(void)
 {
   ULONG idcmp;
 
-#ifdef MINIGL_DISPATCH_CLIENT
-  QuakeWindow = (struct Window *)mglGetInputWindowHandle();
-  if (!QuakeWindow)
-    QuakeWindow = (struct Window *)mglGetWindowHandle();
-#else
+  /* Mirror the working MiniGL client exactly: only mglGetWindowHandle(),
+     fetched once.  mglGetInputWindowHandle() maps to the same backend entry
+     in the R200 dispatch DLL, so the two-handle dance buys nothing. */
   QuakeWindow = (struct Window *)mglGetWindowHandle();
-#endif
 
   if (!QuakeWindow)
     return;
 
-  idcmp = QuakeWindow->IDCMPFlags | IDCMP_CLOSEWINDOW |
-          IDCMP_RAWKEY | IDCMP_MOUSEBUTTONS;
+#ifdef WOS
+  { static int kb_null_traced;
+    if (!kb_null_traced)
+    { extern void Sys_WOSTrace (const char *s);
+      kb_null_traced = 1;
+      Sys_WOSTrace("kb: no input window\n"); }
+  }
+#endif
+
+  /* Q3 parity: replace the whole mask instead of OR-ing onto the window's
+     base mask, and set WFLG_REPORTMOUSE -- without it IDCMP_MOUSEMOVE never
+     arrives.  No ActivateWindow: Q3 does not call it (the host opens the
+     fullscreen window with WFLG_ACTIVATE already). */
+  idcmp = IDCMP_RAWKEY | IDCMP_MOUSEBUTTONS;
 #ifdef NOMOUSEASM
   idcmp |= IDCMP_MOUSEMOVE | IDCMP_DELTAMOVE;
 #endif
   ModifyIDCMP(QuakeWindow, idcmp);
+  QuakeWindow->Flags |= WFLG_REPORTMOUSE;
+
+#ifdef WOS
+  { char kbbuf[140];
+    extern void Sys_WOSTrace (const char *s);
+    sprintf(kbbuf, "kb: win 0x%08lx port 0x%08lx flags 0x%08lx idcmp 0x%08lx screen 0x%08lx\n",
+            (unsigned long)QuakeWindow,
+            (unsigned long)QuakeWindow->UserPort,
+            (unsigned long)QuakeWindow->Flags,
+            (unsigned long)QuakeWindow->IDCMPFlags,
+            (unsigned long)QuakeWindow->WScreen);
+    Sys_WOSTrace(kbbuf); }
+#endif
+  Con_Printf("Input window 0x%08lx\n", (unsigned long)QuakeWindow);
+
+  /* Hide the Amiga pointer over the game window: the game draws its own
+     crosshair and the OS pointer is pure noise during play. MiniGL's
+     mglSetPointer() installs a blank pointer sprite (mglClearPointer()
+     would restore the default one); -showpointer keeps it for windowed
+     debugging. */
+  if (!COM_CheckParm ("-showpointer"))
+    mglSetPointer();
 }
 
 static void Check_Gamma (unsigned char *pal)
@@ -496,6 +547,9 @@ void GL_EndRendering (void)
    { extern int host_framecount;
      extern void Sys_WOSTraceFrame (const char *tag, int n);
      if (host_framecount < 64) Sys_WOSTraceFrame ("pre-swap", host_framecount); }
+#endif
+#ifdef MGL68K_RESIDENT
+   { extern void Draw_Flush2D (void); Draw_Flush2D (); }
 #endif
    mglSwitchDisplay(); //performs unlock
 #ifdef WOS
@@ -968,7 +1022,15 @@ void Sys_SendKeyEvents (void)
   WORD mousex, mousey;
 #endif
   qboolean close_requested = false;
-  
+
+  if (!QuakeWindow)
+  {
+    /* In the streamed-PPC MiniGL architecture the Intuition window may not
+       exist yet at VID_ConfigureInputWindow() time (it appears on the first
+       present).  Retry until MiniGL hands us a window. */
+    VID_ConfigureInputWindow();
+  }
+
   if (QuakeWindow)
   {
     while (imsg = (struct IntuiMessage *)GetMsg(QuakeWindow->UserPort))
@@ -980,6 +1042,18 @@ void Sys_SendKeyEvents (void)
       mousey = imsg->MouseY;
 #endif
       ReplyMsg((struct Message *)imsg);
+
+#ifdef WOS
+      { static int kb_traced;
+        if (!kb_traced)
+        { char kbbuf[96];
+          extern void Sys_WOSTrace (const char *s);
+          kb_traced = 1;
+          sprintf(kbbuf, "kb: first msg class 0x%08lx code 0x%04x\n",
+                  (unsigned long)msgclass, (unsigned int)msgcode);
+          Sys_WOSTrace(kbbuf); }
+      }
+#endif
 
       if (msgclass == IDCMP_CLOSEWINDOW)
       {

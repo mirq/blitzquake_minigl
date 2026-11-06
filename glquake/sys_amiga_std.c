@@ -7,7 +7,12 @@
 **
 */
 
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(push,2)
+#else
 #pragma amiga-align
+#endif
+
 #include <exec/types.h>
 #include <exec/memory.h>
 #include <exec/execbase.h>
@@ -31,7 +36,12 @@
 #include <powerup/gcclib/powerup_protos.h>
 #endif
 #endif
+#if defined (__GNUC__) && defined (__PPC__)
+#pragma pack(pop)
+#else
 #pragma default-align
+#endif
+
 
 #include "quakedef.h"
 #include "frame_profile.h"
@@ -281,13 +291,14 @@ double WOS_EClockTime (void);
 void WOS_FrameClockTick (void);
 #endif
 #if defined(WOS) && WOS_DIAGNOSTICS
-/* Stage tracing to RAM:gqtrace via direct dos.library calls (stdio-independent,
- * per-line open/append/close). */
+/* Stage tracing via direct dos.library calls (stdio-independent, per-line
+ * open/append/close). Work: so the trace survives reboots (the client can
+ * wedge the machine; RAM: would be lost). */
 #include <string.h>
 void Sys_WOSTrace (const char *s)
 {
-  BPTR f = Open("RAM:gqtrace", MODE_OLDFILE);
-  if (!f) f = Open("RAM:gqtrace", MODE_NEWFILE);
+  BPTR f = Open("Work:wosbuild/gqtrace", MODE_OLDFILE);
+  if (!f) f = Open("Work:wosbuild/gqtrace", MODE_NEWFILE);
   if (f) { Seek(f, 0, OFFSET_END); Write(f, (STRPTR)s, strlen(s)); Close(f); }
 }
 /* Numbered frame-loop marker with absolute clock: "f<N> <tag> <secs>".
@@ -654,6 +665,8 @@ main (int argc, char *argv[])
 
   if (!TimerBase)
     Sys_Error("Can't open timer.device");
+  FP_Init ();   /* 68k: -frameprofile, EClock based (needs TimerBase) */
+  { extern void PCS_Init (void); PCS_Init (); }   /* -pcsample <file> */
 #endif
   Sys_WOSTrace("t4: timer\n");
 #ifdef WOS

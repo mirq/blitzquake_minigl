@@ -1,0 +1,40 @@
+%% Runtime component overview for the Amiga MiniGL targets.
+%% Embedded in docs/architecture/overview.md. Keep both copies in sync.
+flowchart TB
+    subgraph PORTABLE["Portable Quake / GLQuake code (glquake/, glqwcl/)"]
+        GAME["game + client/server<br/>host.c, cl_*.c, sv_*.c, pr_*.c"]
+        REND["renderer<br/>gl_*.c, r_*.c"]
+    end
+
+    subgraph PLATFORM["Amiga platform layer (#ifdef AMIGA / WOS)"]
+        SYS["sys_amiga_std.c<br/>DateStamp timing, args, trace"]
+        VID["gl_vidamiga.c<br/>context, window, input, present"]
+        SND["snd_amiga_AHI.c<br/>AHI audio"]
+        NET["net_bsdsocket.c<br/>bsdsocket UDP"]
+    end
+
+    subgraph MINIGL["MiniGL dispatch stack (outside this repo)"]
+        DC["client library<br/>libminigl.a (WOS)<br/>libminigl_dispatch.a (68k)"]
+        HOST["68k host<br/>mglhost / gqhostrun"]
+        DLL["minigl_ppc.dll<br/>R200 frontend"]
+    end
+
+    subgraph HW["Amiga hardware"]
+        C68["68060 CPU"]
+        PPC["MPC7410 PPC 400 MHz"]
+        GPU["Radeon 9200 (RV280)"]
+        AHIDEV["ahi.device"]
+        BSDS["bsdsocket.library / Roadshow"]
+    end
+
+    GAME --> REND
+    SYS --> GAME
+    REND --> DC
+    REND --> VID
+    SND --> AHIDEV
+    NET --> BSDS
+    DC --> HOST
+    HOST --> DLL
+    DLL --> GPU
+    DC -. "WOS build runs on" .-> PPC
+    HOST -. "68k dispatch build and host run on" .-> C68

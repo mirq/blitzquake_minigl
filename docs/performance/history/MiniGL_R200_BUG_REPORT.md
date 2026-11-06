@@ -1,5 +1,15 @@
 # MiniGL R200 (WarpOS PPC DLL) — defect report from GLQuake porting
 
+> **Archived defect report.** Originally `MiniGL_R200_BUG_REPORT.md` at the
+> repository root. The MiniGL developer addressed the defects on the
+> `fix/r200-glquake-texture-defects` branch (deployed DLL `6C74A72D`/`305388`,
+> host `573F97A3`/`40624` per the 2026-09-13 handover); the lightmap-upload
+> defect line was later fixed further by the frame-260 direct-recommit work
+> (see `FRAME260_INVESTIGATION.md` in this directory). Keep the workaround
+> notes below for reference when running against older DLLs. The GLQuake-side
+> workarounds are described in
+> [docs/targets/warpos.md](../../targets/warpos.md).
+
 Environment (as deployed and measured):
 - Amiga 4000, MPC7410 (PVR 0x800C1104), WarpOS, Prometheus + Radeon 9200
 - MiniGL V19 WOS stack: `minigl_ppc.dll` (CRC32 0x02605851, 294,768 bytes,
